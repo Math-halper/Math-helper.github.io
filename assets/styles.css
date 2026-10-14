@@ -367,3 +367,18 @@ h2 .icn,h3 .icn{color:var(--accent-dim)}
 .bg-checker.w{background:radial-gradient(circle at 35% 30%,#ffffff,#cfcfcf)}
 .bg-checker.b{background:radial-gradient(circle at 35% 30%,#555,#0d0d0d)}
 .playcard .icn{width:15px;height:15px;vertical-align:-2px}
+
+/* ---- text boxes: black text on a white box, always readable ----
+ * (Many inputs have no type attribute and used to fall back to a white
+ * browser-default box with white inherited text.) */
+input:not([type="checkbox"]):not([type="radio"]):not([type="color"]):not([type="range"]):not([type="file"]),
+textarea, select{
+  background:#ffffff;color:#000000;border-color:#8a8a8a;
+}
+input:not([type="checkbox"]):not([type="radio"]):not([type="color"]):not([type="range"]):not([type="file"])::placeholder,
+textarea::placeholder{color:#5c5c5c}
+select option{background:#ffffff;color:#000000}
+/* ...except the places that are dark by design: terminal, Sudoku, sheet cells */
+.term input, .sudoku input, table.sheet td input{
+  background:transparent !important;color:#ffffff !important;
+}
