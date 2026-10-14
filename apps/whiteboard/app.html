@@ -1,0 +1,90 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Whiteboard - proton app</title>
+</head>
+<body>
+<p>This file is a proton app. It is not meant to be opened on its own:
+open <a href="../../index.html">proton</a> and launch <b>Whiteboard</b> from the
+proton menu. The script below is fetched and run by proton's HTML loader
+(assets/html-loader.js) at boot.</p>
+<!-- proton app: everything that registers and renders this app lives in
+     this one script block. Edit it, then reload proton. -->
+<script data-proton-app>
+/* proton app module: whiteboard — edit this file to change this app.
+ * Loaded by index.html; calls registerApp() (see apps/README.md). */
+'use strict';
+
+/* ============================ WHITEBOARD ============================ */
+/* Adapted from the original Whiteboard app: pen/shapes/text/eraser boards
+ * saved on-device — here each board persists as a PNG snapshot. */
+registerApp({
+  id: 'whiteboard', name: 'Whiteboard', icon: 'palette', cat: 'Create', desc: 'Draw with pen, shapes & text — boards autosave', w: 940, h: 600,
+  render(body, ctx) {
+    let board = userData.boards[0], tool = 'pen', drawing = false, start = null, snapshot = null;
+    body.innerHTML = `${bar('Whiteboard', `<select id="w-list"></select><button class="btn sm" id="w-new">${iconSvg('plus')} Board</button><button class="btn sm" id="w-del">Delete</button><button class="btn sm" id="w-png">${iconSvg('download')} PNG</button>`)}
+    <div class="appbar" style="background:#111">${['pen', 'line', 'rect', 'ellipse', 'text', 'eraser'].map((t) => `<button class="btn sm" data-tool="${t}">${{ pen: 'Pen', line: 'Line', rect: 'Rectangle', ellipse: 'Ellipse', text: 'Text', eraser: 'Eraser' }[t]}</button>`).join('')}
+      <input type="color" id="w-color" value="#111111" style="width:38px;height:30px;padding:0"> <label class="muted">Width <input type="range" id="w-width" min="1" max="24" value="3"></label>
+      <button class="btn sm" id="w-undo">Undo</button><button class="btn sm" id="w-clear">Clear</button><span class="muted" id="w-saved" style="margin-left:auto"></span></div>
+    <div class="wb-stage"><canvas id="w-cv"></canvas></div>`;
+    const cv = body.querySelector('#w-cv'), c2 = cv.getContext('2d'), stage = body.querySelector('.wb-stage');
+    const list = body.querySelector('#w-list');
+    let history = [];
+    function fit(restore = true) {
+      const img = restore && board?.data ? board.data : null;
+      cv.width = Math.max(1, stage.clientWidth); cv.height = Math.max(1, stage.clientHeight);
+      c2.fillStyle = '#fff'; c2.fillRect(0, 0, cv.width, cv.height);
+      if (img) { const im = new Image(); im.onload = () => c2.drawImage(im, 0, 0); im.src = img; }
+      history = [];
+    }
+    function persist() {
+      if (!board) return;
+      board.data = cv.toDataURL('image/png'); board.updated = Date.now(); saveData();
+      body.querySelector('#w-saved').textContent = 'Saved';
+    }
+    function drawList() {
+      list.innerHTML = userData.boards.map((b) => `<option value="${b.id}" ${b === board ? 'selected' : ''}>${MH.esc(b.name)}</option>`).join('');
+    }
+    function pos(e) { const r = cv.getBoundingClientRect(); return { x: (e.clientX - r.left) * cv.width / r.width, y: (e.clientY - r.top) * cv.height / r.height }; }
+    function style() { c2.strokeStyle = tool === 'eraser' ? '#fff' : body.querySelector('#w-color').value; c2.fillStyle = c2.strokeStyle; c2.lineWidth = +body.querySelector('#w-width').value; c2.lineCap = 'round'; c2.lineJoin = 'round'; }
+    cv.addEventListener('pointerdown', (e) => {
+      if (!board) return;
+      const p = pos(e);
+      if (tool === 'text') {
+        const t = prompt('Text to place:'); if (!t) return;
+        history.push(cv.toDataURL()); style(); c2.font = '20px system-ui'; c2.fillText(t, p.x, p.y); persist(); return;
+      }
+      drawing = true; start = p; snapshot = cv.toDataURL(); history.push(snapshot); if (history.length > 25) history.shift();
+      cv.setPointerCapture(e.pointerId);
+      if (tool === 'pen' || tool === 'eraser') { style(); c2.beginPath(); c2.moveTo(p.x, p.y); c2.lineTo(p.x + 0.1, p.y + 0.1); c2.stroke(); }
+    });
+    cv.addEventListener('pointermove', (e) => {
+      if (!drawing) return; const p = pos(e); style();
+      if (tool === 'pen' || tool === 'eraser') { c2.lineTo(p.x, p.y); c2.stroke(); return; }
+      const im = new Image(); im.src = snapshot;
+      c2.clearRect(0, 0, cv.width, cv.height); c2.drawImage(im, 0, 0);
+      c2.beginPath();
+      if (tool === 'line') { c2.moveTo(start.x, start.y); c2.lineTo(p.x, p.y); }
+      if (tool === 'rect') c2.rect(Math.min(start.x, p.x), Math.min(start.y, p.y), Math.abs(p.x - start.x), Math.abs(p.y - start.y));
+      if (tool === 'ellipse') c2.ellipse((start.x + p.x) / 2, (start.y + p.y) / 2, Math.abs(p.x - start.x) / 2, Math.abs(p.y - start.y) / 2, 0, 0, Math.PI * 2);
+      c2.stroke();
+    });
+    cv.addEventListener('pointerup', () => { if (drawing) { drawing = false; persist(); } });
+    body.querySelectorAll('[data-tool]').forEach((b) => b.onclick = () => { tool = b.dataset.tool; body.querySelectorAll('[data-tool]').forEach((x) => x.classList.toggle('primary', x === b)); });
+    body.querySelector('[data-tool="pen"]').classList.add('primary');
+    list.onchange = () => { board = userData.boards.find((b) => b.id === list.value); fit(); };
+    body.querySelector('#w-new').onclick = () => { const b = { id: MH.uid(), name: 'Board ' + (userData.boards.length + 1), data: '' }; userData.boards.push(b); board = b; saveData(); drawList(); fit(); };
+    body.querySelector('#w-del').onclick = () => { if (board && confirmBox(`Delete ${board.name}?`)) { userData.boards = userData.boards.filter((b) => b !== board); board = userData.boards[0]; saveData(); drawList(); fit(); } };
+    body.querySelector('#w-png').onclick = () => { const a = document.createElement('a'); a.href = cv.toDataURL('image/png'); a.download = (board?.name || 'board') + '.png'; a.click(); };
+    body.querySelector('#w-undo').onclick = () => { const prev = history.pop(); if (!prev) return; const im = new Image(); im.onload = () => { c2.clearRect(0, 0, cv.width, cv.height); c2.drawImage(im, 0, 0); persist(); }; im.src = prev; };
+    body.querySelector('#w-clear').onclick = () => { history.push(cv.toDataURL()); c2.fillStyle = '#fff'; c2.fillRect(0, 0, cv.width, cv.height); persist(); };
+    ctx.winEl.addEventListener('win-resize', () => fit());
+    drawList();
+    requestAnimationFrame(() => fit());
+  },
+});
+</script>
+</body>
+</html>

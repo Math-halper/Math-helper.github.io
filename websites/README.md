@@ -1,9 +1,12 @@
 # proton built-in websites — one site per folder
 
-Every built-in website is a **single file in its own folder**:
-`websites/<site-name>/site.js`. Each file calls
-`registerSite({ id, name, icon, desc, render(main, ctx) })` and the site
-automatically appears:
+Every built-in website is a **single HTML file in its own folder**:
+`websites/<site-name>/site.html`. Each file is a real, standalone HTML page:
+a `<script type="application/json" data-proton-site>` metadata block in the
+`<head>` (id, name, icon, desc), normal HTML markup in the body, and a plain
+`<script>` at the bottom for interactivity. proton's HTML loader
+(`assets/html-loader.js`) reads the metadata at boot, and the Browser loads
+the page itself in a frame. The site automatically appears:
 
 - on the **Browser home page** (`proton://home`),
 - in the Browser's **“Built-in websites…”** menu,
@@ -15,18 +18,20 @@ account data and are managed by `apps/websites/` and `apps/app-center/`.)
 ## Add your own site
 
 1. Copy the `websites/_template/` folder and rename it, e.g. `websites/my-site/`.
-2. Edit `websites/my-site/site.js`.
-3. Add one line to `index.html` with the other website scripts:
-   `<script src="websites/my-site/site.js"></script>`
+2. Edit `websites/my-site/site.html`.
+3. Add one line to `index.html` with the other website links:
+   `<link rel="proton-site" href="websites/my-site/site.html">`
 
-In `render(main, ctx)`: set `main.innerHTML` for your page, then wire up
-buttons. `ctx.openApp('math')` opens an app, `ctx.showSite('guide')`
-visits another built-in site, `ctx.showHome()` returns to Browser home,
-`ctx.loadExternal(url)` embeds a real web page.
+Write the page as ordinary HTML. From its `<script>`, the desktop is
+reachable (same browser tab) as `window.parent.__protonSiteCtx`:
+`.openApp('math')` opens an app, `.showSite('guide')` visits another
+built-in site, `.showHome()` returns to Browser home, and
+`.loadExternal(url)` embeds a real web page. Pages share proton's look via
+`<link rel="stylesheet" href="../../assets/styles.css">`.
 
 ## Remove a site
 
-Delete its `<script>` line from `index.html` (and optionally the folder).
+Delete its `<link rel="proton-site">` line from `index.html` (and optionally the folder).
 
 ## The sites
 

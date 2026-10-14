@@ -1,0 +1,46 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>My App - proton app</title>
+</head>
+<body>
+<p>This file is a proton app. It is not meant to be opened on its own:
+open <a href="../../index.html">proton</a> and launch <b>My App</b> from the
+proton menu. The script below is fetched and run by proton's HTML loader
+(assets/html-loader.js) at boot.</p>
+<!-- proton app: everything that registers and renders this app lives in
+     this one script block. Edit it, then reload proton. -->
+<script data-proton-app>
+/* TEMPLATE — copy this whole _template folder, rename it, edit below,
+ * then add ONE line to index.html with the other app links:
+ *   <link rel="proton-app" href="apps/my-app/app.html">
+ * proton's HTML loader (assets/html-loader.js) fetches this file at boot
+ * and runs the script block below. Delete this comment when you're done.
+ * This _template file itself is never loaded. */
+'use strict';
+
+registerApp({
+  id: 'my-app',                 // unique id, lowercase-with-dashes
+  name: 'My App',                // shown in the proton menu
+  icon: 'grid',                    // icon name from assets/icons.js (folder, globe, star, ...)
+  cat: 'Productivity',           // menu category (invent your own if you like)
+  desc: 'What this app does',    // shown in App Center / Customize
+  w: 720, h: 480,                // starting window size
+
+  render(body) {
+    // body is your window. userData is the signed-in account's saved data.
+    body.innerHTML = `${bar('My App')}<div class="app-main pad">
+      <p>Hello from my app!</p>
+      <button class="btn primary" id="my-btn">Click me</button>
+    </div>`;
+    body.querySelector('#my-btn').onclick = () => {
+      MH.toast('It works!');
+      // saveData(); // after changing userData
+    };
+  },
+});
+</script>
+</body>
+</html>

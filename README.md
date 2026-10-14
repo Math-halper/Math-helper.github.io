@@ -10,7 +10,8 @@ such as cards and checkers keep their colours).
 
 ## Run it
 
-It's just static files — open `index.html`, or serve the folder:
+It's just static files — serve the folder (apps and websites are HTML
+files loaded over HTTP, so a `file://` tab won't work):
 
 ```bash
 python3 -m http.server 8000
@@ -21,16 +22,17 @@ Deployed on GitHub Pages it works as-is from the repo root.
 
 ## Project layout (everything is a module)
 
-- **Apps:** one folder + file each — `apps/<name>/app.js` (30 apps, incl.
-  test apps). Add one by copying `apps/_template/` and adding a
-  `<script>` line to `index.html`; remove one by deleting that line.
-  Full guide: [`apps/README.md`](apps/README.md).
-- **Built-in websites:** one folder + file each — `websites/<name>/site.js`
-  (5 sites, incl. test sites), rendered by the Browser at
-  `proton://<name>`. Guide: [`websites/README.md`](websites/README.md).
+- **Apps:** one folder + HTML file each — `apps/<name>/app.html` (30 apps,
+  incl. test apps). Add one by copying `apps/_template/` and adding a
+  `<link rel="proton-app">` line to `index.html`; remove one by deleting
+  that line. Full guide: [`apps/README.md`](apps/README.md).
+- **Built-in websites:** one folder + HTML page each —
+  `websites/<name>/site.html` (5 sites, incl. test sites), loaded by the
+  Browser at `proton://<name>`. Guide: [`websites/README.md`](websites/README.md).
 - **Core only:** `assets/store.js` (accounts/storage), `assets/icons.js`
   (the SVG icon set - every app/site/button icon is a named vector icon,
   no emoji icons), `assets/core.js` (desktop/window manager/registries),
+  `assets/html-loader.js` (fetches the app/site HTML files at boot),
   `assets/styles.css`, `assets/boot.js`.
 
 ## First launch = create your account

@@ -148,9 +148,11 @@ function websiteAsApp(site) {
 }
 
 /* ---------------- built-in websites registry ----------------
- * Each built-in website lives in websites/<name>/site.js and calls
- * registerSite({ id, name, icon, desc, render(main, ctx) }).
- * The Browser app (apps/browser/app.js) renders whatever is registered. */
+ * Each built-in website is a standalone HTML page in
+ * websites/<name>/site.html, described by a <script data-proton-site>
+ * metadata block. assets/html-loader.js registers them here as
+ * { id, name, icon, desc, page } and the Browser app loads `page`
+ * in a frame at proton://<id>. */
 const SITES = {};
 function registerSite(def) { SITES[def.id] = def; }
 
@@ -530,4 +532,4 @@ function bar(title, extra = '') {
 function confirmBox(msg) { return confirm(msg); }
 
 
-/* App modules live in apps/<app-name>/app.js — see apps/README.md. */
+/* App modules live in apps/<app-name>/app.html — see apps/README.md. */

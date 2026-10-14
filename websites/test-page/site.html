@@ -1,0 +1,47 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Test Page - proton website</title>
+<script type="application/json" data-proton-site>
+{"id":"test-page","name":"Test Page","icon":"flask","desc":"TEST SITE: buttons, forms, clock & counter to try the Browser with"}
+</script>
+<link rel="stylesheet" href="../../assets/styles.css">
+<style>html,body{height:auto;min-height:100%;overflow:auto;background:#050505;color:#fff}body{margin:0}</style>
+</head>
+<body>
+<div class="pad" style="max-width:720px">
+  <h2>Test Page</h2>
+  <p class="muted">A built-in test website living in <span class="kbd">websites/test-page/site.html</span>. Everything below is interactive, so you can check the Browser, windows and rendering all work.</p>
+  <div class="grid-cards">
+    <div class="card"><h3>Counter</h3><p style="font-size:30px;margin:6px 0" id="tp-count">0</p>
+      <button class="btn primary" id="tp-inc">Click me</button>
+      <button class="btn" id="tp-reset">Reset</button></div>
+    <div class="card"><h3>Live clock</h3><p style="font-size:24px;margin:6px 0" id="tp-clock">--:--:--</p>
+      <p class="muted">If this ticks every second, timers work.</p></div>
+    <div class="card"><h3>Echo form</h3>
+      <form id="tp-form"><div class="field"><label>Type something</label><input id="tp-input" maxlength="60" placeholder="Hello proton"></div>
+      <button class="btn primary">Echo it</button></form>
+      <p id="tp-out" style="min-height:1.4em"></p></div>
+    <div class="card"><h3>Colour box</h3>
+      <div id="tp-box" style="height:64px;border-radius:8px;background:#ffffff;margin-bottom:8px"></div>
+      <input type="color" id="tp-color" value="#ffffff" style="width:100%;height:38px;padding:2px" aria-label="Pick a colour"></div>
+  </div>
+</div>
+<script>
+let count = 0;
+const $ = (id) => document.getElementById(id);
+$('tp-inc').onclick = () => { $('tp-count').textContent = ++count; };
+$('tp-reset').onclick = () => { count = 0; $('tp-count').textContent = '0'; };
+const tick = () => { const el = $('tp-clock'); if (el) el.textContent = new Date().toLocaleTimeString(); };
+tick();
+setInterval(tick, 1000);
+$('tp-form').onsubmit = (e) => {
+  e.preventDefault();
+  $('tp-out').textContent = 'You typed: ' + $('tp-input').value;
+};
+$('tp-color').oninput = (e) => { $('tp-box').style.background = e.target.value; };
+</script>
+</body>
+</html>
