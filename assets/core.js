@@ -75,11 +75,11 @@ function websiteAsApp(site) {
 }
 
 const ACCENTS = {
-  '#68b723': { dim: '#4e8f17', soft: '#e6f1d9', name: 'Mint green' },
-  '#3d7fca': { dim: '#2c5f9e', soft: '#d9e8f7', name: 'Blue' },
-  '#8e5ec9': { dim: '#6b3fa0', soft: '#eadffa', name: 'Purple' },
-  '#e67e22': { dim: '#b85f10', soft: '#fdeeda', name: 'Orange' },
-  '#d64570': { dim: '#a92c50', soft: '#fbe3ec', name: 'Pink' },
+  '#68b723': { dim: '#8ed081', soft: '#1e3512', name: 'Mint green' },
+  '#3d7fca': { dim: '#7db3e8', soft: '#12283f', name: 'Blue' },
+  '#8e5ec9': { dim: '#c39af0', soft: '#2a183f', name: 'Purple' },
+  '#e67e22': { dim: '#f5a65b', soft: '#3a2410', name: 'Orange' },
+  '#d64570': { dim: '#f28bb4', soft: '#3a1626', name: 'Pink' },
 };
 function applyAccent() {
   const a = ACCENTS[userData.settings.accent] || ACCENTS['#68b723'];
@@ -418,7 +418,7 @@ registerApp({
         b.ondblclick = () => { selected = b.dataset.id; draw(); edit(); };
       });
       const f = userData.files.find((x) => x.id === selected);
-      ed.innerHTML = f ? `<div style="border-top:1px solid var(--line);background:#fff">
+      ed.innerHTML = f ? `<div style="border-top:1px solid var(--line);background:#111">
           <div class="appbar"><strong style="margin-right:auto">📄 ${MH.esc(f.name)}</strong>
           <button class="btn sm" id="fe-rename">Rename</button><button class="btn sm" id="fe-dl">⬇ Download</button><button class="btn sm primary" id="fe-save">Save</button></div>
           <textarea id="fe-text" rows="9" style="border:0;border-radius:0;resize:vertical">${MH.esc(f.content)}</textarea></div>` : '';
@@ -466,8 +466,8 @@ registerApp({
     <div class="split"><aside class="side">
       <div style="padding:10px"><input id="n-q" type="search" placeholder="Search notes" style="width:100%;padding:7px 9px"></div>
       <div id="n-list"></div></aside>
-      <div style="display:flex;flex-direction:column;min-height:0;background:#fbfbfa">
-        <div class="appbar" id="n-tools" style="background:#fff">
+      <div style="display:flex;flex-direction:column;min-height:0;background:#050505">
+        <div class="appbar" id="n-tools" style="background:#111">
           <button class="btn sm" data-cmd="bold"><b>B</b></button><button class="btn sm" data-cmd="italic"><i>I</i></button><button class="btn sm" data-cmd="underline"><u>U</u></button>
           <button class="btn sm" data-cmd="insertUnorderedList">• List</button><button class="btn sm" data-cmd="removeFormat">Clear</button>
           <button class="btn sm" id="n-export">Export .txt</button><span class="muted" id="n-saved" style="margin-left:auto"></span></div>
@@ -524,7 +524,7 @@ registerApp({
     let sel = MH.todayISO();
     body.innerHTML = `${bar('Calendar', `<button class="btn sm" id="c-prev">←</button><button class="btn sm" id="c-today">Today</button><button class="btn sm" id="c-next">→</button>`)}
     <div class="split" style="grid-template-columns:1fr 300px"><div class="app-main" style="padding:12px 14px"><h3 id="c-head" style="margin:2px 0 10px"></h3><div class="cal-grid" id="c-grid"></div></div>
-    <aside class="side" style="border-right:0;border-left:1px solid var(--line);padding:14px;background:#fff">
+    <aside class="side" style="border-right:0;border-left:1px solid var(--line);padding:14px;background:#111">
       <h3 id="c-day" style="margin-top:0"></h3><div id="c-events"></div>
       <form id="c-form"><div class="field"><label>Event title</label><input id="c-title" required maxlength="90"></div>
       <div class="field"><label>Time</label><input id="c-time" type="time" value="09:00"></div>

@@ -453,7 +453,7 @@ registerApp({
     if (!userData.chat.direct) { userData.chat.direct = [{ id: MH.uid(), who: 'Nova', me: false, text: 'This is our direct line. Team Chat has the group channels — here it\'s just us. Ask me maths!', ts: Date.now() }]; saveData(); }
     body.innerHTML = `${bar('G-Talk — Nova', `<span class="chip">● on this device</span><button class="btn sm" id="gt-call">📹 Video call</button>`)}
     <div style="display:flex;flex-direction:column;min-height:0;flex:1"><div class="chat-msgs" id="gt-msgs"></div>
-    <form id="gt-form" style="display:flex;gap:7px;padding:10px;background:#fff;border-top:1px solid var(--line)"><input id="gt-in" style="flex:1;padding:9px 11px" placeholder="Message Nova…" maxlength="500" autocomplete="off"><button class="btn primary">Send</button></form></div>`;
+    <form id="gt-form" style="display:flex;gap:7px;padding:10px;background:#111;border-top:1px solid var(--line)"><input id="gt-in" style="flex:1;padding:9px 11px" placeholder="Message Nova…" maxlength="500" autocomplete="off"><button class="btn primary">Send</button></form></div>`;
     const box = body.querySelector('#gt-msgs');
     const draw = () => { box.innerHTML = userData.chat.direct.map((m) => `<div class="bubble ${m.me ? 'me' : ''}"><small>${m.me ? 'You' : 'Nova'} · ${new Date(m.ts).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</small>${MH.esc(m.text)}</div>`).join(''); box.scrollTop = box.scrollHeight; };
     body.querySelector('#gt-call').onclick = () => MH.toast('📹 Simulated call: real video needs a server, so Nova waves at you from this browser instead. 👋');

@@ -4,7 +4,8 @@ A complete desktop in your browser: Mint-style bottom panel and proton menu,
 draggable/resizable windows, and 20+ apps — cloned and rebranded from
 [Mixt (`proton-arcade/mlp` @ `arena/170861f7-mlp`)](https://github.com/proton-arcade/mlp/tree/arena/170861f7-mlp)
 and rebuilt to run as a **pure static website** (no server, no build step,
-no dependencies).
+no dependencies). It ships a **dark theme: primarily black backgrounds with
+white text**, keeping Mixt's green as the accent colour.
 
 ## ▶ Run it
 

@@ -1,7 +1,9 @@
 /* ==========================================================================
-   proton — Mint-Y look, adapted from Mixt's mixt.css
-   (proton-arcade/mlp, AGPL-3.0-only): green accent #68b723, light grey
-   gradient title bars, dark full-width bottom panel.
+   proton — look adapted from Mixt's Mint-Y theme (mixt.css,
+   proton-arcade/mlp, AGPL-3.0-only): green accent #68b723 and a
+   full-width bottom panel. proton itself ships a dark theme —
+   primarily black backgrounds with white text (see the block at the
+   bottom of this file).
    ========================================================================== */
 :root{
   --accent:#68b723; --accent-dim:#4e8f17; --accent-soft:#e6f1d9;
@@ -226,3 +228,103 @@ input[type=range]{accent-color:var(--accent)}
 .add-form .field{margin:0}
 .add-form input{width:100%;padding:8px 10px}
 .site-url{word-break:break-all}
+
+/* ==========================================================================
+   DARK THEME — primarily black backgrounds with white text.
+   proton's green (#68b723) stays as the accent. App "objects" that are
+   meant to look physical (playing cards, chess board, the whiteboard's
+   paper, photos/video) keep their own colours; everything else is black.
+   ========================================================================== */
+:root{
+  --accent-soft:#1e3512;
+  --panel:#050505; --panel-text:#ffffff;
+  --titlebar-a:#232323; --titlebar-b:#0a0a0a; --titlebar-text:#ffffff;
+  --win-bg:#050505; --win-border:rgba(255,255,255,.28);
+  --ink:#ffffff; --muted:#b5b5b5; --line:#333333; --card:#101010;
+}
+body{background:#000000;color:#ffffff}
+a{color:#8ed081}
+::placeholder{color:#8a8a8a}
+select option{background:#111111;color:#ffffff}
+
+/* boot + auth */
+.boot{background:radial-gradient(1000px 600px at 50% 25%,rgba(104,183,35,.22),transparent 60%),#000000}
+.auth-wrap{background:radial-gradient(1000px 600px at 50% 15%,rgba(104,183,35,.16),transparent 60%),#000000}
+.auth-card{background:#050505;color:#ffffff;border:1px solid #2c2c2c}
+.auth-head{background:linear-gradient(#232323,#0d0d0d);color:#ffffff}
+.auth-body input,.auth-body select{background:#111111;border-color:#444444;color:#ffffff}
+.auth-switch a{color:#8ed081}
+.auth-err{background:#2b0f0d;border-color:#a92c28;color:#ffb4ab}
+
+/* wallpapers: black first, with only a whisper of each colour */
+.wp-mint{background:radial-gradient(900px 500px at 75% 12%,rgba(104,183,35,.30),transparent 55%),linear-gradient(160deg,#070a05,#000000 70%)}
+.wp-ocean{background:radial-gradient(900px 500px at 75% 12%,rgba(61,127,202,.28),transparent 55%),linear-gradient(160deg,#05080c,#000000 70%)}
+.wp-sunset{background:radial-gradient(900px 500px at 75% 12%,rgba(217,95,78,.24),transparent 55%),linear-gradient(160deg,#0c0605,#000000 70%)}
+.wp-grape{background:radial-gradient(900px 500px at 75% 12%,rgba(142,94,201,.26),transparent 55%),linear-gradient(160deg,#090510,#000000 70%)}
+.wp-slate{background:radial-gradient(900px 500px at 75% 12%,rgba(255,255,255,.10),transparent 55%),linear-gradient(160deg,#080808,#000000 70%)}
+.wp-rose{background:radial-gradient(900px 500px at 75% 12%,rgba(214,69,112,.24),transparent 55%),linear-gradient(160deg,#0c0508,#000000 70%)}
+
+/* panel, start menu, windows */
+.panel{background:#000000;box-shadow:inset 0 1px 0 rgba(255,255,255,.14)}
+.startmenu{background:#050505;border-color:#333333}
+.win{background:#050505;color:#ffffff;box-shadow:0 16px 44px rgba(0,0,0,.85)}
+.win-head{background:linear-gradient(#232323,#0a0a0a);color:#ffffff;box-shadow:inset 0 -1px 0 rgba(255,255,255,.14)}
+.wbtn{color:#ffffff}
+.wbtn:hover{background:rgba(255,255,255,.14)}
+.wbtn.close:hover{background:var(--danger);color:#ffffff}
+
+/* shared app chrome + controls */
+.appbar{background:linear-gradient(#1c1c1c,#0d0d0d);color:#ffffff;border-color:#333333}
+.appbar input[type=search],.appbar input[type=text],.appbar select{background:#111111;border-color:#444444;color:#ffffff}
+.btn{background:#161616;border-color:#4a4a4a;color:#ffffff}
+.btn:hover{background:#242424}
+.btn.primary{background:var(--accent);border-color:var(--accent-dim);color:#ffffff}
+.iconbtn{background:#161616;border-color:#4a4a4a;color:#ffffff}
+.iconbtn:hover{background:#242424}
+input[type=text],input[type=password],input[type=email],input[type=date],input[type=time],input[type=number],textarea,select{background:#111111;border-color:#444444;color:#ffffff}
+.card,.stat{background:#101010;border-color:#333333;color:#ffffff}
+.rowitem{color:#ffffff;border-bottom-color:#262626}
+.rowitem:hover{background:#1b1b1b}
+.split .side{background:#050505;border-color:#333333}
+table.data th{background:#1a1a1a;color:#ffffff}
+table.data th,table.data td{border-color:#333333}
+.kbd{background:#1c1c1c;border-color:#444444;color:#ffffff}
+.toast{background:#0d0d0d;border:1px solid #333333}
+
+/* notes / files / calendar / spreadsheet */
+.note-body,.note-title{color:#ffffff}
+.note-body:empty::before{color:#777777}
+.file-item{color:#ffffff}
+.file-item:hover{background:#182212}
+.cal-dow{background:#141414;color:#b5b5b5;border-color:#333333}
+.cal-day{background:#080808;color:#ffffff;border-color:#333333}
+.cal-day.other{background:#030303;color:#666666}
+.cal-day:hover{background:#161616}
+.cal-ev{background:#173a5e;color:#bcd9ff}
+table.sheet th{background:#161616;color:#b5b5b5}
+table.sheet th,table.sheet td{border-color:#333333}
+table.sheet td input{color:#ffffff}
+table.sheet td:focus-within{background:#111111}
+
+/* games + calculator (boards/cards keep their physical look) */
+.sudoku{border-color:#666666}
+.sudoku input{background:#0d0d0d;border-color:#3a3a3a;color:#ffffff}
+.sudoku input.given{background:#222222;color:#ffffff}
+.sudoku input.bad{background:#4a1713;color:#ffb4ab}
+.sudoku input:nth-child(3n){border-right-color:#777777}
+.pile{border-color:#4a4a4a}
+.calc-grid button{background:#161616;border-color:#444444;color:#ffffff}
+.calc-grid button.op{background:var(--accent-soft)}
+
+/* whiteboard: dark stage/frame, the paper itself stays white to draw on */
+.wb-stage{background:#111111}
+
+/* chat */
+.chat-msgs{background:#030303}
+.bubble{background:#151515;border-color:#333333;color:#ffffff}
+.bubble.me{background:var(--accent-soft);border-color:#3f6126}
+
+/* terminal / presentation / misc */
+.term{background:#000000}
+.present-stage{background:#000000}
+details.help summary{color:#ffffff}

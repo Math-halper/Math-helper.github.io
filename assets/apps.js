@@ -95,7 +95,7 @@ registerApp({
           <div class="field"><label>to x</label><input id="g-max" type="number" value="6" style="width:80px;padding:8px"></div>
           <button class="btn primary" id="g-go">Plot 📈</button></div>
           <p class="muted" id="g-msg">Examples: <span class="kbd">sin(x)</span> · <span class="kbd">x^3-2*x</span> · <span class="kbd">sqrt(abs(x))</span> · <span class="kbd">2^x</span></p>
-          <canvas id="g-cv" width="760" height="380" style="width:100%;background:#fff;border:1px solid var(--line);border-radius:8px"></canvas></div>`;
+          <canvas id="g-cv" width="760" height="380" style="width:100%;background:#111;border:1px solid var(--line);border-radius:8px"></canvas></div>`;
         const plot = () => {
           const cv = main.querySelector('#g-cv'), ctx = cv.getContext('2d');
           const min = parseFloat(main.querySelector('#g-min').value), max = parseFloat(main.querySelector('#g-max').value);
@@ -109,9 +109,9 @@ registerApp({
           const pad = (hi - lo) * 0.12 || 1; lo -= pad; hi += pad;
           const X = (x) => (x - min) / (max - min) * W, Y = (y) => H - (y - lo) / (hi - lo) * H;
           ctx.clearRect(0, 0, W, H);
-          ctx.strokeStyle = '#e3e3e1'; ctx.fillStyle = '#888'; ctx.font = '11px system-ui';
+          ctx.strokeStyle = '#2b2b2b'; ctx.fillStyle = '#aaa'; ctx.font = '11px system-ui';
           for (let gx = Math.ceil(min); gx <= max; gx++) { ctx.beginPath(); ctx.moveTo(X(gx), 0); ctx.lineTo(X(gx), H); ctx.stroke(); ctx.fillText(gx, X(gx) + 3, Y(0) - 4 < 12 ? 12 : Y(0) - 4); }
-          ctx.strokeStyle = '#999'; ctx.beginPath(); ctx.moveTo(0, Y(0)); ctx.lineTo(W, Y(0)); ctx.moveTo(X(0), 0); ctx.lineTo(X(0), H); ctx.stroke();
+          ctx.strokeStyle = '#555'; ctx.beginPath(); ctx.moveTo(0, Y(0)); ctx.lineTo(W, Y(0)); ctx.moveTo(X(0), 0); ctx.lineTo(X(0), H); ctx.stroke();
           ctx.strokeStyle = '#68b723'; ctx.lineWidth = 2.4; ctx.beginPath(); let pen = false;
           vals.forEach((y, i) => { if (!Number.isFinite(y) || Math.abs(y) > 1e7) { pen = false; return; } const px = i, py = Y(y); pen ? ctx.lineTo(px, py) : ctx.moveTo(px, py); pen = true; });
           ctx.stroke(); ctx.lineWidth = 1;
@@ -265,7 +265,7 @@ registerApp({
   render(body, ctx) {
     let board = userData.boards[0], tool = 'pen', drawing = false, start = null, snapshot = null;
     body.innerHTML = `${bar('Whiteboard', `<select id="w-list"></select><button class="btn sm" id="w-new">＋ Board</button><button class="btn sm" id="w-del">Delete</button><button class="btn sm" id="w-png">⬇ PNG</button>`)}
-    <div class="appbar" style="background:#fff">${['pen', 'line', 'rect', 'ellipse', 'text', 'eraser'].map((t) => `<button class="btn sm" data-tool="${t}">${{ pen: '✏️ Pen', line: '╱ Line', rect: '▭ Rect', ellipse: '◯ Ellipse', text: 'T Text', eraser: '🧽 Eraser' }[t]}</button>`).join('')}
+    <div class="appbar" style="background:#111">${['pen', 'line', 'rect', 'ellipse', 'text', 'eraser'].map((t) => `<button class="btn sm" data-tool="${t}">${{ pen: '✏️ Pen', line: '╱ Line', rect: '▭ Rect', ellipse: '◯ Ellipse', text: 'T Text', eraser: '🧽 Eraser' }[t]}</button>`).join('')}
       <input type="color" id="w-color" value="#1d4f91" style="width:38px;height:30px;padding:0"> <label class="muted">Width <input type="range" id="w-width" min="1" max="24" value="3"></label>
       <button class="btn sm" id="w-undo">Undo</button><button class="btn sm" id="w-clear">Clear</button><span class="muted" id="w-saved" style="margin-left:auto"></span></div>
     <div class="wb-stage"><canvas id="w-cv"></canvas></div>`;
@@ -374,7 +374,7 @@ registerApp({
   id: 'browser', name: 'Browser', icon: '🌐', cat: 'Learn', desc: 'Built-in pages: welcome, guide & world history (from the original /internet)', w: 940, h: 600,
   render(body) {
     body.innerHTML = `${bar('Browser', `<button class="btn sm" data-page="home">⌂ Home</button><button class="btn sm" id="b-websites">🌍 Websites</button><button class="btn sm" data-page="guide">📖 Guide</button><button class="btn sm" data-page="history">🏛 World History</button><button class="btn sm" data-page="maths">Σ Maths resources</button>`)}
-    <div class="appbar" style="background:#fff"><span>🔒</span><input id="b-url" type="text" value="proton://home" style="flex:1;padding:7px 10px"><button class="btn sm primary" id="b-go">Go</button></div>
+    <div class="appbar" style="background:#111"><span>🔒</span><input id="b-url" type="text" value="proton://home" style="flex:1;padding:7px 10px"><button class="btn sm primary" id="b-go">Go</button></div>
     <div class="app-main" id="b-main"></div>`;
     const main = body.querySelector('#b-main');
     const PAGES = {
@@ -471,7 +471,7 @@ registerApp({
           <button class="btn" id="md-shuffle" aria-pressed="false">⤮ Shuffle</button><button class="btn" id="md-repeat">↻ Repeat: off</button>
           <label class="muted">Speed <select id="md-speed"><option>0.5</option><option selected>1</option><option>1.5</option><option>2</option></select></label>
         </div><p class="muted" id="md-status" style="text-align:center"></p></div>
-      <aside style="border-left:1px solid var(--line);background:#fbfbfa;overflow:auto"><h3 style="padding:12px 12px 4px;margin:0">Playlist</h3><div id="md-list"></div></aside></div>`;
+      <aside style="border-left:1px solid var(--line);background:#050505;overflow:auto"><h3 style="padding:12px 12px 4px;margin:0">Playlist</h3><div id="md-list"></div></aside></div>`;
     const video = body.querySelector('#md-video'), audio = body.querySelector('#md-audio');
     const el = () => items[cur]?.kind === 'video' ? video : audio;
     function drawList() {
@@ -537,7 +537,7 @@ registerApp({
     <aside class="side">${Object.keys(userData.chat).map((c) => `<button class="rowitem" data-ch="${c}"># ${c}</button>`).join('')}
       <div class="pad muted">Nova the helper bot lives in this browser. Ask maths questions here!</div></aside>
     <div style="display:flex;flex-direction:column;min-height:0"><div class="chat-msgs" id="ch-msgs"></div>
-      <form id="ch-form" style="display:flex;gap:7px;padding:10px;background:#fff;border-top:1px solid var(--line)">
+      <form id="ch-form" style="display:flex;gap:7px;padding:10px;background:#111;border-top:1px solid var(--line)">
       <input id="ch-in" style="flex:1;padding:9px 11px" placeholder="Message #general… try: what is 12 × 8?" maxlength="500" autocomplete="off"><button class="btn primary">Send</button></form></div></div>`;
     function draw() {
       body.querySelectorAll('[data-ch]').forEach((b) => b.classList.toggle('sel', b.dataset.ch === channel));
