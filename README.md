@@ -1,6 +1,6 @@
-# Math Helper OS — a browser desktop (static Mixt clone)
+# proton — a browser desktop (static Mixt clone)
 
-A complete desktop in your browser: Mint-style bottom panel and Σ menu,
+A complete desktop in your browser: Mint-style bottom panel and proton menu,
 draggable/resizable windows, and 20+ apps — cloned and rebranded from
 [Mixt (`proton-arcade/mlp` @ `arena/170861f7-mlp`)](https://github.com/proton-arcade/mlp/tree/arena/170861f7-mlp)
 and rebuilt to run as a **pure static website** (no server, no build step,
@@ -36,7 +36,7 @@ export a backup from **Settings → Backup** first.
 - **Desktop** — wallpaper choices, desktop icons, Mint-Y panel with pinned
   & running apps, clock, start menu with search, window manager
   (drag/resize/minimise/maximise), toasts
-- **Σ Math Helper** *(new for this rebrand)* — calculator, linear &
+- **Calculator** *(new for this rebrand)* — calculator, linear &
   quadratic solver with steps, percentage/Pythagoras, formula cards,
   function graph plotter
 - **Productivity** — Files (virtual drive), Notes (rich text), Calendar,

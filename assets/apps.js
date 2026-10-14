@@ -1,4 +1,4 @@
-/* Math Helper OS — apps part 2: Math Helper, Spreadsheet, Presentation,
+/* proton — apps part 2: Calculator, Spreadsheet, Presentation,
  * Whiteboard, Terminal, Browser, Media, PDF Viewer, Team Chat, Meetings.
  * Game logic (Sudoku generator/checker) is adapted from the original
  * src/apps/* logic files (AGPL-3.0-only); everything else is a browser-only
@@ -23,10 +23,10 @@ const fmtNum = (v) => Math.abs(v) >= 1e12 || (Math.abs(v) < 1e-9 && v !== 0) ? v
 
 /* ============================ MATH HELPER ============================ */
 registerApp({
-  id: 'math', name: 'Math Helper', icon: 'Σ', cat: 'Learn', desc: 'Calculator, equation solver, graph plotter & formulas', w: 880, h: 600,
+  id: 'math', name: 'Calculator', icon: '🧮', cat: 'Learn', desc: 'Calculator, equation solver, graph plotter & formulas', w: 880, h: 600,
   render(body) {
     let expr = '';
-    body.innerHTML = `${bar('Σ Math Helper', `<button class="btn sm" data-tab="calc">Calculator</button><button class="btn sm" data-tab="solve">Solver</button><button class="btn sm" data-tab="graph">Graph</button><button class="btn sm" data-tab="cards">Formulas</button>`)}
+    body.innerHTML = `${bar('Calculator', `<button class="btn sm" data-tab="calc">Calculator</button><button class="btn sm" data-tab="solve">Solver</button><button class="btn sm" data-tab="graph">Graph</button><button class="btn sm" data-tab="cards">Formulas</button>`)}
     <div class="app-main pad" id="math-main"></div>`;
     const main = body.querySelector('#math-main');
     const tabs = body.querySelectorAll('[data-tab]');
@@ -333,10 +333,10 @@ registerApp({
     body.innerHTML = `<div class="term" id="t-out"></div>`;
     const out = body.querySelector('#t-out');
     const print = (s = '') => { out.insertAdjacentHTML('beforeend', MH.esc(s) + '\n'); out.scrollTop = out.scrollHeight; };
-    print('Math Helper OS terminal — type "help" and press Enter.');
+    print('proton terminal — type "help" and press Enter.');
     print(`Signed in as ${currentUser.username} on this device. Everything here is a simulation: no real shell, no network.`);
     function prompt() {
-      out.insertAdjacentHTML('beforeend', `<span style="color:#8ee08a">${MH.esc(currentUser.username)}@mathhelper</span>:~$ <input id="t-in" autocomplete="off" spellcheck="false">\n`);
+      out.insertAdjacentHTML('beforeend', `<span style="color:#8ee08a">${MH.esc(currentUser.username)}@proton</span>:~$ <input id="t-in" autocomplete="off" spellcheck="false">\n`);
       const inp = body.querySelector('#t-in'); inp.focus();
       out.onclick = () => inp.focus();
       inp.addEventListener('keydown', (e) => { if (e.key === 'Enter') { const cmd = inp.value; inp.remove(); print(cmd); run(cmd.trim()); } });
@@ -358,7 +358,7 @@ registerApp({
         case 'wallpaper': if (['mint', 'ocean', 'sunset', 'grape', 'slate', 'rose'].includes(arg)) { userData.settings.wallpaper = arg; saveData(); document.querySelector('.wallpaper').className = 'wallpaper wp-' + arg; print('Wallpaper set to ' + arg); } else print('Unknown wallpaper.'); break;
         case 'accent': if (ACCENTS[arg]) { userData.settings.accent = arg; saveData(); applyAccent(); print('Accent set.'); } else print('Try one of: ' + Object.keys(ACCENTS).join(' ')); break;
         case 'notes': print(`You have ${userData.notes.length} note(s), ${userData.files.length} file(s), ${userData.events.length} event(s) — all saved on this device.`); break;
-        case 'about': print('Math Helper OS — static clone/rebrand of Mixt (proton-arcade/mlp @ arena/170861f7-mlp), AGPL-3.0-only.'); break;
+        case 'about': print('proton — static clone/rebrand of Mixt (proton-arcade/mlp @ arena/170861f7-mlp), AGPL-3.0-only.'); break;
         case 'clear': out.innerHTML = ''; break;
         case 'sudo': print('Nice try 😄 — you already own this whole (browser) computer.'); break;
         default: print(`Unknown command "${cmd}" — type "help".`);
@@ -374,11 +374,11 @@ registerApp({
   id: 'browser', name: 'Browser', icon: '🌐', cat: 'Learn', desc: 'Built-in pages: welcome, guide & world history (from the original /internet)', w: 940, h: 600,
   render(body) {
     body.innerHTML = `${bar('Browser', `<button class="btn sm" data-page="home">⌂ Home</button><button class="btn sm" data-page="guide">📖 Guide</button><button class="btn sm" data-page="history">🏛 World History</button><button class="btn sm" data-page="maths">Σ Maths resources</button>`)}
-    <div class="appbar" style="background:#fff"><span>🔒</span><input id="b-url" type="text" value="mathhelper://home" style="flex:1;padding:7px 10px"><button class="btn sm primary" id="b-go">Go</button></div>
+    <div class="appbar" style="background:#fff"><span>🔒</span><input id="b-url" type="text" value="proton://home" style="flex:1;padding:7px 10px"><button class="btn sm primary" id="b-go">Go</button></div>
     <div class="app-main" id="b-main"></div>`;
     const main = body.querySelector('#b-main');
     const PAGES = {
-      home: `<div class="pad"><h2>Welcome to the (tiny) Math Helper web 🌐</h2><p class="muted">This static site has no server, so the Browser ships with built-in pages — like the original project's bundled sites in <span class="kbd">internet/</span>. Real websites can be opened below too, though many refuse to be embedded.</p>
+      home: `<div class="pad"><h2>Welcome to the (tiny) proton web 🌐</h2><p class="muted">This static site has no server, so the Browser ships with built-in pages — like the original project's bundled sites in <span class="kbd">internet/</span>. Real websites can be opened below too, though many refuse to be embedded.</p>
       <div class="grid-cards"><div class="card"><h3>📖 Guide</h3><p>How this desktop works: accounts, saving, windows, backups.</p><button class="btn primary" data-go="guide">Read the guide</button></div>
       <div class="card"><h3>🏛 World History</h3><p>A short interactive timeline, adapted from the original bundled site.</p><button class="btn primary" data-go="history">Open timeline</button></div>
       <div class="card"><h3>Σ Maths resources</h3><p>Formula reminders and practice ideas.</p><button class="btn primary" data-go="maths">Study up</button></div></div></div>`,
@@ -398,11 +398,11 @@ registerApp({
       maths: `<div class="pad"><h2>Σ Maths resources</h2><div class="grid-cards">
         <div class="card"><h3>Daily practice</h3><p>20 minutes beats 2 hours once a week. Mix topics: arithmetic, algebra, geometry.</p></div>
         <div class="card"><h3>Show your working</h3><p>Write each step. If you get stuck, the step where it breaks is where the learning is.</p></div>
-        <div class="card"><h3>Use the Solver</h3><p>Open <b>Σ Math Helper → Solver</b>, solve, then read the “Steps” line and re-derive it yourself.</p><button class="btn primary" id="b-openmath">Open Math Helper</button></div>
+        <div class="card"><h3>Use the Solver</h3><p>Open <b>Calculator → Solver</b>, solve, then read the “Steps” line and re-derive it yourself.</p><button class="btn primary" id="b-openmath">Open Calculator</button></div>
         <div class="card"><h3>Plot it</h3><p>Unsure what x² − 3x looks like? Graph it, then predict sin(x) before plotting.</p></div></div></div>`,
     };
     function show(page, urlText) {
-      body.querySelector('#b-url').value = urlText || `mathhelper://${page}`;
+      body.querySelector('#b-url').value = urlText || `proton://${page}`;
       main.innerHTML = PAGES[page] || PAGES.home;
       main.querySelectorAll('[data-go]').forEach((b) => b.onclick = () => show(b.dataset.go));
       main.querySelector('#b-openmath')?.addEventListener('click', () => openApp('math'));
@@ -410,7 +410,7 @@ registerApp({
     function go() {
       const raw = body.querySelector('#b-url').value.trim();
       const page = Object.keys(PAGES).find((p) => raw.toLowerCase().includes(p));
-      if (raw.startsWith('mathhelper://') || page) { show(page || 'home', raw); return; }
+      if (raw.startsWith('proton://') || page) { show(page || 'home', raw); return; }
       const url = /^https?:\/\//i.test(raw) ? raw : 'https://' + raw;
       main.innerHTML = `<div style="display:flex;flex-direction:column;height:100%"><div class="pad muted" style="padding-bottom:6px">Loading <b>${MH.esc(url)}</b> — if it stays blank, that site refuses embedding. <a href="${MH.esc(url)}" target="_blank" rel="noopener">Open in a new tab ↗</a></div><iframe src="${MH.esc(url)}" style="flex:1;border:0;width:100%" title="Web page"></iframe></div>`;
     }
@@ -520,13 +520,13 @@ registerApp({
       const solve = t.match(/solve\s+(-?[\d.]+)\s*x\s*\+\s*(-?[\d.]+)\s*=\s*(-?[\d.]+)/);
       const calc = t.match(/(?:what is|calculate|how much is)?\s*([-+*/().\d\s^x]+(?:sqrt\([\d.]+\))?[-+*/().\d\s^x]*)/);
       if (solve) { const [, a, b, c] = solve.map(Number); reply = a === 0 ? 'a can\'t be 0 there!' : `x = ${fmtNum((c - b) / a)}. Steps: ${a}x = ${fmtNum(c)} − ${fmtNum(b)} = ${fmtNum(c - b)}, then divide by ${fmtNum(a)}.`; }
-      else if (/\b(hi|hello|hey)\b/.test(t)) reply = `Hi ${currentUser.displayName}! Ask me a maths question, or open Σ Math Helper for the full solver & graph plotter.`;
+      else if (/\b(hi|hello|hey)\b/.test(t)) reply = `Hi ${currentUser.displayName}! Ask me a maths question, or open Calculator for the full solver & graph plotter.`;
       else if (t.includes('thank')) reply = 'Any time! That\'s what I\'m here for. 📚';
-      else if (t.includes('sudoku') || t.includes('chess') || t.includes('game')) reply = 'Games live in the Σ menu → Games. Sudoku even saves mid-game. Good luck! 🎲';
+      else if (t.includes('sudoku') || t.includes('chess') || t.includes('game')) reply = 'Games live in the proton menu → Games. Sudoku even saves mid-game. Good luck! 🎲';
       else if (calc && /[+\-*/x×÷^]/.test(t)) {
         try { const expr = t.replace(/what is|calculate|how much is|\?/g, '').replace(/×/g, '*').replace(/÷/g, '/').replace(/x(?=\d|\s*\d)/g, '*'); reply = `That's ${fmtNum(evalMath(expr))}. (I worked it out locally — no cloud harmed.)`; } catch { /* fall through */ }
       }
-      if (!reply) reply = ['Great question — I\'m only a tiny on-device bot, but the Σ Math Helper app can solve and graph it properly!', 'Noted! 📌 (This chat is saved on this device, by the way.)', 'Interesting! Try me with a calculation, like “what is 45 × 6?”'][Math.floor(Math.random() * 3)];
+      if (!reply) reply = ['Great question — I\'m only a tiny on-device bot, but the Calculator app can solve and graph it properly!', 'Noted! 📌 (This chat is saved on this device, by the way.)', 'Interesting! Try me with a calculation, like “what is 45 × 6?”'][Math.floor(Math.random() * 3)];
       setTimeout(() => { userData.chat[channel].push({ id: MH.uid(), who: 'Nova', me: false, text: reply, ts: Date.now() }); saveData(); draw(); }, 550);
     }
     body.querySelectorAll('[data-ch]').forEach((b) => b.onclick = () => { channel = b.dataset.ch; draw(); });

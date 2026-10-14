@@ -1,4 +1,4 @@
-/* Math Helper OS — auth screens, desktop, panel, start menu, window manager,
+/* proton — auth screens, desktop, panel, start menu, window manager,
  * and the productivity apps (Files, Notes, Calendar, Contacts, Mail,
  * Vault, App Center, Settings). Games & media live in apps.js.
  * Window chrome/panel styling follows Mixt's Mint-Y theme (mixt.css).
@@ -120,15 +120,15 @@ function enterDesktop() {
   MH.$('auth').hidden = true;
   const d = MH.$('desktop'); d.hidden = false;
   applyAccent();
-  document.title = `Math Helper OS — ${currentUser.displayName}`;
+  document.title = `proton — ${currentUser.displayName}`;
   d.innerHTML = `
     <div class="wallpaper wp-${MH.esc(userData.settings.wallpaper)}"></div>
     <div class="desktop-icons" id="dicons"></div>
-    <div class="desktop-hint">${MH.esc(new Date().toLocaleDateString(undefined, { weekday: 'long', day: 'numeric', month: 'long' }))}<br>Double-click an icon, or press the Σ menu</div>
+    <div class="desktop-hint">${MH.esc(new Date().toLocaleDateString(undefined, { weekday: 'long', day: 'numeric', month: 'long' }))}<br>Double-click an icon, or press the proton menu</div>
     <div class="windows-layer" id="windows"></div>
     <div class="startmenu" id="startmenu" hidden></div>
     <footer class="panel">
-      <button class="menu-btn" id="menubtn"><span class="lg">Σ</span> Math Helper</button>
+      <button class="menu-btn" id="menubtn"><span class="lg">⚛</span> proton</button>
       <div class="panel-apps" id="panelapps"></div>
       <div class="tray">
         <button class="tbtn" id="tray-lock" title="Lock">🔒</button>
@@ -231,12 +231,12 @@ const COLORS = ['#68b723', '#3d7fca', '#8e5ec9', '#e67e22', '#d64570', '#2aa198'
 function authShell(title, sub, bodyHTML) {
   const a = MH.$('auth'); a.hidden = false;
   a.innerHTML = `<div class="auth-card">
-    <div class="auth-head"><div class="auth-logo">Σ</div><div><h1>${title}</h1><p>${sub}</p></div></div>
+    <div class="auth-head"><div class="auth-logo">⚛</div><div><h1>${title}</h1><p>${sub}</p></div></div>
     <div class="auth-body">${bodyHTML}</div></div>`;
 }
 function renderSetup(backToLogin) {
-  document.title = 'Create your account — Math Helper OS';
-  authShell('Create your account', 'First launch setup · Math Helper OS', `
+  document.title = 'Create your account — proton';
+  authShell('Create your account', 'First launch setup · proton', `
     <p class="auth-note" style="margin-top:0">👋 Welcome! This static website has <b>no server</b>, so your account is created and stored <b>only in this browser</b>. You'll stay signed in on this device until you sign out.</p>
     <form id="setup-form">
       <label>Display name<input id="su-name" required maxlength="40" placeholder="e.g. Alex Morgan" autocomplete="name"></label>
@@ -286,9 +286,9 @@ function renderSetup(backToLogin) {
   };
 }
 function renderLogin() {
-  document.title = 'Sign in — Math Helper OS';
+  document.title = 'Sign in — proton';
   const accounts = Object.values(MH.accounts());
-  authShell('Welcome back', 'Sign in to Math Helper OS on this device', `
+  authShell('Welcome back', 'Sign in to proton on this device', `
     <form id="login-form">
       <label>Username
         <select id="li-user">${accounts.map((a) => `<option value="${MH.esc(a.usernameLower)}">${MH.esc(a.avatar)} ${MH.esc(a.username)} — ${MH.esc(a.displayName)}</option>`).join('')}</select>
@@ -298,7 +298,7 @@ function renderLogin() {
       <button class="btn primary block" type="submit">Sign in &amp; stay signed in →</button>
     </form>
     <p class="auth-switch">New to this device? <a id="li-new">Create an account</a></p>
-    <p class="auth-note">You stay signed in on this device until you choose <b>Sign out</b> in the Σ menu. Use <b>Lock</b> to hide the desktop without signing out.</p>`);
+    <p class="auth-note">You stay signed in on this device until you choose <b>Sign out</b> in the proton menu. Use <b>Lock</b> to hide the desktop without signing out.</p>`);
   MH.$('li-new').onclick = () => renderSetup(true);
   MH.$('login-form').onsubmit = async (e) => {
     e.preventDefault();
@@ -314,7 +314,7 @@ function renderLogin() {
   };
 }
 function renderLock() {
-  document.title = 'Locked — Math Helper OS';
+  document.title = 'Locked — proton';
   authShell('Desktop locked', 'Your work is exactly as you left it', `
     <div style="text-align:center"><div class="lock-avatar" style="background:${MH.esc(currentUser.color)}">${currentUser.avatar}</div>
     <b>${MH.esc(currentUser.displayName)}</b><div class="muted">@${MH.esc(currentUser.username)}</div></div>
@@ -737,7 +737,7 @@ registerApp({
 
     <h3 style="color:var(--danger)">Danger zone</h3>
     <button class="btn danger" id="s-delete">Delete my account &amp; all its data</button>
-    <p class="auth-note">Math Helper OS is a static clone of Mixt (<i>proton-arcade/mlp</i>, branch <span class="kbd">arena/170861f7-mlp</span>, commit <span class="kbd">c37c6ca</span>), rebranded and rebuilt to run with no server. AGPL-3.0-only — see CREDITS.md / LICENSE.txt in the repository. Open <b>About</b> from App Center for details.</p>
+    <p class="auth-note">proton is a static clone of Mixt (<i>proton-arcade/mlp</i>, branch <span class="kbd">arena/170861f7-mlp</span>, commit <span class="kbd">c37c6ca</span>), rebranded and rebuilt to run with no server. AGPL-3.0-only — see CREDITS.md / LICENSE.txt in the repository. Open <b>About</b> from App Center for details.</p>
     </div>`;
     body.querySelectorAll('[data-wp]').forEach((b) => b.onclick = () => {
       userData.settings.wallpaper = b.dataset.wp; saveData();
@@ -765,7 +765,7 @@ registerApp({
       MH.saveAccounts(accounts); currentUser = accounts[currentUser.usernameLower];
       err.textContent = ''; MH.toast('Password changed. Use it next time you sign in or unlock.');
     };
-    body.querySelector('#s-export').onclick = () => MH.download(`math-helper-backup-${currentUser.username}.json`, JSON.stringify({ account: { username: currentUser.username, displayName: currentUser.displayName }, exportedAt: new Date().toISOString(), data: userData }, null, 2), 'application/json');
+    body.querySelector('#s-export').onclick = () => MH.download(`proton-backup-${currentUser.username}.json`, JSON.stringify({ account: { username: currentUser.username, displayName: currentUser.displayName }, exportedAt: new Date().toISOString(), data: userData }, null, 2), 'application/json');
     body.querySelector('#s-import').onchange = async (e) => {
       const f = e.target.files[0]; if (!f) return;
       try {
@@ -775,7 +775,7 @@ registerApp({
         document.querySelector('.wallpaper').className = 'wallpaper wp-' + userData.settings.wallpaper;
         applyAccent(); renderDesktopIcons(); renderPanelApps();
         MH.toast('Backup imported — your desktop was restored.');
-      } catch { MH.toast('That file is not a Math Helper OS backup.'); }
+      } catch { MH.toast('That file is not a proton backup.'); }
     };
     body.querySelector('#s-addacct').onclick = () => { saveDataNow(); MH.$('desktop').hidden = true; wins.clear(); renderSetup(true); };
     body.querySelector('#s-lock').onclick = lockDesktop;
@@ -793,8 +793,8 @@ registerApp({
 registerApp({
   id: 'about', name: 'About', icon: 'ℹ️', cat: 'System', desc: 'What this is, credits and how saving works', w: 720, h: 540,
   render(body) {
-    body.innerHTML = `${bar('About Math Helper OS')}<div class="app-main pad">
-      <div style="display:flex;gap:14px;align-items:center"><div class="auth-logo">Σ</div><div><h2 style="margin:0">Math Helper OS</h2><span class="muted">A complete desktop computer in your browser — no server edition</span></div></div>
+    body.innerHTML = `${bar('About proton')}<div class="app-main pad">
+      <div style="display:flex;gap:14px;align-items:center"><div class="auth-logo">⚛</div><div><h2 style="margin:0">proton</h2><span class="muted">A complete desktop computer in your browser — no server edition</span></div></div>
       <p>This site is a <b>static clone</b> of <b>Mixt</b> from <a href="https://github.com/proton-arcade/mlp/tree/arena/170861f7-mlp" target="_blank" rel="noopener">proton-arcade/mlp @ arena/170861f7-mlp</a> (commit <span class="kbd">c37c6ca</span>), the Mint/Cinnamon-styled browser desktop built on Puter-derived internals. The original needs a Node.js server, SQLite and HTTPS; GitHub Pages can only serve static files, so the desktop, window manager and apps were <b>rebuilt browser-only</b> and rebranded, keeping Mixt's Mint-Y look (green <span class="kbd">#68b723</span>, light title bars, dark bottom panel).</p>
       <h3>Your account</h3>
       <p>On first launch you created an account that lives <b>only in this browser</b> (localStorage). Passwords are salted SHA-256 hashes — never plain text, never sent anywhere. You stay signed in until you sign out; every app saves per-account, automatically.</p>

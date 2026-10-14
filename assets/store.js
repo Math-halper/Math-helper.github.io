@@ -1,4 +1,4 @@
-/* Math Helper OS — storage + accounts (browser-only, localStorage).
+/* proton — storage + accounts (browser-only, localStorage).
  *
  * No server exists on a static site, so accounts live on THIS device only.
  * Passwords are never stored in plain text: we keep a per-user random salt
@@ -62,36 +62,36 @@ const MH = {
       version: 1,
       settings: { wallpaper: 'mint', accent: '#68b723', pinned: ['files', 'math', 'notes', 'browser', 'terminal'] },
       notes: [{
-        id: MH.uid(), title: 'Welcome to Math Helper OS 👋',
-        html: `<p>This desktop is a <b>static clone of Mixt</b> (from <i>proton-arcade/mlp</i>), rebranded and rebuilt to run with <b>no server at all</b>.</p><h2><span style="font-size:19px">Things to try</span></h2><ul><li>Open the <b>Σ Math Helper</b> app — calculator, solver and graph plotter</li><li>Everything you type here is <b>saved on this device</b>, under your account</li><li>Drag windows, pin apps to the panel, change the wallpaper in Settings</li></ul><p>Have fun!</p>`,
+        id: MH.uid(), title: 'Welcome to proton 👋',
+        html: `<p>This desktop is a <b>static clone of Mixt</b> (from <i>proton-arcade/mlp</i>), rebranded and rebuilt to run with <b>no server at all</b>.</p><h2><span style="font-size:19px">Things to try</span></h2><ul><li>Open the <b>Calculator</b> app — calculator, solver and graph plotter</li><li>Everything you type here is <b>saved on this device</b>, under your account</li><li>Drag windows, pin apps to the panel, change the wallpaper in Settings</li></ul><p>Have fun!</p>`,
         updated: Date.now(),
       }],
-      events: [{ id: MH.uid(), date: today, time: '09:00', title: 'First day on Math Helper OS', notes: 'Created my account today.' }],
+      events: [{ id: MH.uid(), date: today, time: '09:00', title: 'First day on proton', notes: 'Created my account today.' }],
       contacts: [
         { id: MH.uid(), name: 'Nova (Helper Bot)', email: 'Nova@localhost', phone: '', notes: 'Built-in chat helper. Say hi in Team Chat!' },
         { id: MH.uid(), name: displayName, email: '', phone: '', notes: 'Me' },
       ],
       mail: [{
-        id: MH.uid(), folder: 'inbox', from: 'Math Helper OS', to: displayName, subject: 'Welcome aboard! 🎉',
-        body: `Hi ${displayName},\n\nYour account lives entirely in this browser — no server, no tracking. Your notes, files, calendar and games are saved on this device and will be here next visit because you stay signed in.\n\nTip: press the Σ menu (bottom-left) to see every app.\n\n— Math Helper OS`, date: Date.now(), read: false,
+        id: MH.uid(), folder: 'inbox', from: 'proton', to: displayName, subject: 'Welcome aboard! 🎉',
+        body: `Hi ${displayName},\n\nYour account lives entirely in this browser — no server, no tracking. Your notes, files, calendar and games are saved on this device and will be here next visit because you stay signed in.\n\nTip: press the proton menu (bottom-left) to see every app.\n\n— proton`, date: Date.now(), read: false,
       }],
       files: [
-        { id: MH.uid(), name: 'Welcome.txt', folder: 'Documents', type: 'text', content: 'Welcome to Math Helper OS!\n\nYour Files app is a virtual drive saved in this browser.\nCreate text files, organise them in folders, download or delete them.\n\nFiles never leave this device.', updated: Date.now() },
+        { id: MH.uid(), name: 'Welcome.txt', folder: 'Documents', type: 'text', content: 'Welcome to proton!\n\nYour Files app is a virtual drive saved in this browser.\nCreate text files, organise them in folders, download or delete them.\n\nFiles never leave this device.', updated: Date.now() },
         { id: MH.uid(), name: 'Ideas.txt', folder: 'Documents', type: 'text', content: 'Ideas:\n- Practise 20 minutes of maths a day\n- Beat the Sudoku hard mode\n- ', updated: Date.now() },
-        { id: MH.uid(), name: 'README.txt', folder: 'Home', type: 'text', content: 'Math Helper OS — static clone of Mixt (proton-arcade/mlp @ arena/170861f7-mlp), rebranded.\nLicensed AGPL-3.0-only. See CREDITS.md in the project repo.', updated: Date.now() },
+        { id: MH.uid(), name: 'README.txt', folder: 'Home', type: 'text', content: 'proton — static clone of Mixt (proton-arcade/mlp @ arena/170861f7-mlp), rebranded.\nLicensed AGPL-3.0-only. See CREDITS.md in the project repo.', updated: Date.now() },
       ],
       fileFolders: ['Home', 'Documents', 'Pictures', 'Downloads'],
       sheets: { 'Budget': { 'B1': 'Item', 'C1': 'Cost', 'B2': 'Books', 'C2': '25', 'B3': 'Snacks', 'C3': '8', 'B4': 'Total', 'C4': '=SUM(C2:C3)' } },
       activeSheet: 'Budget',
       slides: [
-        { id: MH.uid(), title: 'My First Presentation', body: 'Made on Math Helper OS — saved on this device.' },
+        { id: MH.uid(), title: 'My First Presentation', body: 'Made on proton — saved on this device.' },
         { id: MH.uid(), title: 'Slide Two', body: 'Use ← → in Present mode.\nEdit any slide on the left.' },
       ],
       boards: [{ id: MH.uid(), name: 'Scribbles', data: '' }],
       chat: {
         general: [{ id: MH.uid(), who: 'Nova', me: false, text: 'Welcome to #general! I live in your browser and remember this conversation on this device.', ts: Date.now() }],
         maths: [{ id: MH.uid(), who: 'Nova', me: false, text: 'Ask me things like “what is 12 × 8?” or “solve x+3=7” right here in chat.', ts: Date.now() }],
-        games: [{ id: MH.uid(), who: 'Nova', me: false, text: 'Chess, Checkers, Sudoku, Solitaire and Backgammon are all in the Σ menu. 🎲', ts: Date.now() }],
+        games: [{ id: MH.uid(), who: 'Nova', me: false, text: 'Chess, Checkers, Sudoku, Solitaire and Backgammon are all in the proton menu. 🎲', ts: Date.now() }],
       },
       meetings: [{ id: MH.uid(), title: 'Weekly study group', when: today + 'T16:00', agenda: '1. Review homework\n2. Plan next topic\n3. Questions', notes: '' }],
       vault: [{ id: MH.uid(), title: 'Example secret', body: 'The vault asks for your account password again before showing these notes.' }],

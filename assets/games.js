@@ -1,4 +1,4 @@
-/* Math Helper OS — games: Sudoku, Chess, Checkers, Klondike, Backgammon,
+/* proton — games: Sudoku, Chess, Checkers, Klondike, Backgammon,
  * plus G-Talk (direct chat). Sudoku generation/checking is adapted from the
  * original src/apps/sudoku/logic.js; checker/chess/solitaire/backgammon
  * movement follows the original apps' rules in browser-only form.

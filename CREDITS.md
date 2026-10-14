@@ -1,6 +1,6 @@
 # Credits & provenance
 
-**Math Helper OS** (this repository) is a static, browser-only clone and
+**proton** (this repository) is a static, browser-only clone and
 rebrand of **Mixt**, from:
 
 - Upstream: https://github.com/proton-arcade/mlp/tree/arena/170861f7-mlp
@@ -15,7 +15,7 @@ static files. So the desktop, window manager and apps were **rebuilt with
 vanilla HTML/CSS/JS and zero dependencies**, keeping the upstream behaviour
 and look wherever a browser-only equivalent exists:
 
-| Upstream (Mixt) | Here (Math Helper OS) |
+| Upstream (Mixt) | Here (proton) |
 | --- | --- |
 | Mint-Y theme `src/gui/src/css/mixt.css` (accent `#68b723`, light gradient title bars, dark bottom panel) | Same palette/chrome, reimplemented in `assets/styles.css` |
 | Server accounts, `admin` first sign-in, whitelist | First-launch account creation stored **only in this browser** (localStorage), salted SHA-256 password hash, stays signed in, lock screen |
@@ -26,7 +26,7 @@ and look wherever a browser-only equivalent exists:
 | `src/apps/admin-vault`, dashboard Admin tab | Vault app that re-checks your account password; account/device stats in Settings |
 | `src/app-center`, Files/dashboard | App Center (pin/desktop toggles) + virtual Files drive |
 | `internet/world-history`, `internet/mixt-guide` | Built-in Browser pages |
-| — (this repo is `Math-helper`) | **New:** Σ Math Helper — calculator, linear/quadratic solver, percentage & Pythagoras, formula cards, function graph plotter |
+| — (new in this rebrand) | **New:** Calculator — calculator, linear/quadratic solver, percentage & Pythagoras, formula cards, function graph plotter |
 
 Things that fundamentally need a server were replaced with honest on-device
 equivalents and are labelled as such in-app: real e-mail/chat/video transport,
@@ -34,7 +34,7 @@ multi-user whitelisting, cloud storage, and the Mixt.js SDK.
 
 ## Licence
 
-Math Helper OS, like Mixt and the Puter-derived code it is based on, is
+proton, like Mixt and the Puter-derived code it is based on, is
 licensed under the **GNU Affero General Public License v3.0 only** — see
 `LICENSE.txt`. Mixt contains code derived from Puter, copyright Puter
 Technologies Inc., also AGPL-3.0. Original copyright notices in upstream
