@@ -25,6 +25,7 @@ and look wherever a browser-only equivalent exists:
 | `src/apps/team-chat`, `g-talk`, `meetings` | On-device channels/direct chat with a local helper bot; meeting planner (real calls need a server) |
 | `src/apps/admin-vault`, dashboard Admin tab | Vault app that re-checks your account password; account/device stats in Settings |
 | `src/app-center`, Files/dashboard | App Center + virtual Files drive; App Center/Websites add & remove user apps and websites (web apps in windows, saved sites, built-ins hide/restore), saved per account |
+| — (modular layer) | **Customize** app: every built-in module's name/icon/category/order is editable and resettable, custom themes & wallpapers can be added/edited/removed/applied, and desktop parts (clock, hint, tray buttons, menu search, panel labels) toggle live — all per-account state with migration |
 | `internet/world-history`, `internet/mixt-guide` | Built-in Browser pages |
 | — (new in this rebrand) | **New:** Calculator — calculator, linear/quadratic solver, percentage & Pythagoras, formula cards, function graph plotter |
 

@@ -55,7 +55,14 @@ export a backup from **Settings → Backup** first.
   apps). Custom apps/websites can be edited or removed; built-in apps can be
   **removed** from the menu and **added back** any time (Settings & App Center
   are protected so you can't lock yourself out). All saved per account.
-- **System** — App Center, Websites manager, Admin Vault
+- **🎛 Customize — everything is modular.** Rename any app, change its icon,
+  move it to another (or a brand-new) menu category, reorder it, pin it, remove
+  it and add it back, or reset it — per account. Invent your own **themes**
+  (accent + wallpaper) and **wallpapers** (two-colour gradients) and apply them
+  in one click; they also appear in Settings. Toggle desktop parts (clock,
+  desktop date/hint, lock & account buttons, menu search, panel labels)
+  instantly, and reset all customisations without touching your content.
+- **System** — App Center, Websites manager, Admin Vault, Customize
   (password-gated private notes), Settings (wallpaper/accent, change
   password, export/import/delete account), About, built-in Browser with
   Guide & World History pages
