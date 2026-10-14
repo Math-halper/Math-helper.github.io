@@ -12,10 +12,12 @@ the page itself in a frame. The site automatically appears:
 - in the Browser's **“Built-in websites…”** menu,
 - at its own address, e.g. `proton://test-page`.
 
-(The websites *users* save at runtime are different — those live in their
-account data and are managed by `apps/websites/` and `apps/app-center/`.)
+(Websites saved on an account before adding was disabled are different —
+those live in account data and can still be opened or removed in
+`apps/websites/` and `apps/app-center/`. Users can no longer add websites;
+typing an address in the Browser visits it without saving it.)
 
-## Add your own site
+## Add your own site (developer workflow)
 
 1. Copy the `websites/_template/` folder and rename it, e.g. `websites/my-site/`.
 2. Edit `websites/my-site/site.html`.

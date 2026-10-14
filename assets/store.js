@@ -68,13 +68,9 @@ const MH = {
       }],
       events: [{ id: MH.uid(), date: today, time: '09:00', title: 'First day on proton', notes: 'Created my account today.' }],
       contacts: [
-        { id: MH.uid(), name: 'Nova (Helper Bot)', email: 'Nova@localhost', phone: '', notes: 'Built-in chat helper. Say hi in Team Chat!' },
+        { id: MH.uid(), name: 'Nova (Helper Bot)', email: 'Nova@localhost', phone: '', notes: 'Built-in helper. It has no app of its own any more.' },
         { id: MH.uid(), name: displayName, email: '', phone: '', notes: 'Me' },
       ],
-      mail: [{
-        id: MH.uid(), folder: 'inbox', from: 'proton', to: displayName, subject: 'Welcome aboard!',
-        body: `Hi ${displayName},\n\nYour account lives entirely in this browser — no server, no tracking. Your notes, files, calendar and games are saved on this device and will be here next visit because you stay signed in.\n\nTip: press the proton menu (bottom-left) to see every app.\n\n— proton`, date: Date.now(), read: false,
-      }],
       files: [
         { id: MH.uid(), name: 'Welcome.txt', folder: 'Documents', type: 'text', content: 'Welcome to proton!\n\nYour Files app is a virtual drive saved in this browser.\nCreate text files, organise them in folders, download or delete them.\n\nFiles never leave this device.', updated: Date.now() },
         { id: MH.uid(), name: 'Ideas.txt', folder: 'Documents', type: 'text', content: 'Ideas:\n- Practise 20 minutes of maths a day\n- Beat the Sudoku hard mode\n- ', updated: Date.now() },
@@ -88,22 +84,17 @@ const MH = {
         { id: MH.uid(), title: 'Slide Two', body: 'Use the arrow keys in Present mode.\nEdit any slide on the left.' },
       ],
       boards: [{ id: MH.uid(), name: 'Scribbles', data: '' }],
-      chat: {
-        general: [{ id: MH.uid(), who: 'Nova', me: false, text: 'Welcome to #general! I live in your browser and remember this conversation on this device.', ts: Date.now() }],
-        maths: [{ id: MH.uid(), who: 'Nova', me: false, text: 'Ask me things like “what is 12 × 8?” or “solve x+3=7” right here in chat.', ts: Date.now() }],
-        games: [{ id: MH.uid(), who: 'Nova', me: false, text: 'Chess, Checkers, Sudoku, Solitaire and Backgammon are all in the proton menu.', ts: Date.now() }],
-      },
-      meetings: [{ id: MH.uid(), title: 'Weekly study group', when: today + 'T16:00', agenda: '1. Review homework\n2. Plan next topic\n3. Questions', notes: '' }],
-      vault: [{ id: MH.uid(), title: 'Example secret', body: 'The vault asks for your account password again before showing these notes.' }],
       games: {},
       counters: { windowsOpened: 0 },
-      /* Apps & websites the user adds themselves (Mixt-style install/remove).
+      /* Apps & websites saved on this account. Adding websites and
+       * web-address apps is disabled now, but anything already saved stays
+       * openable and removable (Mixt-style install/remove, grandfathered).
        * customApps: [{id,name,icon,desc,url}] — each becomes a real proton app.
        * websites:   [{id,name,icon,url}]   — saved sites, opened in Browser.
        * hiddenApps: [appId]                — built-ins the user "removed"
        *                                      (hidden from menu, restorable). */
       customApps: [],
-      websites: [{ id: 'site-mixt', name: 'Mixt — the original project', icon: 'atom', url: 'https://github.com/proton-arcade/mlp/tree/arena/170861f7-mlp' }],
+      websites: [],
       hiddenApps: [],
 
     };

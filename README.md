@@ -22,7 +22,7 @@ Deployed on GitHub Pages it works as-is from the repo root.
 
 ## Project layout (everything is a module)
 
-- **Apps:** one folder + HTML file each — `apps/<name>/app.html` (30 apps,
+- **Apps:** one folder + HTML file each — `apps/<name>/app.html` (25 apps,
   incl. test apps). Add one by copying `apps/_template/` and adding a
   `<link rel="proton-app">` line to `index.html`; remove one by deleting
   that line. Full guide: [`apps/README.md`](apps/README.md).
@@ -59,20 +59,20 @@ export a backup from **Settings → Backup** first.
   function graph plotter
 - **Productivity** — Files (virtual drive), Notes (rich text), Calendar,
   Spreadsheet (formulas incl. `SUM`/`AVERAGE` ranges), Presentation with
-  present mode, Contacts, Mail (on-device), PDF Viewer, Terminal
+  present mode, Contacts, PDF Viewer, Terminal
 - **Create** — Whiteboard (pen/shapes/text, PNG export)
 - **Games** — Chess (vs computer or 2-player), Checkers, Sudoku
   (easy/medium/hard, hints), Klondike solitaire, Backgammon practice board
-- **Chat & media** — Team Chat + G-Talk with Nova the on-device helper bot,
-  Meetings planner, Media player (MP4/MP3 from your computer)
-- **Add & remove apps/websites (like Mixt)** — App Center has one-click forms:
-  **Add an app** (name, icon chosen from the SVG icon set, web address -
-  appears in proton menu under *My Apps*,
-  pinnable, opens in its own window), **Add a website** (saved sites also live in
-  the new **Websites** app and on the Browser home page, and can be turned into
-  apps). Custom apps/websites can be edited or removed; built-in apps can be
-  **removed** from the menu and **added back** any time (Settings & App Center
-  are protected so you can't lock yourself out). All saved per account.
+- **Media** — Media player (MP4/MP3 from your computer)
+- **Everything is the static website — no adding websites.** All apps are
+  built into this static site; there is no way to add a website or create an
+  app from a web address in the UI. The Browser can still visit an address
+  typed into its bar without saving it, and anything already saved on an
+  account (custom apps, websites) stays openable and removable in App Center,
+  the Websites app and the Browser. Built-in apps can be **removed** from the
+  menu and **added back** any time (Settings & App Center are protected so
+  you can't lock yourself out). Mail, Team Chat, Meetings, G-Talk and Admin
+  Vault were removed. All saved per account.
 - **Customize — everything is modular.** Rename any app, change its icon,
   move it to another (or a brand-new) menu category, reorder it, pin it, remove
   it and add it back, or reset it — per account. Invent your own **themes**
@@ -80,13 +80,12 @@ export a backup from **Settings → Backup** first.
   in one click; they also appear in Settings. Toggle desktop parts (clock,
   desktop date/hint, lock & account buttons, menu search, panel labels)
   instantly, and reset all customisations without touching your content.
-- **System** — App Center, Websites manager, Admin Vault, Customize
-  (password-gated private notes), Settings (wallpaper/accent, change
-  password, export/import/delete account), About, built-in Browser with
-  Guide & World History pages
+- **System** — App Center, Websites manager, Customize, Settings
+  (wallpaper/accent, change password, export/import/delete account), About,
+  built-in Browser with Guide & World History pages
 
-Everything autosaves per account: notes, files, events, contacts, mail,
-slides, whiteboards, chats, meetings, secrets and game progress.
+Everything autosaves per account: notes, files, events, contacts,
+slides, whiteboards and game progress.
 
 ## Credits & licence
 

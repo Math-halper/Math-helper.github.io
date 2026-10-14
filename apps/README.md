@@ -8,7 +8,11 @@ There is no build step. `index.html` lists each file with a
 `registerApp({...})` (defined in `assets/core.js`) and the app instantly
 appears in the proton menu, App Center and Customize.
 
-## Add your own app
+> Note for users: inside proton itself you **cannot** add websites or
+> web-address apps — everything is part of this static website. "Add your own
+> app" below is the *developer* workflow for changing the site's code.
+
+## Add your own app (developer workflow)
 
 1. Copy the `apps/_template/` folder and rename it, e.g. `apps/my-app/`.
 2. Edit `apps/my-app/app.html` (name, `icon:` as a name from `assets/icons.js`
@@ -36,8 +40,6 @@ in `assets/styles.css` (`.btn`, `.card`, `.appbar`, …). Look at
 | `notes/` | Notes (`notes`) |
 | `calendar/` | Calendar (`calendar`) |
 | `contacts/` | Contacts (`contacts`) |
-| `mail/` | Mail (`mail`) |
-| `admin-vault/` | Admin Vault (`vault`) |
 | `websites/` | Websites manager (`websites`) |
 | `app-center/` | App Center (`appcenter`) |
 | `customize/` | Customize (`customize`) |
@@ -51,14 +53,11 @@ in `assets/styles.css` (`.btn`, `.card`, `.appbar`, …). Look at
 | `browser/` | Browser (`browser`) |
 | `media/` | Media (`media`) |
 | `pdf-viewer/` | PDF Viewer (`pdf`) |
-| `team-chat/` | Team Chat (`chat`) |
-| `meetings/` | Meetings (`meetings`) |
 | `sudoku/` | Sudoku (`sudoku`) |
 | `chess/` | Chess (`chess`) |
 | `checkers/` | Checkers (`checkers`) |
 | `klondike/` | Klondike (`klondike`) |
 | `backgammon/` | Backgammon (`backgammon`) |
-| `g-talk/` | G-Talk (`gtalk`) |
 | `hello-test/` | Hello Test (`hello-test`) |
 | `speed-test/` | Speed Test (`speed-test`) |
 | `storage-test/` | Storage Test (`storage-test`) |

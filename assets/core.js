@@ -1,7 +1,8 @@
-/* proton — auth screens, desktop, panel, start menu, window manager,
- * and the productivity apps (Files, Notes, Calendar, Contacts, Mail,
- * Vault, App Center, Settings). Games & media live in apps.js.
- * Window chrome/panel styling follows Mixt's Mint-Y theme (mixt.css).
+/* proton — auth screens, desktop, panel, start menu and window manager.
+ * Every app lives in its own apps/<name>/app.html module (loaded via
+ * assets/html-loader.js); built-in websites are standalone pages in
+ * websites/<name>/site.html, framed by the Browser app.
+ * Window chrome/panel styling follows Mixt's Mint-Y theme.
  */
 'use strict';
 
@@ -131,20 +132,13 @@ function applyComponents() {
   const search = document.querySelector('.sm-search');
   if (search) search.style.display = c.startSearch !== false ? '' : 'none';
 }
-/* Open a saved website in the Browser app (fresh window so it navigates). */
+/* Open a website already saved on this account in the Browser app
+ * (fresh window so it navigates). New websites cannot be added, and a
+ * saved website can no longer be turned into an app. */
 function openWebsite(site) {
   pendingBrowserURL = site.url;
   if (wins.has('browser')) closeWin('browser');
   openApp('browser');
-}
-/* Turn a saved website into its own windowed app. Returns true if created. */
-function websiteAsApp(site) {
-  normalizeUserData();
-  if (userData.customApps.some((a) => a.url === site.url)) { MH.toast('That website is already one of your apps.'); return false; }
-  userData.customApps.push({ id: 'custom-' + MH.uid(), name: site.name, icon: site.icon || 'globe', desc: 'Website app — ' + site.url, url: site.url });
-  syncCustomApps(); saveData(); refreshChrome();
-  MH.toast(`“${site.name}” added as an app — find it in the proton menu, under My Apps.`);
-  return true;
 }
 
 /* ---------------- built-in websites registry ----------------

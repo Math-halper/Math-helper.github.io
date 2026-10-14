@@ -19,7 +19,7 @@ proton menu. The script below is fetched and run by proton's HTML loader
 
 /* ============================ CUSTOMIZE (modular everything) ============================ */
 registerApp({
-  id: 'customize', name: 'Customize', icon: 'sliders', cat: 'System', desc: 'Add, remove & edit apps, themes, wallpapers and desktop parts', w: 1020, h: 660,
+  id: 'customize', name: 'Customize', icon: 'sliders', cat: 'System', desc: 'Remove & edit apps, themes, wallpapers and desktop parts', w: 1020, h: 660,
   render(body) {
     normalizeUserData(); applyModuleOverrides();
     const PROTECTED = ['appcenter', 'settings', 'customize'];
@@ -29,7 +29,7 @@ registerApp({
     <p class="muted" style="margin-top:0">Rename apps, change their icons, move them between categories, reorder them, hide or restore them — then invent your own themes and wallpapers. Everything here is saved per account, and <b>Reset customisations</b> at the bottom undoes it all without touching your notes, files or other content.</p>
     <div style="display:flex;gap:7px;flex-wrap:wrap;margin-bottom:6px">
       <a class="btn sm" href="#cust-apps" data-jump="cust-apps">${iconSvg('grid')} Apps</a><a class="btn sm" href="#cust-themes" data-jump="cust-themes">${iconSvg('palette')} Themes</a><a class="btn sm" href="#cust-walls" data-jump="cust-walls">${iconSvg('image')} Wallpapers</a><a class="btn sm" href="#cust-desktop" data-jump="cust-desktop">${iconSvg('monitor')} Desktop parts</a>
-      <button class="btn sm" id="cust-goto-appcenter">${iconSvg('plus')} Add apps & websites (App Center)</button>
+      <button class="btn sm" id="cust-goto-appcenter">${iconSvg('grid')} Manage apps in App Center</button>
     </div>
 
     <h3 id="cust-apps">${iconSvg('grid')} App modules</h3>
@@ -61,7 +61,7 @@ registerApp({
     <div class="card" id="cust-components"></div>
 
     <h3>${iconSvg('refresh')} Start over</h3>
-    <div class="card"><p class="muted" style="margin-top:0">Reset every customisation (app renames/icons/categories/order, hidden apps, pins, themes, wallpapers, desktop parts) back to proton defaults. Your content — notes, files, calendar, chats, custom apps and websites — is <b>not</b> deleted.</p>
+    <div class="card"><p class="muted" style="margin-top:0">Reset every customisation (app renames/icons/categories/order, hidden apps, pins, themes, wallpapers, desktop parts) back to proton defaults. Your content — notes, files, calendar, saved web apps and websites — is <b>not</b> deleted.</p>
     <button class="btn danger" id="cust-reset">Reset customisations</button></div>
     </div>`;
 

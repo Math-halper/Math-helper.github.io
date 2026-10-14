@@ -46,30 +46,18 @@ registerApp({
       ${Object.values(SITES).map((s) => `<div class="card"><div class="card-ic" style="font-size:24px">${iconFor(s.icon, 'globe')}</div><h3 style="margin:5px 0 3px">${MH.esc(s.name)}</h3><p class="muted">${MH.esc(s.desc || '')}</p><button class="btn primary" data-site="${s.id}">Visit</button></div>`).join('')}
       </div>
       <h3 style="margin-top:20px">${iconSvg('globe')} Your websites</h3><div class="grid-cards" id="b-sites"></div>
-      <div class="card" style="margin-top:12px"><b>Add a website</b>
-        <form id="b-site-form" class="add-form" style="margin-top:8px">
-          <div class="field"><label>Site name</label><input id="b-site-name" required maxlength="50" placeholder="e.g. Wikipedia"></div>
-          <div class="field"><label>Address</label><input id="b-site-url" required placeholder="e.g. wikipedia.org" inputmode="url"></div>
-          <button class="btn primary" type="submit">Add website</button>
-        </form></div></div>`;
+      <p class="muted" style="margin-top:14px">Adding websites is disabled. Type any address in the bar above to visit it without saving it, or open one of the built-in websites.</p></div>`;
       main.querySelectorAll('[data-site]').forEach((b) => b.onclick = () => showSite(b.dataset.site));
       const sitesBox = main.querySelector('#b-sites');
       sitesBox.innerHTML = userData.websites.length ? userData.websites.map((s) => `
         <div class="card"><div class="card-ic" style="font-size:24px">${iconFor(s.icon, 'globe')}</div><h3 style="margin:5px 0 3px">${MH.esc(s.name)}</h3>
         <p class="muted site-url">${MH.esc(s.url)}</p><button class="btn sm primary" data-open="${s.id}">Open</button>
         <button class="btn sm" data-del="${s.id}">Remove</button></div>`).join('')
-        : '<p class="muted">No websites saved yet — add one below, in the Websites app, or in App Center.</p>';
+        : '<p class="muted">No websites saved on this account. Adding websites is disabled.</p>';
       sitesBox.querySelectorAll('[data-open]').forEach((b) => b.onclick = () => { const s = userData.websites.find((x) => x.id === b.dataset.open); if (s) loadExternal(s.url); });
       sitesBox.querySelectorAll('[data-del]').forEach((b) => b.onclick = () => {
         userData.websites = userData.websites.filter((x) => x.id !== b.dataset.del); saveData(); showHome();
       });
-      main.querySelector('#b-site-form').onsubmit = (e) => {
-        e.preventDefault();
-        const url = normalizeUrl(main.querySelector('#b-site-url').value);
-        if (!url) { MH.toast('Please enter a valid address, e.g. example.com'); return; }
-        userData.websites.push({ id: 'site-' + MH.uid(), name: main.querySelector('#b-site-name').value.trim(), icon: 'globe', url });
-        saveData(); showHome(); MH.toast('Website added.');
-      };
     }
     function showSite(id) {
       const site = SITES[id];
