@@ -4,7 +4,7 @@
 
 /* ============================ CHECKERS ============================ */
 registerApp({
-  id: 'checkers', name: 'Checkers', icon: '🔴', cat: 'Games', desc: 'Red vs Black — jump to capture, reach the end to king', w: 620, h: 680,
+  id: 'checkers', name: 'Checkers', icon: 'disc', cat: 'Games', desc: 'Red vs Black — jump to capture, reach the end to king', w: 620, h: 680,
   render(body) {
     let b, turn, sel = null;
     function fresh() {
@@ -16,7 +16,7 @@ registerApp({
     fresh();
     body.innerHTML = `${bar('Checkers', `<label class="muted"><input type="checkbox" id="ck-ai" checked> Play vs computer (you are Red)</label><button class="btn sm primary" id="ck-new">New game</button>`)}
     <div class="app-main"><div class="board8" id="ck-board"></div><p id="ck-status" style="text-align:center;font-weight:600"></p>
-    <p class="muted" style="text-align:center;padding:0 18px 14px">Click your piece, then a highlighted square. Jumps capture the piece in between; reach the far row to become a ♛ king (moves both ways).</p></div>`;
+    <p class="muted" style="text-align:center;padding:0 18px 14px">Click your piece, then a highlighted square. Jumps capture the piece in between; reach the far row to become a king (moves both ways).</p></div>`;
     const at = (r, c) => (r < 0 || r > 7 || c < 0 || c > 7) ? 'x' : b[r * 8 + c];
     const isKing = (p) => p === 'R' || p === 'B';
     const colOf = (p) => p.toLowerCase();
@@ -42,11 +42,11 @@ registerApp({
       body.querySelector('#ck-board').innerHTML = b.map((p, i) => {
         const r = Math.floor(i / 8), c = i % 8, dark = (r + c) % 2 === 1;
         const target = mine.steps.includes(i) || mine.jumps.some((j) => j.to === i);
-        return `<div class="sq ${dark ? 'ckr-d' : 'ckr-l'} ${i === sel ? 'sel' : target ? 'hint' : ''}" data-i="${i}" style="${dark ? 'background:#a05248' : ''}"><span class="${p ? (colOf(p) === 'r' ? 'piece-r' : 'piece-b') : ''}" style="font-size:30px">${p ? (isKing(p) ? '♛' : '●') : ''}</span></div>`;
+        return `<div class="sq ${dark ? 'ckr-d' : 'ckr-l'} ${i === sel ? 'sel' : target ? 'hint' : ''}" data-i="${i}" style="${dark ? 'background:#a05248' : ''}"><span class="${p ? (colOf(p) === 'r' ? 'piece-r' : 'piece-b') : ''}">${p && isKing(p) ? iconSvg('crown') : ''}</span></div>`;
       }).join('');
       body.querySelectorAll('#ck-board .sq').forEach((s) => s.onclick = () => clickSq(+s.dataset.i));
       const left = { r: b.filter((p) => p && colOf(p) === 'r').length, b: b.filter((p) => p && colOf(p) === 'b').length };
-      body.querySelector('#ck-status').textContent = msg || (left.r === 0 ? '⚫ Black wins!' : left.b === 0 ? '🔴 Red wins!' : `${turn === 'r' ? '🔴 Red' : '⚫ Black'} to move · Red ${left.r} — Black ${left.b}`);
+      body.querySelector('#ck-status').textContent = msg || (left.r === 0 ? 'Black wins!' : left.b === 0 ? 'Red wins!' : `${turn === 'r' ? 'Red' : 'Black'} to move - Red ${left.r}, Black ${left.b}`);
     }
     function doMove(m) {
       let p = b[m.from];

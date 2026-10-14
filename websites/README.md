@@ -35,5 +35,5 @@ Delete its `<script>` line from `index.html` (and optionally the folder).
 | `guide/` | Guide (`proton://guide`) |
 | `world-history/` | World History (`proton://world-history`) |
 | `maths-resources/` | Maths Resources (`proton://maths-resources`) |
-| `test-page/` | 🧪 Test Page (`proton://test-page`) |
-| `proton-daily/` | 🧪 proton Daily, sample test newspaper (`proton://proton-daily`) |
+| `test-page/` | Test Page (`proton://test-page`) |
+| `proton-daily/` | proton Daily, sample test newspaper (`proton://proton-daily`) |

@@ -4,7 +4,7 @@
 
 /* ============================ CUSTOMIZE (modular everything) ============================ */
 registerApp({
-  id: 'customize', name: 'Customize', icon: '🎛️', cat: 'System', desc: 'Add, remove & edit apps, themes, wallpapers and desktop parts', w: 1020, h: 660,
+  id: 'customize', name: 'Customize', icon: 'sliders', cat: 'System', desc: 'Add, remove & edit apps, themes, wallpapers and desktop parts', w: 1020, h: 660,
   render(body) {
     normalizeUserData(); applyModuleOverrides();
     const PROTECTED = ['appcenter', 'settings', 'customize'];
@@ -13,18 +13,18 @@ registerApp({
     <div class="app-main pad">
     <p class="muted" style="margin-top:0">Rename apps, change their icons, move them between categories, reorder them, hide or restore them — then invent your own themes and wallpapers. Everything here is saved per account, and <b>Reset customisations</b> at the bottom undoes it all without touching your notes, files or other content.</p>
     <div style="display:flex;gap:7px;flex-wrap:wrap;margin-bottom:6px">
-      <a class="btn sm" href="#cust-apps" data-jump="cust-apps">🧩 Apps</a><a class="btn sm" href="#cust-themes" data-jump="cust-themes">🎨 Themes</a><a class="btn sm" href="#cust-walls" data-jump="cust-walls">🖼 Wallpapers</a><a class="btn sm" href="#cust-desktop" data-jump="cust-desktop">🖥 Desktop parts</a>
-      <button class="btn sm" id="cust-goto-appcenter">＋ Add apps & websites (App Center)</button>
+      <a class="btn sm" href="#cust-apps" data-jump="cust-apps">${iconSvg('grid')} Apps</a><a class="btn sm" href="#cust-themes" data-jump="cust-themes">${iconSvg('palette')} Themes</a><a class="btn sm" href="#cust-walls" data-jump="cust-walls">${iconSvg('image')} Wallpapers</a><a class="btn sm" href="#cust-desktop" data-jump="cust-desktop">${iconSvg('monitor')} Desktop parts</a>
+      <button class="btn sm" id="cust-goto-appcenter">${iconSvg('plus')} Add apps & websites (App Center)</button>
     </div>
 
-    <h3 id="cust-apps">🧩 App modules</h3>
+    <h3 id="cust-apps">${iconSvg('grid')} App modules</h3>
     <div class="field"><label>Search modules</label><input id="cust-q" type="search" placeholder="Search by name, category or id…" style="padding:8px 10px"></div>
     <datalist id="cust-cats">${[...new Set([...CATS, ...Object.values(APPS).map((a) => a.cat)])].map((c) => `<option value="${MH.esc(c)}">`).join('')}</datalist>
     <div id="cust-modlist"></div>
 
-    <h3 id="cust-themes">🎨 Themes</h3>
+    <h3 id="cust-themes">${iconSvg('palette')} Themes</h3>
     <div class="grid-cards" id="cust-themelist"></div>
-    <div class="card" style="margin-top:12px"><b>＋ Add a theme</b>
+    <div class="card" style="margin-top:12px"><b>Add a theme</b>
       <form id="cust-theme-form" class="add-form" style="margin-top:8px">
         <div class="field"><label>Theme name</label><input id="ct-name" required maxlength="36" placeholder="e.g. Midnight Forest"></div>
         <div class="field"><label>Accent colour</label><input id="ct-accent" type="color" value="#68b723" style="height:38px;padding:2px"></div>
@@ -32,9 +32,9 @@ registerApp({
         <button class="btn primary" type="submit">Add & apply theme</button>
       </form></div>
 
-    <h3 id="cust-walls">🖼 Wallpapers</h3>
+    <h3 id="cust-walls">${iconSvg('image')} Wallpapers</h3>
     <div class="grid-cards" id="cust-walllist"></div>
-    <div class="card" style="margin-top:12px"><b>＋ Add a wallpaper</b>
+    <div class="card" style="margin-top:12px"><b>Add a wallpaper</b>
       <form id="cust-wall-form" class="add-form" style="margin-top:8px">
         <div class="field"><label>Wallpaper name</label><input id="cw-name" required maxlength="36" placeholder="e.g. Deep Space"></div>
         <div class="field"><label>Colour 1</label><input id="cw-from" type="color" value="#0b1026" style="height:38px;padding:2px"></div>
@@ -42,10 +42,10 @@ registerApp({
         <button class="btn primary" type="submit">Add & apply wallpaper</button>
       </form></div>
 
-    <h3 id="cust-desktop">🖥 Desktop parts</h3>
+    <h3 id="cust-desktop">${iconSvg('monitor')} Desktop parts</h3>
     <div class="card" id="cust-components"></div>
 
-    <h3>↩ Start over</h3>
+    <h3>${iconSvg('refresh')} Start over</h3>
     <div class="card"><p class="muted" style="margin-top:0">Reset every customisation (app renames/icons/categories/order, hidden apps, pins, themes, wallpapers, desktop parts) back to proton defaults. Your content — notes, files, calendar, chats, custom apps and websites — is <b>not</b> deleted.</p>
     <button class="btn danger" id="cust-reset">Reset customisations</button></div>
     </div>`;
@@ -64,15 +64,15 @@ registerApp({
           const removed = userData.hiddenApps.includes(a.id), edited = !!userData.moduleOverrides[a.id];
           return `<div class="card" style="margin-bottom:9px;${removed ? 'opacity:.62' : ''}">
           <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center">
-            <span style="font-size:23px">${a.icon}</span><b>${MH.esc(a.name)}</b>
+            <span style="font-size:23px">${iconFor(a.icon)}</span><b>${MH.esc(a.name)}</b>
             <span class="chip">${MH.esc(a.cat)}</span><span class="muted">${a.id}</span>
             ${edited ? '<span class="chip">Edited</span>' : ''}${removed ? '<span class="chip" style="background:#4a1713;color:#ffb4ab">Removed</span>' : ''}
             <span style="margin-left:auto;display:flex;gap:6px;flex-wrap:wrap">
-              ${removed ? `<button class="btn sm primary" data-mrestore="${a.id}">＋ Add back</button>` : `<button class="btn sm primary" data-mopen="${a.id}">Open</button><button class="btn sm" data-mpin="${a.id}">${userData.settings.pinned.includes(a.id) ? 'Unpin' : '📌 Pin'}</button>${PROTECTED.includes(a.id) ? '' : `<button class="btn sm" data-mhide="${a.id}">Remove</button>`}`}
+              ${removed ? `<button class="btn sm primary" data-mrestore="${a.id}">${iconSvg('plus')} Add back</button>` : `<button class="btn sm primary" data-mopen="${a.id}">Open</button><button class="btn sm" data-mpin="${a.id}">${userData.settings.pinned.includes(a.id) ? 'Unpin' : iconSvg('pin') + ' Pin'}</button>${PROTECTED.includes(a.id) ? '' : `<button class="btn sm" data-mhide="${a.id}">Remove</button>`}`}
               ${edited ? `<button class="btn sm" data-mreset="${a.id}">Reset</button>` : ''}
             </span></div>
-          <div class="add-form" style="margin-top:9px;grid-template-columns:64px 1.5fr 1.2fr 70px 2fr">
-            <div class="field"><label>Icon</label><input data-micon="${a.id}" value="${MH.esc(a.icon)}" maxlength="4"></div>
+          <div class="add-form" style="margin-top:9px;grid-template-columns:150px 1.5fr 1.2fr 70px 2fr">
+            <div class="field"><label>Icon</label><select data-micon="${a.id}">${iconOptions(a.icon)}</select></div>
             <div class="field"><label>Name</label><input data-mname="${a.id}" value="${MH.esc(a.name)}" maxlength="40"></div>
             <div class="field"><label>Category</label><input data-mcat="${a.id}" value="${MH.esc(a.cat)}" list="cust-cats" maxlength="24"></div>
             <div class="field"><label>Order</label><input data-morder="${a.id}" type="number" value="${userData.moduleOverrides[a.id]?.order ?? ''}" placeholder="auto"></div>
@@ -81,7 +81,7 @@ registerApp({
           <button class="btn sm" data-msave="${a.id}" style="margin-top:8px">Save changes</button>
           <span class="muted">Tip: give several apps the same new category name to create your own menu section.</span></div>`;
         }).join('') +
-        (customs.length ? customs.map((a) => `<div class="card" style="margin-bottom:9px"><span style="font-size:23px">${MH.esc(a.icon || '🧩')}</span> <b>${MH.esc(a.name)}</b> <span class="chip">My Apps</span> <span class="muted site-url">${MH.esc(a.url)}</span>
+        (customs.length ? customs.map((a) => `<div class="card" style="margin-bottom:9px"><span style="font-size:23px">${iconFor(a.icon, 'grid')}</span> <b>${MH.esc(a.name)}</b> <span class="chip">My Apps</span> <span class="muted site-url">${MH.esc(a.url)}</span>
           <span style="margin-left:8px"></span><button class="btn sm primary" data-copen="${a.id}">Open</button> <button class="btn sm" data-cmanage="${a.id}">Edit / remove in App Center</button></div>`).join('') : '');
       body.querySelectorAll('[data-mopen]').forEach((b) => b.onclick = () => openApp(b.dataset.mopen));
       body.querySelectorAll('[data-copen]').forEach((b) => b.onclick = () => openApp(b.dataset.copen));
@@ -126,13 +126,13 @@ registerApp({
     function drawThemes() {
       const active = userData.settings.activeThemeId;
       body.querySelector('#cust-themelist').innerHTML = `
-        <div class="card" ${active === 'proton-dark' ? 'style="outline:2px solid var(--accent)"' : ''}><div style="font-size:26px">🌑</div>
+        <div class="card" ${active === 'proton-dark' ? 'style="outline:2px solid var(--accent)"' : ''}><div class="card-ic" style="font-size:26px">${iconSvg('moon')}</div>
           <h3 style="margin:6px 0 3px">proton Dark ${active === 'proton-dark' ? '<span class="chip">Active</span>' : ''}</h3>
           <p class="muted">The built-in theme: black backgrounds, white text, your chosen accent.</p>
           <div class="field"><label>Accent</label><select data-builtin-accent>${Object.entries(ACCENTS).map(([hex, a]) => `<option value="${hex}" ${userData.settings.accent === hex && active === 'proton-dark' ? 'selected' : ''}>${a.name}</option>`).join('')}</select></div>
           ${active === 'proton-dark' ? '' : '<button class="btn sm primary" data-theme-builtin="1">Apply</button>'}</div>` +
         userData.customThemes.map((th) => `
-        <div class="card" ${active === th.id ? 'style="outline:2px solid var(--accent)"' : ''}><div style="font-size:26px">🎨</div>
+        <div class="card" ${active === th.id ? 'style="outline:2px solid var(--accent)"' : ''}><div class="card-ic" style="font-size:26px">${iconSvg('palette')}</div>
           ${active === th.id ? '<span class="chip">Active</span>' : ''}
           <div class="field"><label>Theme name</label><input data-thname="${th.id}" value="${MH.esc(th.name)}" maxlength="36"></div>
           <div class="field"><label>Accent colour</label><input data-thaccent="${th.id}" type="color" value="${MH.esc(th.accent)}" style="height:36px;padding:2px;width:100%"></div>
@@ -204,12 +204,12 @@ registerApp({
     function drawComponents() {
       const c = userData.settings.components;
       const items = [
-        ['clock', '🕐 Clock in the panel'],
-        ['desktopHint', '📅 Date & hint on the desktop'],
-        ['lockButton', '🔒 Lock button in the panel'],
-        ['userButton', '👤 Account button in the panel'],
-        ['startSearch', '🔎 Search box in the proton menu'],
-        ['panelLabels', '🏷 Names next to pinned panel icons'],
+        ['clock', iconSvg('clock') + ' Clock in the panel'],
+        ['desktopHint', iconSvg('calendar') + ' Date & hint on the desktop'],
+        ['lockButton', iconSvg('lock') + ' Lock button in the panel'],
+        ['userButton', iconSvg('user') + ' Account button in the panel'],
+        ['startSearch', iconSvg('search') + ' Search box in the proton menu'],
+        ['panelLabels', iconSvg('edit') + ' Names next to pinned panel icons'],
       ];
       body.querySelector('#cust-components').innerHTML = items.map(([key, label]) =>
         `<label style="display:flex;gap:9px;align-items:center;padding:7px 0;font-weight:600"><input type="checkbox" data-comp="${key}" ${c[key] ? 'checked' : ''} style="width:18px;height:18px;accent-color:var(--accent)"> ${label}</label>`).join('') +

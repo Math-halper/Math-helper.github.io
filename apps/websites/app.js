@@ -4,27 +4,27 @@
 
 /* ============================ WEBSITES ============================ */
 registerApp({
-  id: 'websites', name: 'Websites', icon: '🌍', cat: 'Productivity', desc: 'Your saved websites — add, open, turn into apps, remove', w: 900, h: 580,
+  id: 'websites', name: 'Websites', icon: 'globe', cat: 'Productivity', desc: 'Your saved websites — add, open, turn into apps, remove', w: 900, h: 580,
   render(body) {
     body.innerHTML = `${bar('Websites')}<div class="app-main pad">
-    <div class="card"><h3 style="margin-top:0">＋ Add a website</h3>
+    <div class="card"><h3 style="margin-top:0">Add a website</h3>
       <form id="ws-form" class="add-form">
         <div class="field"><label>Site name</label><input id="ws-name" required maxlength="50" placeholder="e.g. Khan Academy"></div>
         <div class="field"><label>Address</label><input id="ws-url" required placeholder="e.g. khanacademy.org" inputmode="url"></div>
-        <div class="field"><label>Icon (emoji)</label><input id="ws-icon" maxlength="4" value="🌐"></div>
+        <div class="field"><label>Icon</label><select id="ws-icon">${iconOptions('globe')}</select></div>
         <button class="btn primary" type="submit">Add website</button>
       </form>
-      <p class="muted">Saved websites live here and on the Browser home page. “＋ App” turns a site into its own windowed app in the proton menu. Everything is saved on this device, per account.</p></div>
+      <p class="muted">Saved websites live here and on the Browser home page. "Add as app" turns a site into its own windowed app in the proton menu. Everything is saved on this device, per account.</p></div>
     <h3>Your websites <span class="muted" id="ws-count"></span></h3>
     <div class="grid-cards" id="ws-list"></div></div>`;
     function draw() {
       body.querySelector('#ws-count').textContent = `(${userData.websites.length})`;
       body.querySelector('#ws-list').innerHTML = userData.websites.length ? userData.websites.map((s) => `
-        <div class="card"><div style="font-size:28px">${MH.esc(s.icon || '🌐')}</div>
+        <div class="card"><div class="card-ic" style="font-size:28px">${iconFor(s.icon, 'globe')}</div>
         <h3 style="margin:6px 0 3px">${MH.esc(s.name)}</h3>
         <p class="muted site-url" style="min-height:32px">${MH.esc(s.url)}</p>
         <div style="display:flex;gap:6px;flex-wrap:wrap"><button class="btn sm primary" data-open="${s.id}">Open</button>
-        <button class="btn sm" data-app="${s.id}">＋ App</button>
+        <button class="btn sm" data-app="${s.id}">${iconSvg('plus')} App</button>
         <button class="btn sm" data-edit="${s.id}">Edit</button>
         <button class="btn sm" data-remove="${s.id}">Remove</button></div></div>`).join('')
         : '<p class="muted">No websites yet — add your first one above.</p>';
@@ -48,8 +48,8 @@ registerApp({
       e.preventDefault();
       const url = normalizeUrl(body.querySelector('#ws-url').value);
       if (!url) { MH.toast('Please enter a valid address, e.g. example.com'); return; }
-      userData.websites.push({ id: 'site-' + MH.uid(), name: body.querySelector('#ws-name').value.trim(), icon: body.querySelector('#ws-icon').value.trim() || '🌐', url });
-      saveData(); e.target.reset(); body.querySelector('#ws-icon').value = '🌐'; draw();
+      userData.websites.push({ id: 'site-' + MH.uid(), name: body.querySelector('#ws-name').value.trim(), icon: body.querySelector('#ws-icon').value.trim() || 'globe', url });
+      saveData(); e.target.reset(); body.querySelector('#ws-icon').value = 'globe'; draw();
       MH.toast('Website added — open it here or from the Browser home page.');
     };
     draw();

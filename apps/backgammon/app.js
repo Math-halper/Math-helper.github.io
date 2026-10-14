@@ -4,7 +4,7 @@
 
 /* ============================ BACKGAMMON (practice board) ============================ */
 registerApp({
-  id: 'backgammon', name: 'Backgammon', icon: '🎲', cat: 'Games', desc: 'Practice board: dice, moves, hits & bearing off', w: 940, h: 640,
+  id: 'backgammon', name: 'Backgammon', icon: 'dice', cat: 'Games', desc: 'Practice board: dice, moves, hits & bearing off', w: 940, h: 640,
   render(body) {
     let pts, dice, used, turn, onBar, off;
     function fresh() {
@@ -16,9 +16,9 @@ registerApp({
     }
     fresh();
     let sel = null;
-    body.innerHTML = `${bar('Backgammon — practice', `<button class="btn sm primary" id="bg-roll">🎲 Roll dice</button><button class="btn sm" id="bg-new">New game</button><span class="muted" id="bg-dice" style="margin-left:auto"></span>`)}
+    body.innerHTML = `${bar('Backgammon — practice', `<button class="btn sm primary" id="bg-roll">${iconSvg('dice')} Roll dice</button><button class="btn sm" id="bg-new">New game</button><span class="muted" id="bg-dice" style="margin-left:auto"></span>`)}
     <div class="app-main pad"><div id="bg-board"></div><p id="bg-status" style="font-weight:600"></p>
-    <p class="muted">White (●) moves 0 → 23, Black (●) moves 23 → 0. Roll, click one of your points, then click a highlighted destination. Landing on a single opponent checker hits it to the bar; points with 2+ opponents are blocked. Bear off from your home quarter (White 18–23, Black 0–5) once all your checkers are home. This is a relaxed practice board — doubles give two moves here.</p></div>`;
+    <p class="muted"><span class="pdot w"></span> White moves 0 to 23, <span class="pdot b"></span> Black moves 23 to 0. Roll, click one of your points, then click a highlighted destination. Landing on a single opponent checker hits it to the bar; points with 2+ opponents are blocked. Bear off from your home quarter (White 18–23, Black 0–5) once all your checkers are home. This is a relaxed practice board — doubles give two moves here.</p></div>`;
     const home = (c) => c === 'w' ? pts.slice(18).reduce((s, p) => s + (p.c === 'w' ? p.n : 0), 0) + off.w === 15 && onBar.w === 0 : pts.slice(0, 6).reduce((s, p) => s + (p.c === 'b' ? p.n : 0), 0) + off.b === 15 && onBar.b === 0;
     function dests(from) {
       if (onBar[turn] > 0 && from !== -1) return [];
@@ -37,16 +37,16 @@ registerApp({
         const p = pts[i], ds = sel !== null ? dests(sel) : [];
         const isDest = ds.some((d) => d.to === i);
         return `<button data-pt="${i}" style="min-height:74px;border:1px solid var(--line);border-radius:6px;background:${i % 2 ? '#e8dcc3' : '#f5efe0'};${isDest ? 'outline:3px solid var(--accent);' : ''}${sel === i ? 'outline:3px solid #3d7fca;' : ''}padding:4px">
-          <small style="color:#888">${i}</small><br><span style="font-size:19px;color:${p.c === 'w' ? '#fff' : '#222'};text-shadow:0 0 3px #000">${p.n ? '●'.repeat(Math.min(p.n, 5)) : ''}</span>${p.n > 5 ? `<br><small>×${p.n}</small>` : ''}</button>`;
+          <small style="color:#888">${i}</small><br><span style="font-size:19px;color:${p.c === 'w' ? '#fff' : '#222'};text-shadow:0 0 3px #000">${p.n ? '<span class="bg-pips">' + '<i class="bg-checker ' + p.c + '"></i>'.repeat(Math.min(p.n, 5)) + '</span>' : ''}</span>${p.n > 5 ? `<br><small>×${p.n}</small>` : ''}</button>`;
       };
       body.querySelector('#bg-board').innerHTML = `
         <div style="display:grid;grid-template-columns:repeat(12,1fr);gap:4px">${[11, 10, 9, 8, 7, 6, 5, 4, 3, 2, 1, 0].map(renderPt).join('')}</div>
-        <div style="display:flex;justify-content:space-between;padding:7px 2px" class="muted"><span>⚪ Bar: ${onBar.w} · Borne off: ${off.w}/15</span><span>${turn === 'w' ? '⚪ White' : '⚫ Black'} to move</span><span>⚫ Bar: ${onBar.b} · Borne off: ${off.b}/15</span></div>
+        <div style="display:flex;justify-content:space-between;padding:7px 2px" class="muted"><span><span class="pdot w"></span> Bar: ${onBar.w} · Borne off: ${off.w}/15</span><span>${turn === 'w' ? 'White' : 'Black'} to move</span><span><span class="pdot b"></span> Bar: ${onBar.b} · Borne off: ${off.b}/15</span></div>
         <div style="display:grid;grid-template-columns:repeat(12,1fr);gap:4px">${[12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23].map(renderPt).join('')}</div>
         ${onBar[turn] > 0 ? '<button class="btn primary" id="bg-bar" style="margin-top:9px">Enter from bar (select, then click destination)</button>' : ''}
         ${sel !== null && dests(sel).some((d) => d.to === 99) ? '<button class="btn primary" id="bg-off" style="margin-top:9px;margin-left:7px">Bear off selected checker</button>' : ''}`;
       body.querySelector('#bg-dice').textContent = dice.length ? `Dice: ${dice.map((d, i) => used.includes(i) ? `(${d} used)` : d).join(' · ')}` : 'Roll to start';
-      body.querySelector('#bg-status').textContent = off.w === 15 ? '⚪ White wins! 🎉' : off.b === 15 ? '⚫ Black wins! 🎉' : msg || (dice.length && used.length >= dice.length ? 'Out of moves — roll for the next player.' : '');
+      body.querySelector('#bg-status').textContent = off.w === 15 ? 'White wins!' : off.b === 15 ? 'Black wins!' : msg || (dice.length && used.length >= dice.length ? 'Out of moves — roll for the next player.' : '');
       body.querySelectorAll('[data-pt]').forEach((el) => el.onclick = () => clickPt(+el.dataset.pt));
       body.querySelector('#bg-bar')?.addEventListener('click', () => { sel = -1; draw('Choose where to enter from the bar.'); });
       body.querySelector('#bg-off')?.addEventListener('click', () => {
@@ -57,7 +57,7 @@ registerApp({
     }
     function afterMove() {
       draw();
-      if (dice.length && used.length >= dice.length) { turn = turn === 'w' ? 'b' : 'w'; dice = []; used = []; sel = null; setTimeout(() => draw(`Now ${turn === 'w' ? '⚪ White' : '⚫ Black'} — roll the dice.`), 350); }
+      if (dice.length && used.length >= dice.length) { turn = turn === 'w' ? 'b' : 'w'; dice = []; used = []; sel = null; setTimeout(() => draw(`Now ${turn === 'w' ? 'White' : 'Black'} - roll the dice.`), 350); }
     }
     function clickPt(i) {
       if (!dice.length) { draw('Roll the dice first.'); return; }

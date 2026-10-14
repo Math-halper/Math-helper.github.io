@@ -4,36 +4,37 @@
 
 /* ============================ KLONDIKE ============================ */
 registerApp({
-  id: 'klondike', name: 'Klondike', icon: '🃏', cat: 'Games', desc: 'Classic solitaire — click to select & move cards', w: 960, h: 620,
+  id: 'klondike', name: 'Klondike', icon: 'layers', cat: 'Games', desc: 'Classic solitaire — click to select & move cards', w: 960, h: 620,
   render(body) {
-    const SUITS = [['♠', 0], ['♥', 1], ['♦', 1], ['♣', 0]]; // [glyph, isRed]
+    const SUITS = [['spade', 0], ['heart', 1], ['diamond', 1], ['club', 0]]; // [icon name, isRed]
+    const suitSvg = (s) => iconSvg('suit-' + s);
     const RANKS = ['A', '2', '3', '4', '5', '6', '7', '8', '9', '10', 'J', 'Q', 'K'];
     let stock, waste, foundations, tableau, selected = null, moves = 0;
     function fresh() {
       const deck = [];
-      SUITS.forEach(([s, red], si) => RANKS.forEach((r, ri) => deck.push({ s, red: !!red, r: ri + 1, label: r + s, up: false })));
+      SUITS.forEach(([s, red], si) => RANKS.forEach((r, ri) => deck.push({ s, red: !!red, r: ri + 1, label: r, up: false })));
       for (let i = deck.length - 1; i > 0; i--) { const j = Math.floor(Math.random() * (i + 1)); [deck[i], deck[j]] = [deck[j], deck[i]]; }
       tableau = Array.from({ length: 7 }, (_, col) => deck.splice(0, col + 1).map((card, i, arr) => ({ ...card, up: i === arr.length - 1 })));
       stock = deck; waste = []; foundations = [[], [], [], []]; selected = null; moves = 0;
     }
     fresh();
-    body.innerHTML = `${bar('Klondike Solitaire', `<button class="btn sm primary" id="k-new">New game</button><button class="btn sm" id="k-auto">Auto → foundations</button><span class="muted" id="k-info" style="margin-left:auto"></span>`)}
+    body.innerHTML = `${bar('Klondike Solitaire', `<button class="btn sm primary" id="k-new">New game</button><button class="btn sm" id="k-auto">Auto-finish foundations</button><span class="muted" id="k-info" style="margin-left:auto"></span>`)}
     <div class="app-main pad"><div class="cards-row" id="k-top"></div><h3>Tableau</h3><div class="cards-row" id="k-tab" style="align-items:flex-start"></div>
-    <p class="muted">Click the stock to draw. Click a card (or stack) to select it, then click where it should go. Double-click a top card to send it to a foundation. Build foundations A→K by suit; tableau builds down in alternating colours; only Kings fill empty columns.</p></div>`;
+    <p class="muted">Click the stock to draw. Click a card (or stack) to select it, then click where it should go. Double-click a top card to send it to a foundation. Build foundations from A to K by suit; tableau builds down in alternating colours; only Kings fill empty columns.</p></div>`;
     const cardHTML = (card, selFlag, attrs = '') => card.up
-      ? `<div class="playcard ${card.red ? 'red' : ''} ${selFlag ? 'sel' : ''}" ${attrs}>${card.label}</div>`
-      : `<div class="playcard back" ${attrs}>🂠</div>`;
+      ? `<div class="playcard ${card.red ? 'red' : ''} ${selFlag ? 'sel' : ''}" ${attrs}>${card.label} ${suitSvg(card.s)}</div>`
+      : `<div class="playcard back" ${attrs}></div>`;
     function pileCards(selTest) {
       // selection test: ({type, pile, idx}) => bool
       return '';
     }
     function draw(msg = '') {
-      body.querySelector('#k-info').textContent = `Moves: ${moves} · In foundations: ${foundations.flat().length}/52 ${foundations.flat().length === 52 ? '🎉 YOU WIN!' : ''} ${msg}`;
+      body.querySelector('#k-info').textContent = `Moves: ${moves} · In foundations: ${foundations.flat().length}/52 ${foundations.flat().length === 52 ? 'YOU WIN!' : ''} ${msg}`;
       const top = body.querySelector('#k-top');
       top.innerHTML = `
-        <div><div class="muted" style="text-align:center">Stock</div><div class="pile" id="k-stock">${stock.length ? cardHTML({ ...stock[stock.length - 1], up: false }) : '<div style="padding:38px 8px;text-align:center">↺</div>'}</div></div>
+        <div><div class="muted" style="text-align:center">Stock</div><div class="pile" id="k-stock">${stock.length ? cardHTML({ ...stock[stock.length - 1], up: false }) : `<div style="padding:38px 8px;text-align:center">${iconSvg('refresh')}</div>`}</div></div>
         <div><div class="muted" style="text-align:center">Waste</div><div class="pile" id="k-waste">${waste.length ? cardHTML(waste[waste.length - 1], selected?.type === 'waste') : ''}</div></div>
-        ${foundations.map((f, i) => `<div><div class="muted" style="text-align:center">${SUITS[i][0]} Foundation</div><div class="pile" data-found="${i}">${f.length ? cardHTML(f[f.length - 1], selected?.type === 'found' && selected.pile === i) : `<div style="padding:38px 8px;text-align:center;color:#999">${SUITS[i][0]} A→K</div>`}</div></div>`).join('')}`;
+        ${foundations.map((f, i) => `<div><div class="muted" style="text-align:center">${suitSvg(SUITS[i][0])} Foundation</div><div class="pile" data-found="${i}">${f.length ? cardHTML(f[f.length - 1], selected?.type === 'found' && selected.pile === i) : `<div style="padding:38px 8px;text-align:center;color:#999">${suitSvg(SUITS[i][0])} A to K</div>`}</div></div>`).join('')}`;
       body.querySelector('#k-tab').innerHTML = tableau.map((pile, pi) => `
         <div><div class="muted" style="text-align:center">Column ${pi + 1}</div><div class="pile" data-tab="${pi}" style="min-height:${106 + Math.max(0, pile.length - 1) * 26}px">
         ${pile.map((card, ci) => cardHTML(card, selected?.type === 'tab' && selected.pile === pi && ci >= selected.idx, `data-tabcard="${pi}:${ci}"`)).join('') || '<div style="padding:38px 4px;text-align:center;color:#999">K only</div>'}</div></div>`).join('');
@@ -95,7 +96,7 @@ registerApp({
       if (canPlace(cards, dest)) {
         removeCards(selected);
         if (dest.type === 'found') foundations[dest.pile].push(...cards); else tableau[dest.pile].push(...cards);
-        moves++; selected = null; draw(foundations.flat().length === 52 ? '🎉' : '');
+        moves++; selected = null; draw(foundations.flat().length === 52 ? 'You win!' : '');
       } else { // reselect instead
         selected = (dest.type === 'tab' && dest.idx < tableau[dest.pile].length) ? dest : (dest.type === 'waste' ? { type: 'waste' } : selected);
         draw('That card can\'t go there.');

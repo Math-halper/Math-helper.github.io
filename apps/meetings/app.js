@@ -4,10 +4,10 @@
 
 /* ============================ MEETINGS ============================ */
 registerApp({
-  id: 'meetings', name: 'Meetings', icon: '📹', cat: 'Chat & Media', desc: 'Plan meetings with agendas & notes (on-device)', w: 860, h: 540,
+  id: 'meetings', name: 'Meetings', icon: 'video', cat: 'Chat & Media', desc: 'Plan meetings with agendas & notes (on-device)', w: 860, h: 540,
   render(body) {
     let sel = null;
-    body.innerHTML = `${bar('Meetings', `<button class="btn sm primary" id="mt-new">＋ New meeting</button>`)}
+    body.innerHTML = `${bar('Meetings', `<button class="btn sm primary" id="mt-new">+ New meeting</button>`)}
     <div class="split"><aside class="side" id="mt-list"></aside><div class="app-main pad" id="mt-detail"></div></div>`;
     function draw() {
       body.querySelector('#mt-list').innerHTML = [...userData.meetings].sort((a, b) => a.when.localeCompare(b.when)).map((m) => {

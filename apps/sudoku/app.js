@@ -41,7 +41,7 @@ const SudokuLogic = (() => {
 })();
 
 registerApp({
-  id: 'sudoku', name: 'Sudoku', icon: '🔢', cat: 'Games', desc: 'Generated puzzles, 3 difficulties, progress saved', w: 620, h: 660,
+  id: 'sudoku', name: 'Sudoku', icon: 'hash', cat: 'Games', desc: 'Generated puzzles, 3 difficulties, progress saved', w: 620, h: 660,
   render(body) {
     let g = userData.games.sudoku;
     if (!g) { const { puzzle, solution } = SudokuLogic.generate('medium'); g = userData.games.sudoku = { puzzle, solution, grid: puzzle.map((r) => r.slice()), diff: 'medium' }; saveData(); }
@@ -55,7 +55,7 @@ registerApp({
       body.querySelectorAll('#s-grid input:not([disabled])').forEach((inp) => inp.addEventListener('input', () => {
         const v = inp.value.replace(/[^1-9]/g, '');
         inp.value = v; g.grid[+inp.dataset.r][+inp.dataset.c] = v ? +v : 0; saveData();
-        if (g.grid.every((row, r) => row.every((x, c) => x === g.solution[r][c]))) body.querySelector('#s-msg').textContent = '🎉 Solved — brilliant! Start a new game for another.';
+        if (g.grid.every((row, r) => row.every((x, c) => x === g.solution[r][c]))) body.querySelector('#s-msg').textContent = 'Solved - brilliant! Start a new game for another.';
         else drawSoft();
       }));
       body.querySelector('#s-msg').textContent = msg;
@@ -70,7 +70,7 @@ registerApp({
     };
     body.querySelector('#s-check').onclick = () => {
       const bad = SudokuLogic.conflicts(g.grid);
-      draw(bad.size ? `⚠ ${bad.size} cell(s) clash with another number (highlighted).` : 'No clashes so far — keep going!');
+      draw(bad.size ? `${bad.size} cell(s) clash with another number (highlighted).` : 'No clashes so far — keep going!');
     };
     body.querySelector('#s-hint').onclick = () => {
       const empty = []; g.grid.forEach((row, r) => row.forEach((v, c) => { if (v !== g.solution[r][c]) empty.push([r, c]); }));

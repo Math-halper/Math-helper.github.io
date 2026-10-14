@@ -4,7 +4,7 @@
 
 /* ============================ TERMINAL ============================ */
 registerApp({
-  id: 'terminal', name: 'Terminal', icon: '⌨️', cat: 'Learn', desc: 'A friendly fake shell that can drive the desktop', w: 820, h: 520,
+  id: 'terminal', name: 'Terminal', icon: 'terminal', cat: 'Learn', desc: 'A friendly fake shell that can drive the desktop', w: 820, h: 520,
   render(body) {
     body.innerHTML = `<div class="term" id="t-out"></div>`;
     const out = body.querySelector('#t-out');
@@ -24,19 +24,19 @@ registerApp({
       if (!raw) return done();
       switch (cmd.toLowerCase()) {
         case 'help': print('Commands:\n  help                 this list\n  apps                 list every app\n  open <app-id>        open an app (e.g. open notes)\n  whoami / date / echo <text>\n  math <expression>    e.g. math 12*8+sqrt(81)\n  solve a b c          solve a·x+b=c  →  solve 2 3 11\n  wallpaper <name>     mint|ocean|sunset|grape|slate|rose\n  accent <hex>         e.g. accent #3d7fca\n  notes                how many notes you have\n  clear                clear the terminal\n  about                about this OS'); break;
-        case 'apps': print(Object.values(APPS).map((a) => `  ${a.id.padEnd(14)} ${a.icon} ${a.name}`).join('\n')); break;
+        case 'apps': print(Object.values(APPS).map((a) => `  ${a.id.padEnd(14)} ${iconNameFrom(a.icon)} - ${a.name}`).join('\n')); break;
         case 'open': { const a = APPS[arg.toLowerCase()]; a ? (print(`Opening ${a.name}…`), openApp(a.id)) : print(`No app called "${arg}". Try: apps`); break; }
         case 'whoami': print(`${currentUser.username} — ${currentUser.displayName} (account created ${new Date(currentUser.createdAt).toLocaleString()}, stored only in this browser)`); break;
         case 'date': print(new Date().toString()); break;
         case 'echo': print(arg); break;
-        case 'math': try { print(`${arg} = ${fmtNum(evalMath(arg))}`); } catch (err) { print('⚠ ' + err.message); } break;
+        case 'math': try { print(`${arg} = ${fmtNum(evalMath(arg))}`); } catch (err) { print('Error: ' + err.message); } break;
         case 'solve': { const [a, b, c] = rest.map(Number); print(a ? `x = ${fmtNum((c - b) / a)}` : 'a cannot be 0'); break; }
         case 'wallpaper': if (['mint', 'ocean', 'sunset', 'grape', 'slate', 'rose'].includes(arg)) { userData.settings.wallpaper = arg; saveData(); document.querySelector('.wallpaper').className = 'wallpaper wp-' + arg; print('Wallpaper set to ' + arg); } else print('Unknown wallpaper.'); break;
         case 'accent': if (ACCENTS[arg]) { userData.settings.accent = arg; saveData(); applyAccent(); print('Accent set.'); } else print('Try one of: ' + Object.keys(ACCENTS).join(' ')); break;
         case 'notes': print(`You have ${userData.notes.length} note(s), ${userData.files.length} file(s), ${userData.events.length} event(s) — all saved on this device.`); break;
         case 'about': print('proton — static clone/rebrand of Mixt (proton-arcade/mlp @ arena/170861f7-mlp), AGPL-3.0-only.'); break;
         case 'clear': out.innerHTML = ''; break;
-        case 'sudo': print('Nice try 😄 — you already own this whole (browser) computer.'); break;
+        case 'sudo': print('Nice try - you already own this whole (browser) computer.'); break;
         default: print(`Unknown command "${cmd}" — type "help".`);
       }
       done();

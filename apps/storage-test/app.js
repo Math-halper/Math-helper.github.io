@@ -3,9 +3,9 @@
 'use strict';
 
 registerApp({
-  id: 'storage-test', name: 'Storage Test', icon: '💾', cat: 'Test', desc: 'TEST APP: verify saving works & see this account’s storage use', w: 620, h: 480,
+  id: 'storage-test', name: 'Storage Test', icon: 'database', cat: 'Test', desc: 'TEST APP: verify saving works & see this account’s storage use', w: 620, h: 480,
   render(body) {
-    body.innerHTML = `${bar('💾 Storage Test')}<div class="app-main pad">
+    body.innerHTML = `${bar('Storage Test')}<div class="app-main pad">
       <div class="stat-grid">
         <div class="stat"><b id="sg-account">…</b><span class="muted">saved for this account</span></div>
         <div class="stat"><b id="sg-total">…</b><span class="muted">total proton data in this browser</span></div>
@@ -27,10 +27,10 @@ registerApp({
       body.querySelector('#sg-total').textContent = MH.fmtBytes(total);
       body.querySelector('#sg-accounts').textContent = Object.keys(MH.accounts()).length;
       const counts = [
-        ['📝 Notes', userData.notes.length], ['🗂 Files', userData.files.length],
-        ['📅 Events', userData.events.length], ['🧩 Custom apps', (userData.customApps || []).length],
-        ['🌍 Websites', (userData.websites || []).length], ['🎨 Themes', (userData.customThemes || []).length],
-        ['🖼 Wallpapers', (userData.customWallpapers || []).length], ['🎛 Module edits', Object.keys(userData.moduleOverrides || {}).length],
+        ['Notes', userData.notes.length], ['Files', userData.files.length],
+        ['Events', userData.events.length], ['Custom apps', (userData.customApps || []).length],
+        ['Websites', (userData.websites || []).length], ['Themes', (userData.customThemes || []).length],
+        ['Wallpapers', (userData.customWallpapers || []).length], ['Module edits', Object.keys(userData.moduleOverrides || {}).length],
       ];
       body.querySelector('#sg-break').innerHTML = counts.map(([n, c]) => `${n}: <b style="color:#fff">${c}</b>`).join(' · ');
     }
@@ -42,10 +42,10 @@ registerApp({
         const back = localStorage.getItem(key);
         localStorage.removeItem(key);
         out.innerHTML = back === probe && localStorage.getItem(key) === null
-          ? '✅ <b>Storage works</b> — wrote, read back and cleaned up successfully.'
-          : '⚠️ Storage returned unexpected data. Saving may be unreliable in this browser.';
+          ? '<b>Storage works</b> — wrote, read back and cleaned up successfully.'
+          : '<b>Storage warning:</b> returned unexpected data. Saving may be unreliable in this browser.';
       } catch (err) {
-        out.innerHTML = `❌ <b>Storage failed:</b> ${MH.esc(err.message)} — this browser may be in private mode or out of space.`;
+        out.innerHTML = `<b>Storage failed:</b> ${MH.esc(err.message)} — this browser may be in private mode or out of space.`;
       }
       stats();
     };

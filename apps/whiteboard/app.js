@@ -6,11 +6,11 @@
 /* Adapted from the original Whiteboard app: pen/shapes/text/eraser boards
  * saved on-device — here each board persists as a PNG snapshot. */
 registerApp({
-  id: 'whiteboard', name: 'Whiteboard', icon: '🎨', cat: 'Create', desc: 'Draw with pen, shapes & text — boards autosave', w: 940, h: 600,
+  id: 'whiteboard', name: 'Whiteboard', icon: 'palette', cat: 'Create', desc: 'Draw with pen, shapes & text — boards autosave', w: 940, h: 600,
   render(body, ctx) {
     let board = userData.boards[0], tool = 'pen', drawing = false, start = null, snapshot = null;
-    body.innerHTML = `${bar('Whiteboard', `<select id="w-list"></select><button class="btn sm" id="w-new">＋ Board</button><button class="btn sm" id="w-del">Delete</button><button class="btn sm" id="w-png">⬇ PNG</button>`)}
-    <div class="appbar" style="background:#111">${['pen', 'line', 'rect', 'ellipse', 'text', 'eraser'].map((t) => `<button class="btn sm" data-tool="${t}">${{ pen: '✏️ Pen', line: '╱ Line', rect: '▭ Rect', ellipse: '◯ Ellipse', text: 'T Text', eraser: '🧽 Eraser' }[t]}</button>`).join('')}
+    body.innerHTML = `${bar('Whiteboard', `<select id="w-list"></select><button class="btn sm" id="w-new">${iconSvg('plus')} Board</button><button class="btn sm" id="w-del">Delete</button><button class="btn sm" id="w-png">${iconSvg('download')} PNG</button>`)}
+    <div class="appbar" style="background:#111">${['pen', 'line', 'rect', 'ellipse', 'text', 'eraser'].map((t) => `<button class="btn sm" data-tool="${t}">${{ pen: 'Pen', line: 'Line', rect: 'Rectangle', ellipse: 'Ellipse', text: 'Text', eraser: 'Eraser' }[t]}</button>`).join('')}
       <input type="color" id="w-color" value="#1d4f91" style="width:38px;height:30px;padding:0"> <label class="muted">Width <input type="range" id="w-width" min="1" max="24" value="3"></label>
       <button class="btn sm" id="w-undo">Undo</button><button class="btn sm" id="w-clear">Clear</button><span class="muted" id="w-saved" style="margin-left:auto"></span></div>
     <div class="wb-stage"><canvas id="w-cv"></canvas></div>`;
@@ -27,7 +27,7 @@ registerApp({
     function persist() {
       if (!board) return;
       board.data = cv.toDataURL('image/png'); board.updated = Date.now(); saveData();
-      body.querySelector('#w-saved').textContent = 'Saved ✓';
+      body.querySelector('#w-saved').textContent = 'Saved';
     }
     function drawList() {
       list.innerHTML = userData.boards.map((b) => `<option value="${b.id}" ${b === board ? 'selected' : ''}>${MH.esc(b.name)}</option>`).join('');

@@ -4,7 +4,7 @@
 'use strict';
 
 registerSite({
-  id: 'proton-daily', name: 'proton Daily', icon: '📰', desc: 'TEST SITE: a sample newspaper front page (all stories fictional)',
+  id: 'proton-daily', name: 'proton Daily', icon: 'newspaper', desc: 'TEST SITE: a sample newspaper front page (all stories fictional)',
   render(main, ctx) {
     const STORIES = [
       ['Local desktop learns new tricks', 'Residents report the proton desktop can now add and remove nearly everything, after a round of modular upgrades. “I renamed my Notes app twice before breakfast,” one user said.'],
@@ -13,10 +13,10 @@ registerSite({
       ['Weather', 'Black backgrounds with a chance of green accents across the whole region. White text expected to continue.'],
     ];
     main.innerHTML = `<div class="pad" style="max-width:760px">
-      <h2 style="font-family:Georgia,serif;font-size:30px;margin-bottom:2px">📰 proton Daily</h2>
+      <h2 style="font-family:Georgia,serif;font-size:30px;margin-bottom:2px">proton Daily</h2>
       <p class="muted">${new Date().toLocaleDateString(undefined, { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' })} · All stories fictional · A test website in <span class="kbd">websites/proton-daily/site.js</span></p>
       ${STORIES.map(([h, b]) => `<div class="card" style="margin-bottom:10px"><h3 style="margin:2px 0 5px;font-family:Georgia,serif">${h}</h3><p style="margin:0;line-height:1.6">${b}</p></div>`).join('')}
-      <button class="btn" id="pd-guide">Read the Guide instead →</button></div>`;
+      <button class="btn" id="pd-guide">Read the Guide instead</button></div>`;
     main.querySelector('#pd-guide').onclick = () => ctx.showSite('guide');
   },
 });

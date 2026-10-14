@@ -4,9 +4,10 @@
 
 /* ============================ CHESS ============================ */
 registerApp({
-  id: 'chess', name: 'Chess', icon: '♞', cat: 'Games', desc: 'Play vs the computer or a friend on this device', w: 640, h: 700,
+  id: 'chess', name: 'Chess', icon: 'knight', cat: 'Games', desc: 'Play vs the computer or a friend on this device', w: 640, h: 700,
   render(body) {
-    const GLYPH = { K: '♚', Q: '♛', R: '♜', B: '♝', N: '♞', P: '♟' };
+    const PIECE_ICON = { K: 'chess-king', Q: 'chess-queen', R: 'chess-rook', B: 'chess-bishop', N: 'knight', P: 'chess-pawn' };
+    const pieceSvg = (type, col) => `<span class="ch-piece ${col === 'w' ? 'ch-w' : 'ch-b'}">${iconSvg(PIECE_ICON[type] || 'chess-pawn')}</span>`;
     const VAL = { P: 1, N: 3, B: 3, R: 5, Q: 9, K: 100 };
     let b, turn, captured, sel = null, gameOver = false;
     function fresh() {
@@ -50,12 +51,12 @@ registerApp({
       const legal = sel !== null ? moves(sel) : [];
       body.querySelector('#ch-board').innerHTML = b.map((p, i) => {
         const r = Math.floor(i / 8), c = i % 8;
-        return `<div class="sq ${(r + c) % 2 ? 'd' : 'l'} ${i === sel ? 'sel' : legal.includes(i) ? 'hint' : ''}" data-i="${i}"><span class="${p && p[0] === 'w' ? '' : ''}" style="color:${p?.[0] === 'w' ? '#fff' : '#222'};text-shadow:0 0 3px ${p?.[0] === 'w' ? '#000' : '#fff'},0 2px 3px rgba(0,0,0,.45)">${p ? GLYPH[p[1]] : ''}</span></div>`;
+        return `<div class="sq ${(r + c) % 2 ? 'd' : 'l'} ${i === sel ? 'sel' : legal.includes(i) ? 'hint' : ''}" data-i="${i}">${p ? pieceSvg(p[1], p[0]) : ''}</div>`;
       }).join('');
       body.querySelectorAll('#ch-board .sq').forEach((s) => s.onclick = () => clickSq(+s.dataset.i));
       const check = kingAttacked(turn);
-      body.querySelector('#ch-status').textContent = msg || (gameOver ? 'Game over' : `${turn === 'w' ? '⚪ White' : '⚫ Black'} to move${check ? ' — check!' : ''}`);
-      body.querySelector('#ch-cap').textContent = `Captured by White: ${captured.w.map((p) => GLYPH[p]).join(' ') || '—'} · by Black: ${captured.b.map((p) => GLYPH[p]).join(' ') || '—'}`;
+      body.querySelector('#ch-status').textContent = msg || (gameOver ? 'Game over' : `${turn === 'w' ? 'White' : 'Black'} to move${check ? ' — check!' : ''}`);
+      body.querySelector('#ch-cap').innerHTML = `Captured by White: ${captured.w.map((p) => pieceSvg(p, 'b')).join(' ') || 'none'} &middot; by Black: ${captured.b.map((p) => pieceSvg(p, 'w')).join(' ') || 'none'}`;
     }
     function doMove(from, to) {
       const p = b[from], victim = b[to];

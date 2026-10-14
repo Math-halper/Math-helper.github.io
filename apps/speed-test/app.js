@@ -3,12 +3,12 @@
 'use strict';
 
 registerApp({
-  id: 'speed-test', name: 'Speed Test', icon: '⚡', cat: 'Test', desc: 'TEST APP: reaction timer & device benchmark, best scores saved', w: 620, h: 500,
+  id: 'speed-test', name: 'Speed Test', icon: 'zap', cat: 'Test', desc: 'TEST APP: reaction timer & device benchmark, best scores saved', w: 620, h: 500,
   render(body) {
     userData.games.speedTest ||= { best: null, runs: [] };
     const state = userData.games.speedTest;
     let phase = 'idle', startedAt = 0, timer = null; // idle | waiting | ready
-    body.innerHTML = `${bar('⚡ Speed Test')}<div class="app-main pad">
+    body.innerHTML = `${bar('Speed Test')}<div class="app-main pad">
       <div class="card" style="text-align:center">
         <h3 style="margin-top:0">Reaction timer</h3>
         <button id="st-pad" class="btn" style="width:100%;min-height:110px;font-size:19px">Click to start, then wait for green…</button>
@@ -35,7 +35,7 @@ registerApp({
         clearTimeout(timer); phase = 'idle'; setPad('Too soon! Click to try again', '#161616');
       } else if (phase === 'ready') {
         const ms = Math.round(performance.now() - startedAt);
-        phase = 'idle'; setPad(`⚡ ${ms} ms — click to try again`, '#161616');
+        phase = 'idle'; setPad(`${ms} ms — click to try again`, '#161616');
         if (!state.best || ms < state.best) { state.best = ms; MH.toast(`New best: ${ms} ms!`); }
         state.runs.push({ at: Date.now(), ms }); saveData();
         body.querySelector('#st-result').textContent = 'Best so far: ' + state.best + ' ms';

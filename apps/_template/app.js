@@ -8,7 +8,7 @@
 registerApp({
   id: 'my-app',                 // unique id, lowercase-with-dashes
   name: 'My App',                // shown in the proton menu
-  icon: '🧩',                    // emoji icon
+  icon: 'grid',                    // icon name from assets/icons.js (folder, globe, star, ...)
   cat: 'Productivity',           // menu category (invent your own if you like)
   desc: 'What this app does',    // shown in App Center / Customize
   w: 720, h: 480,                // starting window size

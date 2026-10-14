@@ -6,10 +6,10 @@
 /* Adapted from the original Mixt Notes app (src/apps/notes): list + search +
  * rich-text editor, autosaved — here to per-account localStorage. */
 registerApp({
-  id: 'notes', name: 'Notes', icon: '📝', cat: 'Productivity', desc: 'Rich-text notes, autosaved on this device', w: 900, h: 570,
+  id: 'notes', name: 'Notes', icon: 'file-text', cat: 'Productivity', desc: 'Rich-text notes, autosaved on this device', w: 900, h: 570,
   render(body) {
     let current = userData.notes[0]?.id || null;
-    body.innerHTML = `${bar('Notes', `<button class="btn sm primary" id="n-new">＋ New note</button><button class="btn sm" id="n-del">Delete</button>`)}
+    body.innerHTML = `${bar('Notes', `<button class="btn sm primary" id="n-new">+ New note</button><button class="btn sm" id="n-del">Delete</button>`)}
     <div class="split"><aside class="side">
       <div style="padding:10px"><input id="n-q" type="search" placeholder="Search notes" style="width:100%;padding:7px 9px"></div>
       <div id="n-list"></div></aside>
@@ -41,7 +41,7 @@ registerApp({
     function persist() {
       const n = userData.notes.find((x) => x.id === current); if (!n) return;
       n.title = title.value; n.html = editor.innerHTML; n.updated = Date.now();
-      body.querySelector('#n-saved').textContent = 'Saved ✓'; saveData(); drawList();
+      body.querySelector('#n-saved').textContent = 'Saved'; saveData(); drawList();
     }
     title.addEventListener('input', persist); editor.addEventListener('input', persist);
     body.querySelectorAll('[data-cmd]').forEach((b) => b.onclick = () => { document.execCommand(b.dataset.cmd); editor.focus(); persist(); });

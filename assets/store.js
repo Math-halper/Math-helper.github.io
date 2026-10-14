@@ -62,7 +62,7 @@ const MH = {
       version: 1,
       settings: { wallpaper: 'mint', accent: '#68b723', pinned: ['files', 'math', 'notes', 'browser', 'terminal'] },
       notes: [{
-        id: MH.uid(), title: 'Welcome to proton 👋',
+        id: MH.uid(), title: 'Welcome to proton',
         html: `<p>This desktop is a <b>static clone of Mixt</b> (from <i>proton-arcade/mlp</i>), rebranded and rebuilt to run with <b>no server at all</b>.</p><h2><span style="font-size:19px">Things to try</span></h2><ul><li>Open the <b>Calculator</b> app — calculator, solver and graph plotter</li><li>Everything you type here is <b>saved on this device</b>, under your account</li><li>Drag windows, pin apps to the panel, change the wallpaper in Settings</li></ul><p>Have fun!</p>`,
         updated: Date.now(),
       }],
@@ -72,7 +72,7 @@ const MH = {
         { id: MH.uid(), name: displayName, email: '', phone: '', notes: 'Me' },
       ],
       mail: [{
-        id: MH.uid(), folder: 'inbox', from: 'proton', to: displayName, subject: 'Welcome aboard! 🎉',
+        id: MH.uid(), folder: 'inbox', from: 'proton', to: displayName, subject: 'Welcome aboard!',
         body: `Hi ${displayName},\n\nYour account lives entirely in this browser — no server, no tracking. Your notes, files, calendar and games are saved on this device and will be here next visit because you stay signed in.\n\nTip: press the proton menu (bottom-left) to see every app.\n\n— proton`, date: Date.now(), read: false,
       }],
       files: [
@@ -85,13 +85,13 @@ const MH = {
       activeSheet: 'Budget',
       slides: [
         { id: MH.uid(), title: 'My First Presentation', body: 'Made on proton — saved on this device.' },
-        { id: MH.uid(), title: 'Slide Two', body: 'Use ← → in Present mode.\nEdit any slide on the left.' },
+        { id: MH.uid(), title: 'Slide Two', body: 'Use the arrow keys in Present mode.\nEdit any slide on the left.' },
       ],
       boards: [{ id: MH.uid(), name: 'Scribbles', data: '' }],
       chat: {
         general: [{ id: MH.uid(), who: 'Nova', me: false, text: 'Welcome to #general! I live in your browser and remember this conversation on this device.', ts: Date.now() }],
         maths: [{ id: MH.uid(), who: 'Nova', me: false, text: 'Ask me things like “what is 12 × 8?” or “solve x+3=7” right here in chat.', ts: Date.now() }],
-        games: [{ id: MH.uid(), who: 'Nova', me: false, text: 'Chess, Checkers, Sudoku, Solitaire and Backgammon are all in the proton menu. 🎲', ts: Date.now() }],
+        games: [{ id: MH.uid(), who: 'Nova', me: false, text: 'Chess, Checkers, Sudoku, Solitaire and Backgammon are all in the proton menu.', ts: Date.now() }],
       },
       meetings: [{ id: MH.uid(), title: 'Weekly study group', when: today + 'T16:00', agenda: '1. Review homework\n2. Plan next topic\n3. Questions', notes: '' }],
       vault: [{ id: MH.uid(), title: 'Example secret', body: 'The vault asks for your account password again before showing these notes.' }],
@@ -103,7 +103,7 @@ const MH = {
        * hiddenApps: [appId]                — built-ins the user "removed"
        *                                      (hidden from menu, restorable). */
       customApps: [],
-      websites: [{ id: 'site-mixt', name: 'Mixt — the original project', icon: '⚛', url: 'https://github.com/proton-arcade/mlp/tree/arena/170861f7-mlp' }],
+      websites: [{ id: 'site-mixt', name: 'Mixt — the original project', icon: 'atom', url: 'https://github.com/proton-arcade/mlp/tree/arena/170861f7-mlp' }],
       hiddenApps: [],
 
     };

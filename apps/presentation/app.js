@@ -4,10 +4,10 @@
 
 /* ============================ PRESENTATION ============================ */
 registerApp({
-  id: 'presentation', name: 'Presentation', icon: '📽️', cat: 'Create', desc: 'Slides with a present mode, saved per account', w: 920, h: 580,
+  id: 'presentation', name: 'Presentation', icon: 'presentation', cat: 'Create', desc: 'Slides with a present mode, saved per account', w: 920, h: 580,
   render(body) {
     let idx = 0, presenting = false;
-    body.innerHTML = `${bar('Presentation', `<button class="btn sm primary" id="p-new">＋ Slide</button><button class="btn sm" id="p-del">Delete slide</button><button class="btn sm" id="p-present">▶ Present</button>`)}
+    body.innerHTML = `${bar('Presentation', `<button class="btn sm primary" id="p-new">+ Slide</button><button class="btn sm" id="p-del">Delete slide</button><button class="btn sm" id="p-present">${iconSvg('play')} Present</button>`)}
     <div class="split"><aside class="side" id="p-list"></aside><div id="p-stage" style="display:flex;flex-direction:column;min-height:0"></div></div>`;
     const stage = body.querySelector('#p-stage');
     function draw() {
@@ -18,7 +18,7 @@ registerApp({
       const s = userData.slides[idx];
       if (presenting && s) {
         stage.innerHTML = `<div class="present-stage"><h1>${MH.esc(s.title)}</h1><p style="white-space:pre-wrap;font-size:18px;line-height:1.6">${MH.esc(s.body)}</p>
-        <div><button class="btn" id="pp-prev">← Prev</button> <span style="opacity:.7">${idx + 1} / ${userData.slides.length}</span> <button class="btn" id="pp-next">Next →</button> <button class="btn" id="pp-exit">Exit (Esc)</button></div></div>`;
+        <div><button class="btn" id="pp-prev">${iconSvg('chevron-left')} Prev</button> <span style="opacity:.7">${idx + 1} / ${userData.slides.length}</span> <button class="btn" id="pp-next">Next ${iconSvg('chevron-right')}</button> <button class="btn" id="pp-exit">Exit (Esc)</button></div></div>`;
         stage.querySelector('#pp-prev').onclick = () => { idx--; draw(); };
         stage.querySelector('#pp-next').onclick = () => { idx++; draw(); };
         stage.querySelector('#pp-exit').onclick = () => { presenting = false; draw(); };

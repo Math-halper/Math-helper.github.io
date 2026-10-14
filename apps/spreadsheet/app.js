@@ -4,10 +4,10 @@
 
 /* ============================ SPREADSHEET ============================ */
 registerApp({
-  id: 'spreadsheet', name: 'Spreadsheet', icon: '📊', cat: 'Productivity', desc: 'Grid with formulas (=SUM, =AVERAGE…), saved per account', w: 960, h: 600,
+  id: 'spreadsheet', name: 'Spreadsheet', icon: 'table', cat: 'Productivity', desc: 'Grid with formulas (=SUM, =AVERAGE…), saved per account', w: 960, h: 600,
   render(body) {
     const COLS = 'ABCDEFGHIJ', ROWS = 16;
-    body.innerHTML = `${bar('Spreadsheet', `<select id="sh-list"></select><button class="btn sm" id="sh-new">＋ Sheet</button><button class="btn sm" id="sh-csv">⬇ CSV</button><span class="muted" id="sh-fx" style="margin-left:auto"></span>`)}
+    body.innerHTML = `${bar('Spreadsheet', `<select id="sh-list"></select><button class="btn sm" id="sh-new">${iconSvg('plus')} Sheet</button><button class="btn sm" id="sh-csv">${iconSvg('download')} CSV</button><span class="muted" id="sh-fx" style="margin-left:auto"></span>`)}
     <div class="sheet-wrap"><table class="sheet" id="sh-table"></table></div>
     <div class="appbar" style="border-top:1px solid var(--line);border-bottom:0"><span class="muted">Type values, or formulas like <span class="kbd">=A1+B2</span>, <span class="kbd">=SUM(A1:A5)</span>, <span class="kbd">=AVERAGE(B2:B6)</span>. Everything autosaves.</span></div>`;
     const list = body.querySelector('#sh-list'), table = body.querySelector('#sh-table'), fx = body.querySelector('#sh-fx');

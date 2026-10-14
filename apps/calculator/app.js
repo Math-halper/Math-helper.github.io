@@ -4,7 +4,7 @@
 
 /* ============================ MATH HELPER ============================ */
 registerApp({
-  id: 'math', name: 'Calculator', icon: '🧮', cat: 'Learn', desc: 'Calculator, equation solver, graph plotter & formulas', w: 880, h: 600,
+  id: 'math', name: 'Calculator', icon: 'calculator', cat: 'Learn', desc: 'Calculator, equation solver, graph plotter & formulas', w: 880, h: 600,
   render(body) {
     let expr = '';
     body.innerHTML = `${bar('Calculator', `<button class="btn sm" data-tab="calc">Calculator</button><button class="btn sm" data-tab="solve">Solver</button><button class="btn sm" data-tab="graph">Graph</button><button class="btn sm" data-tab="cards">Formulas</button>`)}
@@ -15,7 +15,7 @@ registerApp({
       tabs.forEach((b) => b.classList.toggle('primary', b.dataset.tab === tab));
       if (tab === 'calc') {
         main.innerHTML = `<div style="max-width:430px;margin:auto"><div class="calc-disp" id="c-disp">${MH.esc(expr || '0')}</div>
-        <div class="calc-grid">${['C', '⌫', '(', ')', '7', '8', '9', '/', '4', '5', '6', '*', '1', '2', '3', '-', '0', '.', '%', '+', '√(', 'x²', 'π', '='].map((k) =>
+        <div class="calc-grid">${['C', 'Del', '(', ')', '7', '8', '9', '/', '4', '5', '6', '*', '1', '2', '3', '-', '0', '.', '%', '+', '√(', 'x²', 'π', '='].map((k) =>
           `<button data-k="${k}" class="${k === '=' ? 'eq' : '+-/*%'.includes(k) || '()√π'.includes(k) ? 'op' : ''}">${k === '*' ? '×' : k === '/' ? '÷' : k}</button>`).join('')}</div>
         <p class="muted" style="text-align:center">Keyboard works too. Try <span class="kbd">(3+4)*5</span>, <span class="kbd">sqrt(144)</span>, <span class="kbd">2^10</span></p></div>`;
         const disp = main.querySelector('#c-disp');
@@ -23,10 +23,10 @@ registerApp({
         main.querySelectorAll('[data-k]').forEach((b) => b.onclick = () => {
           const k = b.dataset.k;
           if (k === 'C') expr = '';
-          else if (k === '⌫') expr = expr.slice(0, -1);
+          else if (k === 'Del') expr = expr.slice(0, -1);
           else if (k === 'x²') expr += '^2';
           else if (k === 'π') expr += 'pi';
-          else if (k === '=') { try { expr = fmtNum(evalMath(expr || '0')); } catch (e) { disp.textContent = '⚠ ' + e.message; return; } }
+          else if (k === '=') { try { expr = fmtNum(evalMath(expr || '0')); } catch (e) { disp.textContent = 'Error: ' + e.message; return; } }
           else expr += k;
           upd();
         });
@@ -74,7 +74,7 @@ registerApp({
           <div class="field" style="flex:1;min-width:220px"><label>f(x) =</label><input id="g-f" value="x^2 - 3*x" style="width:100%;padding:8px"></div>
           <div class="field"><label>from x</label><input id="g-min" type="number" value="-6" style="width:80px;padding:8px"></div>
           <div class="field"><label>to x</label><input id="g-max" type="number" value="6" style="width:80px;padding:8px"></div>
-          <button class="btn primary" id="g-go">Plot 📈</button></div>
+          <button class="btn primary" id="g-go">${iconSvg('chart')} Plot</button></div>
           <p class="muted" id="g-msg">Examples: <span class="kbd">sin(x)</span> · <span class="kbd">x^3-2*x</span> · <span class="kbd">sqrt(abs(x))</span> · <span class="kbd">2^x</span></p>
           <canvas id="g-cv" width="760" height="380" style="width:100%;background:#111;border:1px solid var(--line);border-radius:8px"></canvas></div>`;
         const plot = () => {
@@ -86,7 +86,7 @@ registerApp({
             const x = min + (max - min) * i / W;
             try { const y = evalMath(main.querySelector('#g-f').value, x); vals.push(y); if (Math.abs(y) < 1e7) { lo = Math.min(lo, y); hi = Math.max(hi, y); } } catch { vals.push(NaN); }
           }
-          if (!Number.isFinite(lo)) { main.querySelector('#g-msg').textContent = '⚠ Could not evaluate that function on this range.'; return; }
+          if (!Number.isFinite(lo)) { main.querySelector('#g-msg').textContent = 'Could not evaluate that function on this range.'; return; }
           const pad = (hi - lo) * 0.12 || 1; lo -= pad; hi += pad;
           const X = (x) => (x - min) / (max - min) * W, Y = (y) => H - (y - lo) / (hi - lo) * H;
           ctx.clearRect(0, 0, W, H);

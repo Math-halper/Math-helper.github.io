@@ -4,21 +4,21 @@
 
 /* ============================ FILES ============================ */
 registerApp({
-  id: 'files', name: 'Files', icon: '🗂️', cat: 'Productivity', desc: 'Virtual drive: folders & text files saved per account', w: 880, h: 560,
+  id: 'files', name: 'Files', icon: 'folder', cat: 'Productivity', desc: 'Virtual drive: folders & text files saved per account', w: 880, h: 560,
   render(body) {
     let folder = 'Home', selected = null;
-    body.innerHTML = `${bar('Files', `<button class="btn sm" id="f-new">＋ Text file</button><button class="btn sm" id="f-folder">＋ Folder</button><label class="btn sm" style="margin:0">⬆ Import .txt<input id="f-import" type="file" accept=".txt,.md,.csv" hidden></label><button class="btn sm" id="f-del">🗑 Delete</button>`)}
+    body.innerHTML = `${bar('Files', `<button class="btn sm" id="f-new">${iconSvg('plus')} Text file</button><button class="btn sm" id="f-folder">${iconSvg('plus')} Folder</button><label class="btn sm" style="margin:0">${iconSvg('upload')} Import .txt<input id="f-import" type="file" accept=".txt,.md,.csv" hidden></label><button class="btn sm" id="f-del">${iconSvg('trash')} Delete</button>`)}
     <div class="split"><aside class="side" id="f-folders"></aside><div style="display:flex;flex-direction:column;min-height:0">
       <div class="app-main" id="f-main"></div><div id="f-editor"></div></div></div>`;
     const main = body.querySelector('#f-main'), ed = body.querySelector('#f-editor');
     function draw() {
       body.querySelector('#f-folders').innerHTML = userData.fileFolders.map((f) =>
-        `<button class="rowitem ${f === folder ? 'sel' : ''}" data-f="${MH.esc(f)}">📁 ${MH.esc(f)} <span class="muted" style="margin-left:auto">${userData.files.filter((x) => x.folder === f).length}</span></button>`).join('') +
+        `<button class="rowitem ${f === folder ? 'sel' : ''}" data-f="${MH.esc(f)}">${iconSvg('folder')} ${MH.esc(f)} <span class="muted" style="margin-left:auto">${userData.files.filter((x) => x.folder === f).length}</span></button>`).join('') +
         `<div class="pad muted" style="padding-top:8px">${MH.fmtBytes(JSON.stringify(userData.files).length)} of text stored<br>on this device.</div>`;
       body.querySelectorAll('[data-f]').forEach((b) => b.onclick = () => { folder = b.dataset.f; selected = null; draw(); });
       const items = userData.files.filter((x) => x.folder === folder);
       main.innerHTML = items.length ? `<div class="file-grid">${items.map((f) => `
-        <button class="file-item ${f.id === selected ? 'sel' : ''}" data-id="${f.id}"><span class="ic">📄</span>${MH.esc(f.name)}<span class="muted">${MH.fmtBytes(f.content.length)}</span></button>`).join('')}</div>`
+        <button class="file-item ${f.id === selected ? 'sel' : ''}" data-id="${f.id}"><span class="ic">${iconSvg('file-text')}</span>${MH.esc(f.name)}<span class="muted">${MH.fmtBytes(f.content.length)}</span></button>`).join('')}</div>`
         : `<div class="pad muted">This folder is empty. Create a text file to get started.</div>`;
       main.querySelectorAll('.file-item').forEach((b) => {
         b.onclick = () => { selected = b.dataset.id; draw(); };
@@ -26,8 +26,8 @@ registerApp({
       });
       const f = userData.files.find((x) => x.id === selected);
       ed.innerHTML = f ? `<div style="border-top:1px solid var(--line);background:#111">
-          <div class="appbar"><strong style="margin-right:auto">📄 ${MH.esc(f.name)}</strong>
-          <button class="btn sm" id="fe-rename">Rename</button><button class="btn sm" id="fe-dl">⬇ Download</button><button class="btn sm primary" id="fe-save">Save</button></div>
+          <div class="appbar"><strong style="margin-right:auto">${iconSvg('file-text')} ${MH.esc(f.name)}</strong>
+          <button class="btn sm" id="fe-rename">Rename</button><button class="btn sm" id="fe-dl">${iconSvg('download')} Download</button><button class="btn sm primary" id="fe-save">Save</button></div>
           <textarea id="fe-text" rows="9" style="border:0;border-radius:0;resize:vertical">${MH.esc(f.content)}</textarea></div>` : '';
       if (f) {
         const ta = ed.querySelector('#fe-text');

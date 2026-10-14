@@ -4,12 +4,12 @@
 
 /* ============================ MAIL ============================ */
 registerApp({
-  id: 'mail', name: 'Mail', icon: '✉️', cat: 'Chat & Media', desc: 'On-device mailbox — compose, drafts, sent', w: 900, h: 570,
+  id: 'mail', name: 'Mail', icon: 'mail', cat: 'Chat & Media', desc: 'On-device mailbox — compose, drafts, sent', w: 900, h: 570,
   render(body) {
     let folder = 'inbox', sel = null, draft = null;
-    body.innerHTML = `${bar('Mail', `<button class="btn sm primary" id="m-new">✎ Compose</button>`)}
+    body.innerHTML = `${bar('Mail', `<button class="btn sm primary" id="m-new">${iconSvg('edit')} Compose</button>`)}
     <div class="split"><aside class="side">
-      ${['inbox', 'sent', 'drafts'].map((f) => `<button class="rowitem" data-f="${f}">${f === 'inbox' ? '📥' : f === 'sent' ? '📤' : '📝'} ${f[0].toUpperCase() + f.slice(1)} <span class="muted" style="margin-left:auto" data-count="${f}"></span></button>`).join('')}
+      ${['inbox', 'sent', 'drafts'].map((f) => `<button class="rowitem" data-f="${f}">${f === 'inbox' ? iconSvg('inbox') : f === 'sent' ? iconSvg('send') : iconSvg('edit')} ${f[0].toUpperCase() + f.slice(1)} <span class="muted" style="margin-left:auto" data-count="${f}"></span></button>`).join('')}
       <div class="pad muted">Mail is stored only in this browser — it never leaves your device.</div></aside>
       <div style="display:flex;flex-direction:column;min-height:0"><div id="m-list" style="max-height:42%;overflow:auto;border-bottom:1px solid var(--line)"></div><div class="app-main pad" id="m-view"></div></div></div>`;
     function draw() {
@@ -17,7 +17,7 @@ registerApp({
       body.querySelectorAll('[data-f]').forEach((b) => b.classList.toggle('sel', b.dataset.f === folder));
       const items = userData.mail.filter((m) => m.folder === folder).sort((a, b) => b.date - a.date);
       body.querySelector('#m-list').innerHTML = items.length ? items.map((m) => `
-        <button class="rowitem ${m.id === sel ? 'sel' : ''}" data-id="${m.id}"><span>${m.read || folder !== 'inbox' ? '' : '🔵 '}<b>${MH.esc(folder === 'inbox' ? m.from : m.to)}</b> — ${MH.esc(m.subject)}<br><span class="muted">${new Date(m.date).toLocaleString()} · ${MH.esc(m.body.slice(0, 60))}…</span></span></button>`).join('')
+        <button class="rowitem ${m.id === sel ? 'sel' : ''}" data-id="${m.id}"><span>${m.read || folder !== 'inbox' ? '' : '<span class="pdot" style="background:#3d7fca" title="Unread"></span> '}<b>${MH.esc(folder === 'inbox' ? m.from : m.to)}</b> — ${MH.esc(m.subject)}<br><span class="muted">${new Date(m.date).toLocaleString()} · ${MH.esc(m.body.slice(0, 60))}…</span></span></button>`).join('')
         : '<div class="pad muted">Nothing here yet.</div>';
       body.querySelectorAll('#m-list [data-id]').forEach((b) => b.onclick = () => {
         sel = b.dataset.id; const m = userData.mail.find((x) => x.id === sel);
@@ -50,7 +50,7 @@ registerApp({
       view.innerHTML = m ? `<h3 style="margin:2px 0">${MH.esc(m.subject)}</h3>
         <p class="muted">${folder === 'inbox' ? 'From' : 'To'}: ${MH.esc(folder === 'inbox' ? m.from : m.to)} · ${new Date(m.date).toLocaleString()}</p>
         <p style="white-space:pre-wrap;line-height:1.6">${MH.esc(m.body)}</p>
-        <button class="btn" id="m-reply">↩ Reply</button> <button class="btn" id="m-delmail">Delete</button>`
+        <button class="btn" id="m-reply">${iconSvg('reply')} Reply</button> <button class="btn" id="m-delmail">Delete</button>`
         : '<p class="muted">Select a message to read it.</p>';
       if (m) {
         view.querySelector('#m-delmail').onclick = () => { userData.mail = userData.mail.filter((x) => x.id !== m.id); sel = null; saveData(); draw(); };

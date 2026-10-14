@@ -55,10 +55,10 @@ function syncCustomApps() {
   applyModuleOverrides();
   for (const def of userData.customApps) {
     APPS[def.id] = {
-      id: def.id, name: def.name, icon: def.icon || '🧩', cat: 'My Apps',
+      id: def.id, name: def.name, icon: def.icon || 'grid', cat: 'My Apps',
       desc: def.desc || def.url, w: 980, h: 620,
       render(body) {
-        body.innerHTML = `${bar(def.name, `<span class="muted" style="max-width:340px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${MH.esc(def.url)}</span><button class="btn sm" data-w="reload">↻ Reload</button><button class="btn sm primary" data-w="ext">Open in new tab ↗</button>`)}
+        body.innerHTML = `${bar(def.name, `<span class="muted" style="max-width:340px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${MH.esc(def.url)}</span><button class="btn sm" data-w="reload">${iconSvg('refresh')} Reload</button><button class="btn sm primary" data-w="ext">${iconSvg('external')} Open in new tab</button>`)}
         <div class="app-main"><iframe title="${MH.esc(def.name)}" src="${MH.esc(def.url)}" style="width:100%;height:100%;min-height:420px;border:0" sandbox="allow-scripts allow-same-origin allow-forms allow-popups"></iframe>
         <p class="muted" style="padding:8px 14px">If this stays blank, ${MH.esc(def.name)} refuses to be embedded — use “Open in new tab”. proton never uploads or proxies it; your browser loads it directly.</p></div>`;
         body.querySelector('[data-w="ext"]').onclick = () => window.open(def.url, '_blank', 'noopener');
@@ -141,9 +141,9 @@ function openWebsite(site) {
 function websiteAsApp(site) {
   normalizeUserData();
   if (userData.customApps.some((a) => a.url === site.url)) { MH.toast('That website is already one of your apps.'); return false; }
-  userData.customApps.push({ id: 'custom-' + MH.uid(), name: site.name, icon: site.icon || '🌐', desc: 'Website app — ' + site.url, url: site.url });
+  userData.customApps.push({ id: 'custom-' + MH.uid(), name: site.name, icon: site.icon || 'globe', desc: 'Website app — ' + site.url, url: site.url });
   syncCustomApps(); saveData(); refreshChrome();
-  MH.toast(`“${site.name}” added as an app — find it in the proton menu → My Apps.`);
+  MH.toast(`“${site.name}” added as an app — find it in the proton menu, under My Apps.`);
   return true;
 }
 
@@ -230,10 +230,10 @@ function openApp(id) {
   if (mobile) el.classList.add('max');
   el.innerHTML = `
     <header class="win-head">
-      <span class="wic">${app.icon}</span><span class="wt">${MH.esc(app.name)}</span>
+      <span class="wic">${iconFor(app.icon)}</span><span class="wt">${MH.esc(app.name)}</span>
       <button class="wbtn" data-act="min" title="Minimise">—</button>
-      <button class="wbtn" data-act="max" title="Maximise">▢</button>
-      <button class="wbtn close" data-act="close" title="Close">✕</button>
+      <button class="wbtn" data-act="max" title="Maximise">${iconSvg('square')}</button>
+      <button class="wbtn close" data-act="close" title="Close">${iconSvg('x')}</button>
     </header>
     <div class="win-body"></div><div class="win-resize"></div>`;
   MH.$('windows').appendChild(el);
@@ -274,13 +274,20 @@ function openApp(id) {
   });
 
   try { app.render(body, { openApp, close: () => closeWin(id), winEl: el }); }
-  catch (err) { body.innerHTML = `<div class="pad"><h3>⚠️ ${MH.esc(app.name)} hit a snag</h3><p class="muted">${MH.esc(err.message)}</p></div>`; console.error(err); }
+  catch (err) { body.innerHTML = `<div class="pad"><h3>${iconSvg('alert')} ${MH.esc(app.name)} hit a snag</h3><p class="muted">${MH.esc(err.message)}</p></div>`; console.error(err); }
   renderPanelApps();
 }
 
 /* ---------------- desktop ---------------- */
 /* No shortcut icons on the desktop itself: apps open from the proton menu
  * or the panel. (Older saved settings may still carry desktopApps — ignored.) */
+
+/* Avatar = initials from the account name (no emoji avatars). */
+function userInitials(u) {
+  const src = String((u && (u.displayName || u.username)) || 'proton').trim();
+  const parts = src.split(/\s+/).filter(Boolean);
+  return MH.esc(((parts[0] || 'P')[0] || 'P') + ((parts[1] || '')[0] || '')).toUpperCase();
+}
 
 function enterDesktop() {
   normalizeUserData(); syncCustomApps();
@@ -295,15 +302,15 @@ function enterDesktop() {
     <div class="windows-layer" id="windows"></div>
     <div class="startmenu" id="startmenu" hidden></div>
     <footer class="panel">
-      <button class="menu-btn" id="menubtn"><span class="lg">⚛</span> proton</button>
+      <button class="menu-btn" id="menubtn"><span class="lg">${iconSvg('atom')}</span> proton</button>
       <div class="panel-apps" id="panelapps"></div>
       <div class="tray">
-        <button class="tbtn" id="tray-lock" title="Lock">🔒</button>
+        <button class="tbtn" id="tray-lock" title="Lock">${iconSvg('lock')}</button>
         <button class="tbtn" id="tray-user" title="Account & settings"><span id="tray-avt"></span></button>
         <div class="clock" id="clockbox"><b id="clock-time">--:--</b><span id="clock-date"></span></div>
       </div>
     </footer>`;
-  MH.$('tray-avt').textContent = currentUser.avatar || '😀';
+  MH.$('tray-avt').textContent = userInitials(currentUser);
   renderPanelApps(); renderStartMenu(''); applyWallpaper(); applyComponents();
   MH.$('menubtn').onclick = () => {
     const sm = MH.$('startmenu'), open = sm.hidden;
@@ -330,7 +337,7 @@ function renderPanelApps() {
   const ids = [...new Set([...pinned, ...wins.keys()])].filter((id) => !(userData.hiddenApps || []).includes(id));
   box.innerHTML = ids.filter((id) => APPS[id]).map((id) => {
     const a = APPS[id], run = wins.has(id), act = activeApp === id;
-    return `<button class="pitem ${run ? 'running' : ''} ${act ? 'active' : ''}" data-app="${id}" title="${MH.esc(a.name)}${run ? ' (open)' : ''}"><span>${a.icon}</span>${(pinned.includes(id) && !(userData.settings.components || {}).panelLabels) ? '' : `<span class="pl">${MH.esc(a.name)}</span>`}</button>`;
+    return `<button class="pitem ${run ? 'running' : ''} ${act ? 'active' : ''}" data-app="${id}" title="${MH.esc(a.name)}${run ? ' (open)' : ''}"><span>${iconFor(a.icon)}</span>${(pinned.includes(id) && !(userData.settings.components || {}).panelLabels) ? '' : `<span class="pl">${MH.esc(a.name)}</span>`}</button>`;
   }).join('');
   box.querySelectorAll('.pitem').forEach((b) => b.onclick = () => {
     const id = b.dataset.app;
@@ -348,13 +355,13 @@ function renderStartMenu(q) {
     const inCat = list.filter((a) => a.cat === cat)
       .sort((x, y) => (x.sortOrder ?? x.baseIndex ?? 999) - (y.sortOrder ?? y.baseIndex ?? 999));
     if (!inCat.length) continue;
-    html += `<div class="sm-cat">${cat}</div>` + inCat.map((a) => `<button class="sm-item" data-app="${a.id}"><span class="ic">${a.icon}</span>${MH.esc(a.name)}</button>`).join('');
+    html += `<div class="sm-cat">${cat}</div>` + inCat.map((a) => `<button class="sm-item" data-app="${a.id}"><span class="ic">${iconFor(a.icon)}</span>${MH.esc(a.name)}</button>`).join('');
   }
   if (!list.length) html += `<p style="grid-column:1/-1;opacity:.7;padding:10px 4px">No apps match “${MH.esc(query)}”.</p>`;
   html += `</div>
     <div class="sm-foot">
-      <button class="sm-user" id="sm-user"><span class="avt" style="background:${MH.esc(currentUser.color)}">${currentUser.avatar}</span><span><b>${MH.esc(currentUser.displayName)}</b><span>@${MH.esc(currentUser.username)} · signed in on this device</span></span></button>
-      <button class="btn sm" id="sm-lock">🔒 Lock</button>
+      <button class="sm-user" id="sm-user"><span class="avt" style="background:${MH.esc(currentUser.color)}">${MH.esc(userInitials(currentUser))}</span><span><b>${MH.esc(currentUser.displayName)}</b><span>@${MH.esc(currentUser.username)} · signed in on this device</span></span></button>
+      <button class="btn sm" id="sm-lock">${iconSvg('lock')} Lock</button>
       <button class="btn sm" id="sm-out">Sign out</button>
     </div>`;
   sm.innerHTML = html;
@@ -388,13 +395,13 @@ const COLORS = ['#68b723', '#3d7fca', '#8e5ec9', '#e67e22', '#d64570', '#2aa198'
 function authShell(title, sub, bodyHTML) {
   const a = MH.$('auth'); a.hidden = false;
   a.innerHTML = `<div class="auth-card">
-    <div class="auth-head"><div class="auth-logo">⚛</div><div><h1>${title}</h1><p>${sub}</p></div></div>
+    <div class="auth-head"><div class="auth-logo">${iconSvg('atom')}</div><div><h1>${title}</h1><p>${sub}</p></div></div>
     <div class="auth-body">${bodyHTML}</div></div>`;
 }
 function renderSetup(backToLogin) {
   document.title = 'Create your account — proton';
   authShell('Create your account', 'First launch setup · proton', `
-    <p class="auth-note" style="margin-top:0">👋 Welcome! This static website has <b>no server</b>, so your account is created and stored <b>only in this browser</b>. You'll stay signed in on this device until you sign out.</p>
+    <p class="auth-note" style="margin-top:0">Welcome! This static website has <b>no server</b>, so your account is created and stored <b>only in this browser</b>. You'll stay signed in on this device until you sign out.</p>
     <form id="setup-form">
       <label>Display name<input id="su-name" required maxlength="40" placeholder="e.g. Alex Morgan" autocomplete="name"></label>
       <div class="auth-row">
@@ -406,11 +413,11 @@ function renderSetup(backToLogin) {
         <label>Confirm password<small>Repeat it exactly</small><input id="su-pass2" type="password" required minlength="6" autocomplete="new-password"></label>
       </div>
       <div class="auth-err" id="su-err"></div>
-      <button class="btn primary block" type="submit">Create account &amp; enter desktop →</button>
+      <button class="btn primary block" type="submit">Create account &amp; enter desktop</button>
     </form>
     ${backToLogin ? '<p class="auth-switch">Already have an account on this device? <a id="su-back">Sign in instead</a></p>' : ''}
-    <p class="auth-note">🔒 Your password is stored only as a salted SHA-256 hash. App data (notes, files, games…) is saved per-account in this browser. Clearing browser data deletes it — export a backup from Settings any time.</p>`);
-  const avatar = '😀'; // no picker on sign-up — every new account starts with the default avatar
+    <p class="auth-note">${iconSvg('lock')} Your password is stored only as a salted SHA-256 hash. App data (notes, files, games…) is saved per-account in this browser. Clearing browser data deletes it — export a backup from Settings any time.</p>`);
+  const avatar = ''; // no picker on sign-up — avatars are the account's initials, drawn by userInitials()
   if (backToLogin) MH.$('su-back').onclick = renderLogin;
   MH.$('setup-form').onsubmit = async (e) => {
     e.preventDefault();
@@ -433,7 +440,7 @@ function renderSetup(backToLogin) {
     MH.setSession(key);
     MH.$('auth').hidden = true;
     enterDesktop();
-    MH.toast(`Account created — welcome, ${currentUser.displayName}! 🎉`);
+    MH.toast(`Account created — welcome, ${currentUser.displayName}!`);
   };
 }
 function renderLogin() {
@@ -442,11 +449,11 @@ function renderLogin() {
   authShell('Welcome back', 'Sign in to proton on this device', `
     <form id="login-form">
       <label>Username
-        <select id="li-user">${accounts.map((a) => `<option value="${MH.esc(a.usernameLower)}">${MH.esc(a.avatar)} ${MH.esc(a.username)} — ${MH.esc(a.displayName)}</option>`).join('')}</select>
+        <select id="li-user">${accounts.map((a) => `<option value="${MH.esc(a.usernameLower)}">${MH.esc(a.username)} — ${MH.esc(a.displayName)}</option>`).join('')}</select>
       </label>
       <label>Password<input id="li-pass" type="password" required autocomplete="current-password" placeholder="Your password"></label>
       <div class="auth-err" id="li-err"></div>
-      <button class="btn primary block" type="submit">Sign in &amp; stay signed in →</button>
+      <button class="btn primary block" type="submit">Sign in &amp; stay signed in</button>
     </form>
     <p class="auth-switch">New to this device? <a id="li-new">Create an account</a></p>
     <p class="auth-note">You stay signed in on this device until you choose <b>Sign out</b> in the proton menu. Use <b>Lock</b> to hide the desktop without signing out.</p>`);
@@ -467,12 +474,12 @@ function renderLogin() {
 function renderLock() {
   document.title = 'Locked — proton';
   authShell('Desktop locked', 'Your work is exactly as you left it', `
-    <div style="text-align:center"><div class="lock-avatar" style="background:${MH.esc(currentUser.color)}">${currentUser.avatar}</div>
+    <div style="text-align:center"><div class="lock-avatar" style="background:${MH.esc(currentUser.color)}">${MH.esc(userInitials(currentUser))}</div>
     <b>${MH.esc(currentUser.displayName)}</b><div class="muted">@${MH.esc(currentUser.username)}</div></div>
     <form id="lock-form">
       <label>Password<input id="lk-pass" type="password" required autocomplete="current-password" autofocus></label>
       <div class="auth-err" id="lk-err"></div>
-      <button class="btn primary block" type="submit">Unlock →</button>
+      <button class="btn primary block" type="submit">Unlock</button>
     </form>
     <p class="auth-switch"><a id="lk-out">Sign out instead</a></p>`);
   const a = MH.$('auth'); a.hidden = false;

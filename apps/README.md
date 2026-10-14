@@ -8,7 +8,8 @@ app instantly appears in the proton menu, App Center and Customize.
 ## Add your own app
 
 1. Copy the `apps/_template/` folder and rename it, e.g. `apps/my-app/`.
-2. Edit `apps/my-app/app.js` (name, icon, category, and the `render` function).
+2. Edit `apps/my-app/app.js` (name, `icon:` as a name from `assets/icons.js`
+   such as `folder`, `globe` or `star`, category, and the `render` function).
 3. Add one line to `index.html` with the other app scripts:
    `<script src="apps/my-app/app.js"></script>`
 
@@ -55,9 +56,9 @@ in `assets/styles.css` (`.btn`, `.card`, `.appbar`, …). Look at
 | `klondike/` | Klondike (`klondike`) |
 | `backgammon/` | Backgammon (`backgammon`) |
 | `g-talk/` | G-Talk (`gtalk`) |
-| `hello-test/` | 🧪 Hello Test (`hello-test`) |
-| `speed-test/` | 🧪 Speed Test (`speed-test`) |
-| `storage-test/` | 🧪 Storage Test (`storage-test`) |
+| `hello-test/` | Hello Test (`hello-test`) |
+| `speed-test/` | Speed Test (`speed-test`) |
+| `storage-test/` | Storage Test (`storage-test`) |
 
 Shared code lives outside this folder: `assets/store.js` (accounts/storage),
 `assets/core.js` (desktop, windows, registries), `assets/styles.css`,

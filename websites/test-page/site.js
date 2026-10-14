@@ -4,15 +4,15 @@
 'use strict';
 
 registerSite({
-  id: 'test-page', name: 'Test Page', icon: '🧪', desc: 'TEST SITE: buttons, forms, clock & counter to try the Browser with',
+  id: 'test-page', name: 'Test Page', icon: 'flask', desc: 'TEST SITE: buttons, forms, clock & counter to try the Browser with',
   render(main) {
     let count = 0;
     main.innerHTML = `<div class="pad" style="max-width:720px">
-      <h2>🧪 Test Page</h2>
+      <h2>Test Page</h2>
       <p class="muted">A built-in test website living in <span class="kbd">websites/test-page/site.js</span>. Everything below is interactive, so you can check the Browser, windows and rendering all work.</p>
       <div class="grid-cards">
         <div class="card"><h3>Counter</h3><p style="font-size:30px;margin:6px 0" id="tp-count">0</p>
-          <button class="btn primary" id="tp-inc">＋ Click me</button>
+          <button class="btn primary" id="tp-inc">Click me</button>
           <button class="btn" id="tp-reset">Reset</button></div>
         <div class="card"><h3>Live clock</h3><p style="font-size:24px;margin:6px 0" id="tp-clock">--:--:--</p>
           <p class="muted">If this ticks every second, timers work.</p></div>

@@ -4,11 +4,11 @@
 
 /* ============================ CALENDAR ============================ */
 registerApp({
-  id: 'calendar', name: 'Calendar', icon: '📅', cat: 'Productivity', desc: 'Month view with events saved per account', w: 920, h: 580,
+  id: 'calendar', name: 'Calendar', icon: 'calendar', cat: 'Productivity', desc: 'Month view with events saved per account', w: 920, h: 580,
   render(body) {
     let cursor = new Date(); cursor.setDate(1);
     let sel = MH.todayISO();
-    body.innerHTML = `${bar('Calendar', `<button class="btn sm" id="c-prev">←</button><button class="btn sm" id="c-today">Today</button><button class="btn sm" id="c-next">→</button>`)}
+    body.innerHTML = `${bar('Calendar', `<button class="btn sm" id="c-prev" title="Previous month">${iconSvg('chevron-left')}</button><button class="btn sm" id="c-today">Today</button><button class="btn sm" id="c-next" title="Next month">${iconSvg('chevron-right')}</button>`)}
     <div class="split" style="grid-template-columns:1fr 300px"><div class="app-main" style="padding:12px 14px"><h3 id="c-head" style="margin:2px 0 10px"></h3><div class="cal-grid" id="c-grid"></div></div>
     <aside class="side" style="border-right:0;border-left:1px solid var(--line);padding:14px;background:#111">
       <h3 id="c-day" style="margin-top:0"></h3><div id="c-events"></div>
@@ -37,7 +37,7 @@ registerApp({
       const evs = userData.events.filter((e) => e.date === sel).sort((a, b) => a.time.localeCompare(b.time));
       body.querySelector('#c-events').innerHTML = evs.length ? evs.map((e) => `
         <div class="card" style="padding:9px 11px;margin-bottom:7px"><b>${MH.esc(e.time)}</b> ${MH.esc(e.title)}
-        ${e.notes ? `<div class="muted">${MH.esc(e.notes)}</div>` : ''}<button class="btn sm" data-del="${e.id}" style="float:right">✕</button></div>`).join('')
+        ${e.notes ? `<div class="muted">${MH.esc(e.notes)}</div>` : ''}<button class="btn sm" data-del="${e.id}" style="float:right" title="Delete event">${iconSvg('x')}</button></div>`).join('')
         : '<p class="muted">No events this day.</p>';
       body.querySelectorAll('[data-del]').forEach((b) => b.onclick = () => {
         userData.events = userData.events.filter((e) => e.id !== b.dataset.del); saveData(); draw();

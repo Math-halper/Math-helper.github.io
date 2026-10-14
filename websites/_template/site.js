@@ -10,7 +10,7 @@
 registerSite({
   id: 'my-site',                 // becomes proton://my-site
   name: 'My Site',               // shown in the Browser
-  icon: '🌐',                    // emoji icon
+  icon: 'globe',                    // icon name from assets/icons.js (folder, globe, star, ...)
   desc: 'What this site is',     // shown on the Browser home page
 
   render(main, ctx) {
@@ -18,7 +18,7 @@ registerSite({
     // ctx.showSite(id) visits another built-in site,
     // ctx.showHome() goes back to the Browser home page.
     main.innerHTML = `<div class="pad">
-      <h2>🌐 My Site</h2>
+      <h2>My Site</h2>
       <p>Edit <span class="kbd">websites/my-site/site.js</span> to change me.</p>
       <button class="btn primary" id="my-site-btn">Say hello</button>
     </div>`;

@@ -4,10 +4,10 @@
 
 /* ============================ CONTACTS ============================ */
 registerApp({
-  id: 'contacts', name: 'Contacts', icon: '👥', cat: 'Productivity', desc: 'Address book saved on this device', w: 820, h: 520,
+  id: 'contacts', name: 'Contacts', icon: 'users', cat: 'Productivity', desc: 'Address book saved on this device', w: 820, h: 520,
   render(body) {
     let sel = null;
-    body.innerHTML = `${bar('Contacts', `<input type="search" id="ct-q" placeholder="Search contacts"><button class="btn sm primary" id="ct-new">＋ New</button>`)}
+    body.innerHTML = `${bar('Contacts', `<input type="search" id="ct-q" placeholder="Search contacts"><button class="btn sm primary" id="ct-new">+ New</button>`)}
     <div class="split"><aside class="side" id="ct-list"></aside><div class="app-main pad" id="ct-detail"></div></div>`;
     function draw() {
       const q = body.querySelector('#ct-q').value.trim().toLowerCase();

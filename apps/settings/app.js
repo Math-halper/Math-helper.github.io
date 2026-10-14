@@ -4,34 +4,34 @@
 
 /* ============================ SETTINGS ============================ */
 registerApp({
-  id: 'settings', name: 'Settings', icon: '⚙️', cat: 'System', desc: 'Account, wallpaper, backups and this device', w: 880, h: 600,
+  id: 'settings', name: 'Settings', icon: 'settings', cat: 'System', desc: 'Account, wallpaper, backups and this device', w: 880, h: 600,
   render(body) {
     const used = JSON.stringify(userData).length;
     body.innerHTML = `${bar('Settings')}<div class="app-main pad">
     <div class="stat-grid">
-      <div class="stat"><b>${currentUser.avatar} ${MH.esc(currentUser.displayName)}</b><span class="muted">@${MH.esc(currentUser.username)} · joined ${new Date(currentUser.createdAt).toLocaleDateString()}</span></div>
+      <div class="stat"><b>${MH.esc(currentUser.displayName)}</b><span class="muted">@${MH.esc(currentUser.username)} · joined ${new Date(currentUser.createdAt).toLocaleDateString()}</span></div>
       <div class="stat"><b>${MH.fmtBytes(used)}</b><span class="muted">saved for this account on this device</span></div>
       <div class="stat"><b>${userData.notes.length + userData.files.length + userData.events.length}</b><span class="muted">notes, files &amp; events</span></div>
       <div class="stat"><b>${userData.counters.windowsOpened || 0}</b><span class="muted">windows opened, all time</span></div>
     </div>
 
-    <h3>🎨 Wallpaper</h3><div class="wall-pick">
+    <h3>${iconSvg('palette')} Wallpaper</h3><div class="wall-pick">
       ${[['mint', 'Mint'], ['ocean', 'Ocean'], ['sunset', 'Sunset'], ['grape', 'Grape'], ['slate', 'Slate'], ['rose', 'Rose']].map(([id, n]) =>
         `<button data-wp="${id}" class="wp-${id} ${userData.settings.wallpaper === id ? 'sel' : ''}">${n}</button>`).join('')}
       ${(userData.customWallpapers || []).map((w) =>
         `<button data-wp="${w.id}" style="background:linear-gradient(150deg, ${MH.esc(w.from)}, ${MH.esc(w.to)})" class="${userData.settings.wallpaper === w.id ? 'sel' : ''}">${MH.esc(w.name)}</button>`).join('')}
     </div>
-    <p class="muted">Want more? Add, edit and remove your own wallpapers, themes, apps and desktop parts in the <b>Customize</b> app. <button class="btn sm" id="s-open-customize">🎛️ Open Customize</button></p>
-    <h3>🌈 Accent colour</h3><div style="display:flex;gap:8px;flex-wrap:wrap">
+    <p class="muted">Want more? Add, edit and remove your own wallpapers, themes, apps and desktop parts in the <b>Customize</b> app. <button class="btn sm" id="s-open-customize">${iconSvg('sliders')} Open Customize</button></p>
+    <h3>${iconSvg('palette')} Accent colour</h3><div style="display:flex;gap:8px;flex-wrap:wrap">
       ${Object.entries(ACCENTS).map(([hex, a]) => `<button class="btn sm" data-accent="${hex}" style="${userData.settings.accent === hex ? 'outline:3px solid ' + hex : ''}"><span style="display:inline-block;width:13px;height:13px;border-radius:50%;background:${hex};vertical-align:-2px"></span> ${a.name}</button>`).join('')}
     </div>
 
-    <h3>👤 Profile</h3>
+    <h3>${iconSvg('user')} Profile</h3>
     <div class="field"><label>Display name</label><input id="s-name" value="${MH.esc(currentUser.displayName)}"></div>
     <div class="field"><label>Email (optional, stays on this device)</label><input id="s-email" type="email" value="${MH.esc(currentUser.email || '')}"></div>
     <button class="btn primary" id="s-saveprofile">Save profile</button>
 
-    <h3>🔑 Change password</h3>
+    <h3>${iconSvg('key')} Change password</h3>
     <div class="field"><label>Current password</label><input id="s-cur" type="password" autocomplete="current-password"></div>
     <div class="auth-row" style="display:grid;grid-template-columns:1fr 1fr;gap:12px">
       <div class="field"><label>New password (6+ characters)</label><input id="s-new" type="password" autocomplete="new-password"></div>
@@ -39,15 +39,15 @@ registerApp({
     <div class="auth-err" id="s-passerr"></div>
     <button class="btn" id="s-changepass">Change password</button>
 
-    <h3>💾 Backup (export / import everything for this account)</h3>
+    <h3>${iconSvg('save')} Backup (export / import everything for this account)</h3>
     <p class="muted">Your data only exists in this browser. Export a backup before clearing browser data or changing devices.</p>
-    <button class="btn" id="s-export">⬇ Export backup (.json)</button>
-    <label class="btn">⬆ Import backup<input id="s-import" type="file" accept=".json" hidden></label>
+    <button class="btn" id="s-export">${iconSvg('download')} Export backup (.json)</button>
+    <label class="btn">${iconSvg('upload')} Import backup<input id="s-import" type="file" accept=".json" hidden></label>
 
-    <h3>👥 Accounts on this device</h3>
-    <p>${Object.values(MH.accounts()).map((a) => `${a.avatar} <b>${MH.esc(a.username)}</b> (${MH.esc(a.displayName)})${a.usernameLower === currentUser.usernameLower ? ' — you' : ''}`).join('<br>')}</p>
-    <button class="btn" id="s-addacct">＋ Create another account</button>
-    <button class="btn" id="s-lock">🔒 Lock desktop</button>
+    <h3>${iconSvg('users')} Accounts on this device</h3>
+    <p>${Object.values(MH.accounts()).map((a) => `<b>${MH.esc(a.username)}</b> (${MH.esc(a.displayName)})${a.usernameLower === currentUser.usernameLower ? ' — you' : ''}`).join('<br>')}</p>
+    <button class="btn" id="s-addacct">+ Create another account</button>
+    <button class="btn" id="s-lock">${iconSvg('lock')} Lock desktop</button>
     <button class="btn" id="s-signout">Sign out</button>
 
     <h3 style="color:var(--danger)">Danger zone</h3>

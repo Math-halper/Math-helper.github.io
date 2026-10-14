@@ -4,7 +4,7 @@
 'use strict';
 
 registerSite({
-  id: 'world-history', name: 'World History', icon: '🏛', desc: 'A short interactive timeline, adapted from the original bundled site',
+  id: 'world-history', name: 'World History', icon: 'landmark', desc: 'A short interactive timeline, adapted from the original bundled site',
   render(main) {
     const EVENTS = [
       ['c. 3000 BCE', 'Writing appears', 'Cuneiform in Mesopotamia and hieroglyphs in Egypt let ideas outlive memory. Mathematics follows: counting, calendars, geometry for land and stars.'],
@@ -14,7 +14,7 @@ registerSite({
       ['1969', 'Apollo 11', 'Humans land on the Moon — guided by mathematics computed partly by human “computers” like Katherine Johnson.'],
       ['Today', 'A desktop in a browser', 'You are reading history inside a static clone of a browser operating system. The timeline continues…'],
     ];
-    main.innerHTML = `<div class="pad" style="max-width:760px"><h2>🏛 World History — a pocket timeline</h2>
+    main.innerHTML = `<div class="pad" style="max-width:760px"><h2>World History — a pocket timeline</h2>
       <p class="muted">Adapted from the original project's bundled <span class="kbd">internet/world-history</span> site. This page lives in <span class="kbd">websites/world-history/site.js</span>.</p>
       ${EVENTS.map(([d, t, b]) => `<div class="card" style="margin-bottom:10px"><span class="chip">${d}</span><h3 style="margin:7px 0 4px">${t}</h3><p style="margin:0">${b}</p></div>`).join('')}</div>`;
   },

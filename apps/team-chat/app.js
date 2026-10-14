@@ -4,7 +4,7 @@
 
 /* ============================ TEAM CHAT ============================ */
 registerApp({
-  id: 'chat', name: 'Team Chat', icon: '💬', cat: 'Chat & Media', desc: 'Channels with helper Nova — saved on this device', w: 880, h: 560,
+  id: 'chat', name: 'Team Chat', icon: 'message', cat: 'Chat & Media', desc: 'Channels with helper Nova — saved on this device', w: 880, h: 560,
   render(body) {
     let channel = 'general';
     body.innerHTML = `${bar('Team Chat')}<div class="split" style="grid-template-columns:190px 1fr">
@@ -27,12 +27,12 @@ registerApp({
       const calc = t.match(/(?:what is|calculate|how much is)?\s*([-+*/().\d\s^x]+(?:sqrt\([\d.]+\))?[-+*/().\d\s^x]*)/);
       if (solve) { const [, a, b, c] = solve.map(Number); reply = a === 0 ? 'a can\'t be 0 there!' : `x = ${fmtNum((c - b) / a)}. Steps: ${a}x = ${fmtNum(c)} − ${fmtNum(b)} = ${fmtNum(c - b)}, then divide by ${fmtNum(a)}.`; }
       else if (/\b(hi|hello|hey)\b/.test(t)) reply = `Hi ${currentUser.displayName}! Ask me a maths question, or open Calculator for the full solver & graph plotter.`;
-      else if (t.includes('thank')) reply = 'Any time! That\'s what I\'m here for. 📚';
-      else if (t.includes('sudoku') || t.includes('chess') || t.includes('game')) reply = 'Games live in the proton menu → Games. Sudoku even saves mid-game. Good luck! 🎲';
+      else if (t.includes('thank')) reply = 'Any time! That\'s what I\'m here for.';
+      else if (t.includes('sudoku') || t.includes('chess') || t.includes('game')) reply = 'Games live in the proton menu, under Games. Sudoku even saves mid-game. Good luck!';
       else if (calc && /[+\-*/x×÷^]/.test(t)) {
         try { const expr = t.replace(/what is|calculate|how much is|\?/g, '').replace(/×/g, '*').replace(/÷/g, '/').replace(/x(?=\d|\s*\d)/g, '*'); reply = `That's ${fmtNum(evalMath(expr))}. (I worked it out locally — no cloud harmed.)`; } catch { /* fall through */ }
       }
-      if (!reply) reply = ['Great question — I\'m only a tiny on-device bot, but the Calculator app can solve and graph it properly!', 'Noted! 📌 (This chat is saved on this device, by the way.)', 'Interesting! Try me with a calculation, like “what is 45 × 6?”'][Math.floor(Math.random() * 3)];
+      if (!reply) reply = ['Great question — I\'m only a tiny on-device bot, but the Calculator app can solve and graph it properly!', 'Noted. (This chat is saved on this device, by the way.)', 'Interesting! Try me with a calculation, like “what is 45 × 6?”'][Math.floor(Math.random() * 3)];
       setTimeout(() => { userData.chat[channel].push({ id: MH.uid(), who: 'Nova', me: false, text: reply, ts: Date.now() }); saveData(); draw(); }, 550);
     }
     body.querySelectorAll('[data-ch]').forEach((b) => b.onclick = () => { channel = b.dataset.ch; draw(); });
