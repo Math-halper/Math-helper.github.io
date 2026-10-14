@@ -212,7 +212,6 @@ function lockDesktop() {
 }
 
 /* ---------------- auth screens ---------------- */
-const AVATARS = ['😀', '🦊', '🐼', '🦉', '🐸', '🚀', '🌟', '🎧', '🍀', '🔢'];
 const COLORS = ['#68b723', '#3d7fca', '#8e5ec9', '#e67e22', '#d64570', '#2aa198'];
 
 function authShell(title, sub, bodyHTML) {
@@ -233,20 +232,14 @@ function renderSetup(backToLogin) {
       </div>
       <div class="auth-row">
         <label>Password<small>At least 6 characters</small><input id="su-pass" type="password" required minlength="6" autocomplete="new-password"></label>
-        <label>Confirm password<input id="su-pass2" type="password" required minlength="6" autocomplete="new-password"></label>
+        <label>Confirm password<small>Repeat it exactly</small><input id="su-pass2" type="password" required minlength="6" autocomplete="new-password"></label>
       </div>
-      <label>Pick an avatar</label>
-      <div class="avatar-pick" id="su-avatars">${AVATARS.map((e, i) => `<button type="button" data-av="${e}" class="${i === 0 ? 'sel' : ''}">${e}</button>`).join('')}</div>
       <div class="auth-err" id="su-err"></div>
       <button class="btn primary block" type="submit">Create account &amp; enter desktop →</button>
     </form>
     ${backToLogin ? '<p class="auth-switch">Already have an account on this device? <a id="su-back">Sign in instead</a></p>' : ''}
     <p class="auth-note">🔒 Your password is stored only as a salted SHA-256 hash. App data (notes, files, games…) is saved per-account in this browser. Clearing browser data deletes it — export a backup from Settings any time.</p>`);
-  let avatar = AVATARS[0];
-  MH.$('su-avatars').querySelectorAll('button').forEach((b) => b.onclick = () => {
-    MH.$('su-avatars').querySelectorAll('button').forEach((x) => x.classList.remove('sel'));
-    b.classList.add('sel'); avatar = b.dataset.av;
-  });
+  const avatar = '😀'; // no picker on sign-up — every new account starts with the default avatar
   if (backToLogin) MH.$('su-back').onclick = renderLogin;
   MH.$('setup-form').onsubmit = async (e) => {
     e.preventDefault();

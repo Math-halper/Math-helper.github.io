@@ -41,9 +41,6 @@ button{cursor:pointer}
 .auth-body input,.auth-body select{width:100%;padding:10px 12px;border:1px solid #b9bbb7;border-radius:6px;background:#fff}
 .auth-body input:focus,.auth-body select:focus{outline:2px solid var(--accent);outline-offset:1px;border-color:var(--accent-dim)}
 .auth-row{display:grid;grid-template-columns:1fr 1fr;gap:12px}
-.avatar-pick{display:flex;gap:8px;flex-wrap:wrap;margin-top:6px}
-.avatar-pick button{width:42px;height:42px;font-size:21px;border:2px solid var(--line);background:#fff;border-radius:10px}
-.avatar-pick button.sel{border-color:var(--accent);background:var(--accent-soft)}
 .btn{display:inline-flex;align-items:center;justify-content:center;gap:7px;padding:8px 16px;border:1px solid #aaa;border-radius:6px;background:#fff;font-weight:600}
 .btn:hover{background:#f0f0ef}.btn.primary{background:var(--accent);border-color:var(--accent-dim);color:#fff}.btn.primary:hover{background:#5ea21d}
 .btn.danger{background:var(--danger);border-color:#a92c28;color:#fff}.btn.ghost{border-color:transparent;background:transparent}
