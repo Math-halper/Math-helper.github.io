@@ -1,0 +1,105 @@
+/* proton app module: settings — edit this file to change this app.
+ * Loaded by index.html; calls registerApp() (see apps/README.md). */
+'use strict';
+
+/* ============================ SETTINGS ============================ */
+registerApp({
+  id: 'settings', name: 'Settings', icon: '⚙️', cat: 'System', desc: 'Account, wallpaper, backups and this device', w: 880, h: 600,
+  render(body) {
+    const used = JSON.stringify(userData).length;
+    body.innerHTML = `${bar('Settings')}<div class="app-main pad">
+    <div class="stat-grid">
+      <div class="stat"><b>${currentUser.avatar} ${MH.esc(currentUser.displayName)}</b><span class="muted">@${MH.esc(currentUser.username)} · joined ${new Date(currentUser.createdAt).toLocaleDateString()}</span></div>
+      <div class="stat"><b>${MH.fmtBytes(used)}</b><span class="muted">saved for this account on this device</span></div>
+      <div class="stat"><b>${userData.notes.length + userData.files.length + userData.events.length}</b><span class="muted">notes, files &amp; events</span></div>
+      <div class="stat"><b>${userData.counters.windowsOpened || 0}</b><span class="muted">windows opened, all time</span></div>
+    </div>
+
+    <h3>🎨 Wallpaper</h3><div class="wall-pick">
+      ${[['mint', 'Mint'], ['ocean', 'Ocean'], ['sunset', 'Sunset'], ['grape', 'Grape'], ['slate', 'Slate'], ['rose', 'Rose']].map(([id, n]) =>
+        `<button data-wp="${id}" class="wp-${id} ${userData.settings.wallpaper === id ? 'sel' : ''}">${n}</button>`).join('')}
+      ${(userData.customWallpapers || []).map((w) =>
+        `<button data-wp="${w.id}" style="background:linear-gradient(150deg, ${MH.esc(w.from)}, ${MH.esc(w.to)})" class="${userData.settings.wallpaper === w.id ? 'sel' : ''}">${MH.esc(w.name)}</button>`).join('')}
+    </div>
+    <p class="muted">Want more? Add, edit and remove your own wallpapers, themes, apps and desktop parts in the <b>Customize</b> app. <button class="btn sm" id="s-open-customize">🎛️ Open Customize</button></p>
+    <h3>🌈 Accent colour</h3><div style="display:flex;gap:8px;flex-wrap:wrap">
+      ${Object.entries(ACCENTS).map(([hex, a]) => `<button class="btn sm" data-accent="${hex}" style="${userData.settings.accent === hex ? 'outline:3px solid ' + hex : ''}"><span style="display:inline-block;width:13px;height:13px;border-radius:50%;background:${hex};vertical-align:-2px"></span> ${a.name}</button>`).join('')}
+    </div>
+
+    <h3>👤 Profile</h3>
+    <div class="field"><label>Display name</label><input id="s-name" value="${MH.esc(currentUser.displayName)}"></div>
+    <div class="field"><label>Email (optional, stays on this device)</label><input id="s-email" type="email" value="${MH.esc(currentUser.email || '')}"></div>
+    <button class="btn primary" id="s-saveprofile">Save profile</button>
+
+    <h3>🔑 Change password</h3>
+    <div class="field"><label>Current password</label><input id="s-cur" type="password" autocomplete="current-password"></div>
+    <div class="auth-row" style="display:grid;grid-template-columns:1fr 1fr;gap:12px">
+      <div class="field"><label>New password (6+ characters)</label><input id="s-new" type="password" autocomplete="new-password"></div>
+      <div class="field"><label>Confirm new password</label><input id="s-new2" type="password" autocomplete="new-password"></div></div>
+    <div class="auth-err" id="s-passerr"></div>
+    <button class="btn" id="s-changepass">Change password</button>
+
+    <h3>💾 Backup (export / import everything for this account)</h3>
+    <p class="muted">Your data only exists in this browser. Export a backup before clearing browser data or changing devices.</p>
+    <button class="btn" id="s-export">⬇ Export backup (.json)</button>
+    <label class="btn">⬆ Import backup<input id="s-import" type="file" accept=".json" hidden></label>
+
+    <h3>👥 Accounts on this device</h3>
+    <p>${Object.values(MH.accounts()).map((a) => `${a.avatar} <b>${MH.esc(a.username)}</b> (${MH.esc(a.displayName)})${a.usernameLower === currentUser.usernameLower ? ' — you' : ''}`).join('<br>')}</p>
+    <button class="btn" id="s-addacct">＋ Create another account</button>
+    <button class="btn" id="s-lock">🔒 Lock desktop</button>
+    <button class="btn" id="s-signout">Sign out</button>
+
+    <h3 style="color:var(--danger)">Danger zone</h3>
+    <button class="btn danger" id="s-delete">Delete my account &amp; all its data</button>
+    <p class="auth-note">proton is a static clone of Mixt (<i>proton-arcade/mlp</i>, branch <span class="kbd">arena/170861f7-mlp</span>, commit <span class="kbd">c37c6ca</span>), rebranded and rebuilt to run with no server. AGPL-3.0-only — see CREDITS.md / LICENSE.txt in the repository. Open <b>About</b> from App Center for details.</p>
+    </div>`;
+    body.querySelectorAll('[data-wp]').forEach((b) => b.onclick = () => {
+      setWallpaper(b.dataset.wp);
+      body.querySelectorAll('[data-wp]').forEach((x) => x.classList.toggle('sel', x === b));
+    });
+    body.querySelectorAll('[data-accent]').forEach((b) => b.onclick = () => { userData.settings.accent = b.dataset.accent; userData.settings.activeThemeId = 'proton-dark'; saveData(); applyAccent(); openAppRefresh('settings'); });
+    function openAppRefresh(id) { closeWin(id); openApp(id); }
+    body.querySelector('#s-open-customize')?.addEventListener('click', () => openApp('customize'));
+    body.querySelector('#s-saveprofile').onclick = () => {
+      const accounts = MH.accounts();
+      accounts[currentUser.usernameLower].displayName = body.querySelector('#s-name').value.trim() || currentUser.displayName;
+      accounts[currentUser.usernameLower].email = body.querySelector('#s-email').value.trim();
+      MH.saveAccounts(accounts); currentUser = accounts[currentUser.usernameLower];
+      MH.toast('Profile saved.'); renderStartMenu('');
+    };
+    body.querySelector('#s-changepass').onclick = async () => {
+      const err = body.querySelector('#s-passerr');
+      if (!(await MH.verifyPassword(body.querySelector('#s-cur').value, currentUser))) { err.textContent = 'Current password is incorrect.'; return; }
+      const n = body.querySelector('#s-new').value;
+      if (n.length < 6) { err.textContent = 'New password needs at least 6 characters.'; return; }
+      if (n !== body.querySelector('#s-new2').value) { err.textContent = 'New passwords do not match.'; return; }
+      const accounts = MH.accounts(), salt = MH.uid() + MH.uid();
+      accounts[currentUser.usernameLower].salt = salt;
+      accounts[currentUser.usernameLower].hash = await MH.hashPassword(n, salt);
+      MH.saveAccounts(accounts); currentUser = accounts[currentUser.usernameLower];
+      err.textContent = ''; MH.toast('Password changed. Use it next time you sign in or unlock.');
+    };
+    body.querySelector('#s-export').onclick = () => MH.download(`proton-backup-${currentUser.username}.json`, JSON.stringify({ account: { username: currentUser.username, displayName: currentUser.displayName }, exportedAt: new Date().toISOString(), data: userData }, null, 2), 'application/json');
+    body.querySelector('#s-import').onchange = async (e) => {
+      const f = e.target.files[0]; if (!f) return;
+      try {
+        const parsed = JSON.parse(await f.text());
+        if (!parsed.data?.settings) throw new Error('bad file');
+        userData = parsed.data; normalizeUserData(); syncCustomApps(); saveDataNow(); refreshChrome();
+        applyWallpaper();
+        applyAccent(); renderPanelApps(); applyComponents();
+        MH.toast('Backup imported — your desktop was restored.');
+      } catch { MH.toast('That file is not a proton backup.'); }
+    };
+    body.querySelector('#s-addacct').onclick = () => { saveDataNow(); MH.$('desktop').hidden = true; wins.clear(); renderSetup(true); };
+    body.querySelector('#s-lock').onclick = lockDesktop;
+    body.querySelector('#s-signout').onclick = signOut;
+    body.querySelector('#s-delete').onclick = () => {
+      if (!confirmBox(`Delete @${currentUser.username} and ALL its data on this device? This cannot be undone.`)) return;
+      const accounts = MH.accounts(); delete accounts[currentUser.usernameLower];
+      MH.saveAccounts(accounts); localStorage.removeItem(MH.userKey(currentUser.usernameLower));
+      signOut();
+    };
+  },
+});

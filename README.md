@@ -18,6 +18,18 @@ python3 -m http.server 8000
 
 Deployed on GitHub Pages it works as-is from the repo root.
 
+## 🧩 Project layout (everything is a module)
+
+- **Apps:** one folder + file each — `apps/<name>/app.js` (30 apps, incl.
+  🧪 test apps). Add one by copying `apps/_template/` and adding a
+  `<script>` line to `index.html`; remove one by deleting that line.
+  Full guide: [`apps/README.md`](apps/README.md).
+- **Built-in websites:** one folder + file each — `websites/<name>/site.js`
+  (5 sites, incl. 🧪 test sites), rendered by the Browser at
+  `proton://<name>`. Guide: [`websites/README.md`](websites/README.md).
+- **Core only:** `assets/store.js` (accounts/storage), `assets/core.js`
+  (desktop/window manager/registries), `assets/styles.css`, `assets/boot.js`.
+
 ## 🔑 First launch = create your account
 
 1. On first launch you're asked to create an account (display name,

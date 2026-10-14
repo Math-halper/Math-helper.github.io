@@ -28,9 +28,47 @@
 
 <div id="toasts" class="toasts" aria-live="polite"></div>
 
+<!-- core (infrastructure only — apps & websites are separate modules below) -->
 <script src="assets/store.js"></script>
 <script src="assets/core.js"></script>
-<script src="assets/apps.js"></script>
-<script src="assets/games.js"></script>
+<!-- apps: one folder + file per app (apps/<name>/app.js) -->
+<script src="apps/files/app.js"></script>
+<script src="apps/notes/app.js"></script>
+<script src="apps/calendar/app.js"></script>
+<script src="apps/contacts/app.js"></script>
+<script src="apps/mail/app.js"></script>
+<script src="apps/admin-vault/app.js"></script>
+<script src="apps/websites/app.js"></script>
+<script src="apps/app-center/app.js"></script>
+<script src="apps/customize/app.js"></script>
+<script src="apps/settings/app.js"></script>
+<script src="apps/about/app.js"></script>
+<script src="apps/calculator/app.js"></script>
+<script src="apps/spreadsheet/app.js"></script>
+<script src="apps/presentation/app.js"></script>
+<script src="apps/whiteboard/app.js"></script>
+<script src="apps/terminal/app.js"></script>
+<script src="apps/browser/app.js"></script>
+<script src="apps/media/app.js"></script>
+<script src="apps/pdf-viewer/app.js"></script>
+<script src="apps/team-chat/app.js"></script>
+<script src="apps/meetings/app.js"></script>
+<script src="apps/sudoku/app.js"></script>
+<script src="apps/chess/app.js"></script>
+<script src="apps/checkers/app.js"></script>
+<script src="apps/klondike/app.js"></script>
+<script src="apps/backgammon/app.js"></script>
+<script src="apps/g-talk/app.js"></script>
+<script src="apps/hello-test/app.js"></script>
+<script src="apps/speed-test/app.js"></script>
+<script src="apps/storage-test/app.js"></script>
+<!-- built-in websites: one folder + file per site (websites/<name>/site.js) -->
+<script src="websites/guide/site.js"></script>
+<script src="websites/world-history/site.js"></script>
+<script src="websites/maths-resources/site.js"></script>
+<script src="websites/test-page/site.js"></script>
+<script src="websites/proton-daily/site.js"></script>
+<!-- boot: must load last -->
+<script src="assets/boot.js"></script>
 </body>
 </html>

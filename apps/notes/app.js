@@ -1,0 +1,64 @@
+/* proton app module: notes — edit this file to change this app.
+ * Loaded by index.html; calls registerApp() (see apps/README.md). */
+'use strict';
+
+/* ============================ NOTES ============================ */
+/* Adapted from the original Mixt Notes app (src/apps/notes): list + search +
+ * rich-text editor, autosaved — here to per-account localStorage. */
+registerApp({
+  id: 'notes', name: 'Notes', icon: '📝', cat: 'Productivity', desc: 'Rich-text notes, autosaved on this device', w: 900, h: 570,
+  render(body) {
+    let current = userData.notes[0]?.id || null;
+    body.innerHTML = `${bar('Notes', `<button class="btn sm primary" id="n-new">＋ New note</button><button class="btn sm" id="n-del">Delete</button>`)}
+    <div class="split"><aside class="side">
+      <div style="padding:10px"><input id="n-q" type="search" placeholder="Search notes" style="width:100%;padding:7px 9px"></div>
+      <div id="n-list"></div></aside>
+      <div style="display:flex;flex-direction:column;min-height:0;background:#050505">
+        <div class="appbar" id="n-tools" style="background:#111">
+          <button class="btn sm" data-cmd="bold"><b>B</b></button><button class="btn sm" data-cmd="italic"><i>I</i></button><button class="btn sm" data-cmd="underline"><u>U</u></button>
+          <button class="btn sm" data-cmd="insertUnorderedList">• List</button><button class="btn sm" data-cmd="removeFormat">Clear</button>
+          <button class="btn sm" id="n-export">Export .txt</button><span class="muted" id="n-saved" style="margin-left:auto"></span></div>
+        <input class="note-title" id="n-title" placeholder="Title" maxlength="200">
+        <div class="note-body" id="n-body" contenteditable="true"></div>
+      </div></div>`;
+    const list = body.querySelector('#n-list'), title = body.querySelector('#n-title'), editor = body.querySelector('#n-body');
+    const plain = (html) => { const d = document.createElement('div'); d.innerHTML = html; return (d.textContent || '').replace(/\s+/g, ' ').trim(); };
+    function drawList() {
+      const q = body.querySelector('#n-q').value.trim().toLowerCase();
+      const shown = [...userData.notes].sort((a, b) => b.updated - a.updated)
+        .filter((n) => !q || (n.title + ' ' + plain(n.html)).toLowerCase().includes(q));
+      list.innerHTML = shown.length ? shown.map((n) => `
+        <button class="rowitem ${n.id === current ? 'sel' : ''}" data-id="${n.id}"><span><b>${MH.esc(n.title || 'Untitled')}</b><br><span class="muted">${MH.esc(plain(n.html).slice(0, 60)) || ' '}</span></span></button>`).join('')
+        : '<div class="pad muted">No notes.</div>';
+      list.querySelectorAll('[data-id]').forEach((b) => b.onclick = () => { current = b.dataset.id; open(); });
+    }
+    function open() {
+      const n = userData.notes.find((x) => x.id === current);
+      title.value = n?.title || ''; editor.innerHTML = n?.html || '';
+      body.querySelector('#n-saved').textContent = n ? '' : 'Create a note to start writing';
+      drawList();
+    }
+    function persist() {
+      const n = userData.notes.find((x) => x.id === current); if (!n) return;
+      n.title = title.value; n.html = editor.innerHTML; n.updated = Date.now();
+      body.querySelector('#n-saved').textContent = 'Saved ✓'; saveData(); drawList();
+    }
+    title.addEventListener('input', persist); editor.addEventListener('input', persist);
+    body.querySelectorAll('[data-cmd]').forEach((b) => b.onclick = () => { document.execCommand(b.dataset.cmd); editor.focus(); persist(); });
+    body.querySelector('#n-q').addEventListener('input', drawList);
+    body.querySelector('#n-new').onclick = () => {
+      const n = { id: MH.uid(), title: '', html: '', updated: Date.now() };
+      userData.notes.unshift(n); current = n.id; saveData(); open(); title.focus();
+    };
+    body.querySelector('#n-del').onclick = () => {
+      if (!current || !confirmBox('Delete this note?')) return;
+      userData.notes = userData.notes.filter((x) => x.id !== current);
+      current = userData.notes[0]?.id || null; saveData(); open();
+    };
+    body.querySelector('#n-export').onclick = () => {
+      const n = userData.notes.find((x) => x.id === current); if (!n) return;
+      MH.download((n.title || 'note') + '.txt', `${n.title}\n\n${plain(n.html)}`);
+    };
+    open();
+  },
+});
