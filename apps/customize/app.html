@@ -1,0 +1,280 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Customize - proton app</title>
+</head>
+<body>
+<p>This file is a proton app. It is not meant to be opened on its own:
+open <a href="../../index.html">proton</a> and launch <b>Customize</b> from the
+proton menu. The script below is fetched and run by proton's HTML loader
+(assets/html-loader.js) at boot.</p>
+<!-- proton app: everything that registers and renders this app lives in
+     this one script block. Edit it, then reload proton. -->
+<script data-proton-app>
+/* proton app module: customize — edit this file to change this app.
+ * Loaded by index.html; calls registerApp() (see apps/README.md). */
+'use strict';
+
+/* ============================ CUSTOMIZE (modular everything) ============================ */
+registerApp({
+  id: 'customize', name: 'Customize', icon: 'sliders', cat: 'System', desc: 'Remove & edit apps, themes, wallpapers and desktop parts', w: 1020, h: 660,
+  render(body) {
+    normalizeUserData(); applyModuleOverrides();
+    const PROTECTED = ['appcenter', 'settings', 'customize'];
+    const WP_BUILTINS = [['mint', 'Charcoal'], ['ocean', 'Smoke'], ['sunset', 'Ash'], ['grape', 'Graphite'], ['slate', 'Slate'], ['rose', 'Silver']];
+    body.innerHTML = `${bar('Customize — everything is a module')}
+    <div class="app-main pad">
+    <p class="muted" style="margin-top:0">Rename apps, change their icons, move them between categories, reorder them, hide or restore them — then invent your own themes and wallpapers. Everything here is saved per account, and <b>Reset customisations</b> at the bottom undoes it all without touching your notes, files or other content.</p>
+    <div style="display:flex;gap:7px;flex-wrap:wrap;margin-bottom:6px">
+      <a class="btn sm" href="#cust-apps" data-jump="cust-apps">${iconSvg('grid')} Apps</a><a class="btn sm" href="#cust-themes" data-jump="cust-themes">${iconSvg('palette')} Themes</a><a class="btn sm" href="#cust-walls" data-jump="cust-walls">${iconSvg('image')} Wallpapers</a><a class="btn sm" href="#cust-desktop" data-jump="cust-desktop">${iconSvg('monitor')} Desktop parts</a>
+      <button class="btn sm" id="cust-goto-appcenter">${iconSvg('grid')} Manage apps in App Center</button>
+    </div>
+
+    <h3 id="cust-apps">${iconSvg('grid')} App modules</h3>
+    <div class="field"><label>Search modules</label><input id="cust-q" type="search" placeholder="Search by name, category or id…" style="padding:8px 10px"></div>
+    <datalist id="cust-cats">${[...new Set([...CATS, ...Object.values(APPS).map((a) => a.cat)])].map((c) => `<option value="${MH.esc(c)}">`).join('')}</datalist>
+    <div id="cust-modlist"></div>
+
+    <h3 id="cust-themes">${iconSvg('palette')} Themes</h3>
+    <div class="grid-cards" id="cust-themelist"></div>
+    <div class="card" style="margin-top:12px"><b>Add a theme</b>
+      <form id="cust-theme-form" class="add-form" style="margin-top:8px">
+        <div class="field"><label>Theme name</label><input id="ct-name" required maxlength="36" placeholder="e.g. Midnight Forest"></div>
+        <div class="field"><label>Accent colour</label><input id="ct-accent" type="color" value="#ffffff" style="height:38px;padding:2px"></div>
+        <div class="field"><label>Wallpaper</label><select id="ct-wallpaper"></select></div>
+        <button class="btn primary" type="submit">Add & apply theme</button>
+      </form></div>
+
+    <h3 id="cust-walls">${iconSvg('image')} Wallpapers</h3>
+    <div class="grid-cards" id="cust-walllist"></div>
+    <div class="card" style="margin-top:12px"><b>Add a wallpaper</b>
+      <form id="cust-wall-form" class="add-form" style="margin-top:8px">
+        <div class="field"><label>Wallpaper name</label><input id="cw-name" required maxlength="36" placeholder="e.g. Deep Space"></div>
+        <div class="field"><label>Colour 1</label><input id="cw-from" type="color" value="#1a1a1a" style="height:38px;padding:2px"></div>
+        <div class="field"><label>Colour 2</label><input id="cw-to" type="color" value="#000000" style="height:38px;padding:2px"></div>
+        <button class="btn primary" type="submit">Add & apply wallpaper</button>
+      </form></div>
+
+    <h3 id="cust-desktop">${iconSvg('monitor')} Desktop parts</h3>
+    <div class="card" id="cust-components"></div>
+
+    <h3>${iconSvg('refresh')} Start over</h3>
+    <div class="card"><p class="muted" style="margin-top:0">Reset every customisation (app renames/icons/categories/order, hidden apps, pins, themes, wallpapers, desktop parts) back to proton defaults. Your content — notes, files, calendar, saved web apps and websites — is <b>not</b> deleted.</p>
+    <button class="btn danger" id="cust-reset">Reset customisations</button></div>
+    </div>`;
+
+    const wpOptions = (selected) => [...WP_BUILTINS.map(([id, n]) => `<option value="${id}" ${selected === id ? 'selected' : ''}>${n} (built-in)</option>`),
+      ...userData.customWallpapers.map((w) => `<option value="${w.id}" ${selected === w.id ? 'selected' : ''}>${MH.esc(w.name)} (mine)</option>`)].join('');
+
+    function drawModules() {
+      const q = body.querySelector('#cust-q').value.trim().toLowerCase();
+      const builtins = Object.values(APPS).filter((a) => !dynamicAppIds.has(a.id))
+        .filter((a) => !q || (a.name + ' ' + a.cat + ' ' + a.id + ' ' + a.desc).toLowerCase().includes(q))
+        .sort((x, y) => (x.sortOrder ?? x.baseIndex ?? 999) - (y.sortOrder ?? y.baseIndex ?? 999));
+      const customs = userData.customApps.filter((a) => !q || (a.name + ' ' + a.url).toLowerCase().includes(q));
+      body.querySelector('#cust-modlist').innerHTML =
+        builtins.map((a) => {
+          const removed = userData.hiddenApps.includes(a.id), edited = !!userData.moduleOverrides[a.id];
+          return `<div class="card" style="margin-bottom:9px;${removed ? 'opacity:.62' : ''}">
+          <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center">
+            <span style="font-size:23px">${iconFor(a.icon)}</span><b>${MH.esc(a.name)}</b>
+            <span class="chip">${MH.esc(a.cat)}</span><span class="muted">${a.id}</span>
+            ${edited ? '<span class="chip">Edited</span>' : ''}${removed ? '<span class="chip" style="background:#4a1713;color:#ffb4ab">Removed</span>' : ''}
+            <span style="margin-left:auto;display:flex;gap:6px;flex-wrap:wrap">
+              ${removed ? `<button class="btn sm primary" data-mrestore="${a.id}">${iconSvg('plus')} Add back</button>` : `<button class="btn sm primary" data-mopen="${a.id}">Open</button><button class="btn sm" data-mpin="${a.id}">${userData.settings.pinned.includes(a.id) ? 'Unpin' : iconSvg('pin') + ' Pin'}</button>${PROTECTED.includes(a.id) ? '' : `<button class="btn sm" data-mhide="${a.id}">Remove</button>`}`}
+              ${edited ? `<button class="btn sm" data-mreset="${a.id}">Reset</button>` : ''}
+            </span></div>
+          <div class="add-form" style="margin-top:9px;grid-template-columns:150px 1.5fr 1.2fr 70px 2fr">
+            <div class="field"><label>Icon</label><select data-micon="${a.id}">${iconOptions(a.icon)}</select></div>
+            <div class="field"><label>Name</label><input data-mname="${a.id}" value="${MH.esc(a.name)}" maxlength="40"></div>
+            <div class="field"><label>Category</label><input data-mcat="${a.id}" value="${MH.esc(a.cat)}" list="cust-cats" maxlength="24"></div>
+            <div class="field"><label>Order</label><input data-morder="${a.id}" type="number" value="${userData.moduleOverrides[a.id]?.order ?? ''}" placeholder="auto"></div>
+            <div class="field"><label>Description</label><input data-mdesc="${a.id}" value="${MH.esc(a.desc)}" maxlength="110"></div>
+          </div>
+          <button class="btn sm" data-msave="${a.id}" style="margin-top:8px">Save changes</button>
+          <span class="muted">Tip: give several apps the same new category name to create your own menu section.</span></div>`;
+        }).join('') +
+        (customs.length ? customs.map((a) => `<div class="card" style="margin-bottom:9px"><span style="font-size:23px">${iconFor(a.icon, 'grid')}</span> <b>${MH.esc(a.name)}</b> <span class="chip">My Apps</span> <span class="muted site-url">${MH.esc(a.url)}</span>
+          <span style="margin-left:8px"></span><button class="btn sm primary" data-copen="${a.id}">Open</button> <button class="btn sm" data-cmanage="${a.id}">Edit / remove in App Center</button></div>`).join('') : '');
+      body.querySelectorAll('[data-mopen]').forEach((b) => b.onclick = () => openApp(b.dataset.mopen));
+      body.querySelectorAll('[data-copen]').forEach((b) => b.onclick = () => openApp(b.dataset.copen));
+      body.querySelectorAll('[data-cmanage]').forEach((b) => b.onclick = () => openApp('appcenter'));
+      body.querySelectorAll('[data-mpin]').forEach((b) => b.onclick = () => {
+        const id = b.dataset.mpin, p = userData.settings.pinned;
+        userData.settings.pinned = p.includes(id) ? p.filter((x) => x !== id) : [...p, id];
+        saveData(); renderPanelApps(); drawModules();
+      });
+      body.querySelectorAll('[data-mhide]').forEach((b) => b.onclick = () => {
+        const a = APPS[b.dataset.mhide];
+        if (a && confirmBox(`Remove “${a.name}” from the proton menu? You can add it back here or in App Center.`)) {
+          closeWin(a.id); userData.hiddenApps.push(a.id);
+          userData.settings.pinned = userData.settings.pinned.filter((x) => x !== a.id);
+          saveData(); refreshChrome(); drawModules();
+        }
+      });
+      body.querySelectorAll('[data-mrestore]').forEach((b) => b.onclick = () => {
+        userData.hiddenApps = userData.hiddenApps.filter((x) => x !== b.dataset.mrestore);
+        saveData(); refreshChrome(); drawModules();
+      });
+      body.querySelectorAll('[data-mreset]').forEach((b) => b.onclick = () => {
+        delete userData.moduleOverrides[b.dataset.mreset];
+        applyModuleOverrides(); saveData(); refreshChrome(); drawModules(); MH.toast('Module reset to its defaults.');
+      });
+      body.querySelectorAll('[data-msave]').forEach((b) => b.onclick = () => {
+        const id = b.dataset.msave, base = BASE_MODULES[id], a = APPS[id]; if (!base || !a) return;
+        const val = (attr) => body.querySelector(`[data-${attr}="${id}"]`).value.trim();
+        const o = {};
+        if (val('mname') && val('mname') !== base.name) o.name = val('mname');
+        if (val('micon') && val('micon') !== base.icon) o.icon = val('micon');
+        if (val('mcat') && val('mcat') !== base.cat) o.cat = val('mcat');
+        if (val('mdesc') !== base.desc) o.desc = val('mdesc');
+        const ord = body.querySelector(`[data-morder="${id}"]`).value;
+        if (ord !== '') o.order = Number(ord);
+        if (Object.keys(o).length) userData.moduleOverrides[id] = o; else delete userData.moduleOverrides[id];
+        applyModuleOverrides(); saveData(); refreshChrome(); drawModules();
+        MH.toast(`“${APPS[id].name}” updated — see it in the proton menu.`);
+      });
+    }
+
+    function drawThemes() {
+      const active = userData.settings.activeThemeId;
+      body.querySelector('#cust-themelist').innerHTML = `
+        <div class="card" ${active === 'proton-dark' ? 'style="outline:2px solid var(--accent)"' : ''}><div class="card-ic" style="font-size:26px">${iconSvg('moon')}</div>
+          <h3 style="margin:6px 0 3px">proton Dark ${active === 'proton-dark' ? '<span class="chip">Active</span>' : ''}</h3>
+          <p class="muted">The built-in theme: black backgrounds, white text, and a white/grey accent shade.</p>
+          <div class="field"><label>Accent</label><select data-builtin-accent>${Object.entries(ACCENTS).map(([hex, a]) => `<option value="${hex}" ${userData.settings.accent === hex && active === 'proton-dark' ? 'selected' : ''}>${a.name}</option>`).join('')}</select></div>
+          ${active === 'proton-dark' ? '' : '<button class="btn sm primary" data-theme-builtin="1">Apply</button>'}</div>` +
+        userData.customThemes.map((th) => `
+        <div class="card" ${active === th.id ? 'style="outline:2px solid var(--accent)"' : ''}><div class="card-ic" style="font-size:26px">${iconSvg('palette')}</div>
+          ${active === th.id ? '<span class="chip">Active</span>' : ''}
+          <div class="field"><label>Theme name</label><input data-thname="${th.id}" value="${MH.esc(th.name)}" maxlength="36"></div>
+          <div class="field"><label>Accent colour</label><input data-thaccent="${th.id}" type="color" value="${MH.esc(th.accent)}" style="height:36px;padding:2px;width:100%"></div>
+          <div class="field"><label>Wallpaper</label><select data-thwall="${th.id}">${wpOptions(th.wallpaper)}</select></div>
+          <button class="btn sm" data-thsave="${th.id}">Save</button>
+          ${active === th.id ? '' : `<button class="btn sm primary" data-thapply="${th.id}">Apply</button>`}
+          <button class="btn sm" data-thdel="${th.id}">Delete</button></div>`).join('');
+      body.querySelector('[data-builtin-accent]').onchange = (e) => {
+        userData.settings.accent = e.target.value; userData.settings.activeThemeId = 'proton-dark';
+        saveData(); applyAccent(); drawThemes();
+      };
+      body.querySelector('[data-theme-builtin]')?.addEventListener('click', () => {
+        userData.settings.activeThemeId = 'proton-dark'; saveData(); applyAccent(); drawThemes();
+      });
+      body.querySelectorAll('[data-thsave]').forEach((b) => b.onclick = () => {
+        const th = userData.customThemes.find((x) => x.id === b.dataset.thsave); if (!th) return;
+        th.name = body.querySelector(`[data-thname="${th.id}"]`).value.trim() || th.name;
+        th.accent = body.querySelector(`[data-thaccent="${th.id}"]`).value;
+        th.wallpaper = body.querySelector(`[data-thwall="${th.id}"]`).value;
+        saveData(); if (activeCustomTheme()?.id === th.id) { applyAccent(); applyWallpaper(); }
+        drawThemes(); MH.toast('Theme saved.');
+      });
+      body.querySelectorAll('[data-thapply]').forEach((b) => b.onclick = () => {
+        const th = userData.customThemes.find((x) => x.id === b.dataset.thapply); if (!th) return;
+        userData.settings.activeThemeId = th.id; userData.settings.accent = th.accent;
+        if (th.wallpaper) userData.settings.wallpaper = th.wallpaper;
+        saveData(); applyAccent(); applyWallpaper(); drawThemes(); MH.toast(`Theme “${th.name}” applied.`);
+      });
+      body.querySelectorAll('[data-thdel]').forEach((b) => b.onclick = () => {
+        const th = userData.customThemes.find((x) => x.id === b.dataset.thdel);
+        if (!th || !confirmBox(`Delete the theme “${th.name}”?`)) return;
+        userData.customThemes = userData.customThemes.filter((x) => x.id !== th.id);
+        if (userData.settings.activeThemeId === th.id) { userData.settings.activeThemeId = 'proton-dark'; applyAccent(); }
+        saveData(); drawThemes();
+      });
+      const sel = body.querySelector('#ct-wallpaper');
+      if (sel) sel.innerHTML = wpOptions(userData.settings.wallpaper);
+    }
+
+    function drawWalls() {
+      body.querySelector('#cust-walllist').innerHTML =
+        WP_BUILTINS.map(([id, n]) => `<div class="card"><div style="height:44px;border-radius:6px" class="wp-${id}"></div><h3 style="margin:7px 0 3px">${n}</h3><p class="muted">Built-in wallpaper</p>${userData.settings.wallpaper === id ? '<span class="chip">Active</span>' : `<button class="btn sm primary" data-wapply="${id}">Apply</button>`}</div>`).join('') +
+        userData.customWallpapers.map((w) => `<div class="card">
+          <div style="height:44px;border-radius:6px;background:linear-gradient(150deg, ${MH.esc(w.from)}, ${MH.esc(w.to)})"></div>
+          ${userData.settings.wallpaper === w.id ? '<span class="chip" style="margin-top:7px">Active</span>' : ''}
+          <div class="field"><label>Name</label><input data-wname="${w.id}" value="${MH.esc(w.name)}" maxlength="36"></div>
+          <div style="display:flex;gap:8px"><div class="field" style="flex:1"><label>Colour 1</label><input data-wfrom="${w.id}" type="color" value="${MH.esc(w.from)}" style="height:34px;padding:2px;width:100%"></div>
+          <div class="field" style="flex:1"><label>Colour 2</label><input data-wto="${w.id}" type="color" value="${MH.esc(w.to)}" style="height:34px;padding:2px;width:100%"></div></div>
+          <button class="btn sm" data-wsave="${w.id}">Save</button>
+          ${userData.settings.wallpaper === w.id ? '' : `<button class="btn sm primary" data-wapply="${w.id}">Apply</button>`}
+          <button class="btn sm" data-wdel="${w.id}">Delete</button></div>`).join('');
+      body.querySelectorAll('[data-wapply]').forEach((b) => b.onclick = () => { setWallpaper(b.dataset.wapply); drawWalls(); drawThemes(); });
+      body.querySelectorAll('[data-wsave]').forEach((b) => b.onclick = () => {
+        const w = userData.customWallpapers.find((x) => x.id === b.dataset.wsave); if (!w) return;
+        w.name = body.querySelector(`[data-wname="${w.id}"]`).value.trim() || w.name;
+        w.from = body.querySelector(`[data-wfrom="${w.id}"]`).value;
+        w.to = body.querySelector(`[data-wto="${w.id}"]`).value;
+        saveData(); applyWallpaper(); drawWalls(); MH.toast('Wallpaper saved.');
+      });
+      body.querySelectorAll('[data-wdel]').forEach((b) => b.onclick = () => {
+        const w = userData.customWallpapers.find((x) => x.id === b.dataset.wdel);
+        if (!w || !confirmBox(`Delete the wallpaper “${w.name}”?`)) return;
+        userData.customWallpapers = userData.customWallpapers.filter((x) => x.id !== w.id);
+        if (userData.settings.wallpaper === w.id) setWallpaper('mint');
+        saveData(); drawWalls(); drawThemes();
+      });
+    }
+
+    function drawComponents() {
+      const c = userData.settings.components;
+      const items = [
+        ['clock', iconSvg('clock') + ' Clock in the panel'],
+        ['desktopHint', iconSvg('calendar') + ' Date & hint on the desktop'],
+        ['lockButton', iconSvg('lock') + ' Lock button in the panel'],
+        ['userButton', iconSvg('user') + ' Account button in the panel'],
+        ['startSearch', iconSvg('search') + ' Search box in the proton menu'],
+        ['panelLabels', iconSvg('edit') + ' Names next to pinned panel icons'],
+      ];
+      body.querySelector('#cust-components').innerHTML = items.map(([key, label]) =>
+        `<label style="display:flex;gap:9px;align-items:center;padding:7px 0;font-weight:600"><input type="checkbox" data-comp="${key}" ${c[key] ? 'checked' : ''} style="width:18px;height:18px;accent-color:var(--accent)"> ${label}</label>`).join('') +
+        '<p class="muted">Parts switch instantly — nothing reloads and no windows close.</p>';
+      body.querySelectorAll('[data-comp]').forEach((box) => box.onchange = () => {
+        userData.settings.components[box.dataset.comp] = box.checked;
+        saveData(); applyComponents(); renderPanelApps();
+      });
+    }
+
+    body.querySelector('#cust-q').addEventListener('input', drawModules);
+    body.querySelector('#cust-goto-appcenter').onclick = () => openApp('appcenter');
+    body.querySelectorAll('[data-jump]').forEach((a) => a.onclick = (e) => {
+      e.preventDefault();
+      body.querySelector('#' + a.dataset.jump)?.scrollIntoView({ behavior: 'smooth' });
+    });
+    body.querySelector('#cust-theme-form').onsubmit = (e) => {
+      e.preventDefault();
+      const th = { id: 'theme-' + MH.uid(), name: body.querySelector('#ct-name').value.trim(), accent: body.querySelector('#ct-accent').value, wallpaper: body.querySelector('#ct-wallpaper').value };
+      userData.customThemes.push(th);
+      userData.settings.activeThemeId = th.id; userData.settings.accent = th.accent;
+      if (th.wallpaper) userData.settings.wallpaper = th.wallpaper;
+      saveData(); applyAccent(); applyWallpaper();
+      e.target.reset(); body.querySelector('#ct-accent').value = '#ffffff';
+      drawThemes(); MH.toast(`Theme “${th.name}” added and applied.`);
+    };
+    body.querySelector('#cust-wall-form').onsubmit = (e) => {
+      e.preventDefault();
+      const w = { id: 'wall-' + MH.uid(), name: body.querySelector('#cw-name').value.trim(), from: body.querySelector('#cw-from').value, to: body.querySelector('#cw-to').value };
+      userData.customWallpapers.push(w);
+      saveData(); setWallpaper(w.id);
+      e.target.reset(); body.querySelector('#cw-from').value = '#0b1026'; body.querySelector('#cw-to').value = '#000000';
+      drawWalls(); drawThemes(); MH.toast(`Wallpaper “${w.name}” added and applied.`);
+    };
+    body.querySelector('#cust-reset').onclick = () => {
+      if (!confirmBox('Reset ALL customisations to proton defaults? Your notes, files, custom apps, websites and other content stay untouched.')) return;
+      userData.moduleOverrides = {}; userData.hiddenApps = [];
+      userData.settings.pinned = ['files', 'math', 'notes', 'browser', 'terminal'];
+      userData.customThemes = []; userData.customWallpapers = [];
+      userData.settings.activeThemeId = 'proton-dark';
+      userData.settings.accent = '#ffffff'; userData.settings.wallpaper = 'mint';
+      userData.settings.components = { clock: true, desktopHint: true, lockButton: true, userButton: true, startSearch: true, panelLabels: false };
+      applyModuleOverrides(); saveData(); applyAccent(); applyWallpaper(); applyComponents(); refreshChrome();
+      drawModules(); drawThemes(); drawWalls(); drawComponents();
+      MH.toast('Customisations reset to defaults.');
+    };
+
+    drawModules(); drawThemes(); drawWalls(); drawComponents();
+  },
+});
+</script>
+</body>
+</html>

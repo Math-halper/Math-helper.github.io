@@ -1,0 +1,104 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Backgammon - proton app</title>
+</head>
+<body>
+<p>This file is a proton app. It is not meant to be opened on its own:
+open <a href="../../index.html">proton</a> and launch <b>Backgammon</b> from the
+proton menu. The script below is fetched and run by proton's HTML loader
+(assets/html-loader.js) at boot.</p>
+<!-- proton app: everything that registers and renders this app lives in
+     this one script block. Edit it, then reload proton. -->
+<script data-proton-app>
+/* proton app module: backgammon — edit this file to change this app.
+ * Loaded by index.html; calls registerApp() (see apps/README.md). */
+'use strict';
+
+/* ============================ BACKGAMMON (practice board) ============================ */
+registerApp({
+  id: 'backgammon', name: 'Backgammon', icon: 'dice', cat: 'Games', desc: 'Practice board: dice, moves, hits & bearing off', w: 940, h: 640,
+  render(body) {
+    let pts, dice, used, turn, onBar, off;
+    function fresh() {
+      pts = Array.from({ length: 24 }, () => ({ c: '', n: 0 }));
+      const set = (i, c, n) => pts[i] = { c, n };
+      set(0, 'w', 2); set(11, 'w', 5); set(16, 'w', 3); set(18, 'w', 5);
+      set(23, 'b', 2); set(12, 'b', 5); set(7, 'b', 3); set(5, 'b', 5);
+      dice = []; used = []; turn = 'w'; onBar = { w: 0, b: 0 }; off = { w: 0, b: 0 };
+    }
+    fresh();
+    let sel = null;
+    body.innerHTML = `${bar('Backgammon — practice', `<button class="btn sm primary" id="bg-roll">${iconSvg('dice')} Roll dice</button><button class="btn sm" id="bg-new">New game</button><span class="muted" id="bg-dice" style="margin-left:auto"></span>`)}
+    <div class="app-main pad"><div id="bg-board"></div><p id="bg-status" style="font-weight:600"></p>
+    <p class="muted"><span class="pdot w"></span> White moves 0 to 23, <span class="pdot b"></span> Black moves 23 to 0. Roll, click one of your points, then click a highlighted destination. Landing on a single opponent checker hits it to the bar; points with 2+ opponents are blocked. Bear off from your home quarter (White 18–23, Black 0–5) once all your checkers are home. This is a relaxed practice board — doubles give two moves here.</p></div>`;
+    const home = (c) => c === 'w' ? pts.slice(18).reduce((s, p) => s + (p.c === 'w' ? p.n : 0), 0) + off.w === 15 && onBar.w === 0 : pts.slice(0, 6).reduce((s, p) => s + (p.c === 'b' ? p.n : 0), 0) + off.b === 15 && onBar.b === 0;
+    function dests(from) {
+      if (onBar[turn] > 0 && from !== -1) return [];
+      const remaining = dice.filter((d, i) => !used.includes(i));
+      const out = [];
+      for (const d of remaining) {
+        const to = from === -1 ? (turn === 'w' ? d - 1 : 24 - d) : from + (turn === 'w' ? d : -d);
+        if (to > 23 || to < 0) { if (from >= 0 && home(turn)) out.push({ to: 99, die: d }); continue; }
+        const p = pts[to];
+        if (!p.n || p.c === turn || p.n === 1) out.push({ to, die: d });
+      }
+      return out;
+    }
+    function draw(msg = '') {
+      const renderPt = (i) => {
+        const p = pts[i], ds = sel !== null ? dests(sel) : [];
+        const isDest = ds.some((d) => d.to === i);
+        return `<button data-pt="${i}" style="min-height:74px;border:1px solid var(--line);border-radius:6px;background:${i % 2 ? '#e8dcc3' : '#f5efe0'};${isDest ? 'outline:3px solid var(--accent);' : ''}${sel === i ? 'outline:3px solid #8a8a8a;' : ''}padding:4px">
+          <small style="color:#888">${i}</small><br><span style="font-size:19px;color:${p.c === 'w' ? '#fff' : '#222'};text-shadow:0 0 3px #000">${p.n ? '<span class="bg-pips">' + '<i class="bg-checker ' + p.c + '"></i>'.repeat(Math.min(p.n, 5)) + '</span>' : ''}</span>${p.n > 5 ? `<br><small>×${p.n}</small>` : ''}</button>`;
+      };
+      body.querySelector('#bg-board').innerHTML = `
+        <div style="display:grid;grid-template-columns:repeat(12,1fr);gap:4px">${[11, 10, 9, 8, 7, 6, 5, 4, 3, 2, 1, 0].map(renderPt).join('')}</div>
+        <div style="display:flex;justify-content:space-between;padding:7px 2px" class="muted"><span><span class="pdot w"></span> Bar: ${onBar.w} · Borne off: ${off.w}/15</span><span>${turn === 'w' ? 'White' : 'Black'} to move</span><span><span class="pdot b"></span> Bar: ${onBar.b} · Borne off: ${off.b}/15</span></div>
+        <div style="display:grid;grid-template-columns:repeat(12,1fr);gap:4px">${[12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23].map(renderPt).join('')}</div>
+        ${onBar[turn] > 0 ? '<button class="btn primary" id="bg-bar" style="margin-top:9px">Enter from bar (select, then click destination)</button>' : ''}
+        ${sel !== null && dests(sel).some((d) => d.to === 99) ? '<button class="btn primary" id="bg-off" style="margin-top:9px;margin-left:7px">Bear off selected checker</button>' : ''}`;
+      body.querySelector('#bg-dice').textContent = dice.length ? `Dice: ${dice.map((d, i) => used.includes(i) ? `(${d} used)` : d).join(' · ')}` : 'Roll to start';
+      body.querySelector('#bg-status').textContent = off.w === 15 ? 'White wins!' : off.b === 15 ? 'Black wins!' : msg || (dice.length && used.length >= dice.length ? 'Out of moves — roll for the next player.' : '');
+      body.querySelectorAll('[data-pt]').forEach((el) => el.onclick = () => clickPt(+el.dataset.pt));
+      body.querySelector('#bg-bar')?.addEventListener('click', () => { sel = -1; draw('Choose where to enter from the bar.'); });
+      body.querySelector('#bg-off')?.addEventListener('click', () => {
+        const d = dests(sel).find((x) => x.to === 99); if (!d) return;
+        pts[sel].n--; if (!pts[sel].n) pts[sel].c = '';
+        off[turn]++; used.push(dice.indexOf(d.die)); sel = null; afterMove();
+      });
+    }
+    function afterMove() {
+      draw();
+      if (dice.length && used.length >= dice.length) { turn = turn === 'w' ? 'b' : 'w'; dice = []; used = []; sel = null; setTimeout(() => draw(`Now ${turn === 'w' ? 'White' : 'Black'} - roll the dice.`), 350); }
+    }
+    function clickPt(i) {
+      if (!dice.length) { draw('Roll the dice first.'); return; }
+      if (sel !== null) {
+        const d = dests(sel).find((x) => x.to === i);
+        if (d) {
+          if (sel === -1) onBar[turn]--; else { pts[sel].n--; if (!pts[sel].n) pts[sel].c = ''; }
+          const p = pts[i];
+          if (p.n === 1 && p.c !== turn) { onBar[p.c]++; pts[i] = { c: turn, n: 1 }; }
+          else if (p.n && p.c === turn) p.n++;
+          else pts[i] = { c: turn, n: 1 };
+          used.push(dice.indexOf(d.die)); sel = null; afterMove(); return;
+        }
+      }
+      if (onBar[turn] > 0) { draw('You have a checker on the bar — enter it first.'); return; }
+      sel = pts[i].c === turn ? i : null; draw();
+    }
+    body.querySelector('#bg-roll').onclick = () => {
+      if (dice.length && used.length < dice.length) { draw('Use your current dice first.'); return; }
+      dice = [1 + Math.floor(Math.random() * 6), 1 + Math.floor(Math.random() * 6)]; used = []; sel = onBar[turn] > 0 ? -1 : null;
+      draw(`Rolled ${dice.join(' + ')}. ${onBar[turn] ? 'Enter from the bar first.' : 'Pick a point to move.'}`);
+    };
+    body.querySelector('#bg-new').onclick = () => { fresh(); sel = null; draw('New game — White rolls first.'); };
+    draw('White rolls first.');
+  },
+});
+</script>
+</body>
+</html>

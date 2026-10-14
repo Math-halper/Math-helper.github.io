@@ -1,0 +1,81 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Files - proton app</title>
+</head>
+<body>
+<p>This file is a proton app. It is not meant to be opened on its own:
+open <a href="../../index.html">proton</a> and launch <b>Files</b> from the
+proton menu. The script below is fetched and run by proton's HTML loader
+(assets/html-loader.js) at boot.</p>
+<!-- proton app: everything that registers and renders this app lives in
+     this one script block. Edit it, then reload proton. -->
+<script data-proton-app>
+/* proton app module: files — edit this file to change this app.
+ * Loaded by index.html; calls registerApp() (see apps/README.md). */
+'use strict';
+
+/* ============================ FILES ============================ */
+registerApp({
+  id: 'files', name: 'Files', icon: 'folder', cat: 'Productivity', desc: 'Virtual drive: folders & text files saved per account', w: 880, h: 560,
+  render(body) {
+    let folder = 'Home', selected = null;
+    body.innerHTML = `${bar('Files', `<button class="btn sm" id="f-new">${iconSvg('plus')} Text file</button><button class="btn sm" id="f-folder">${iconSvg('plus')} Folder</button><label class="btn sm" style="margin:0">${iconSvg('upload')} Import .txt<input id="f-import" type="file" accept=".txt,.md,.csv" hidden></label><button class="btn sm" id="f-del">${iconSvg('trash')} Delete</button>`)}
+    <div class="split"><aside class="side" id="f-folders"></aside><div style="display:flex;flex-direction:column;min-height:0">
+      <div class="app-main" id="f-main"></div><div id="f-editor"></div></div></div>`;
+    const main = body.querySelector('#f-main'), ed = body.querySelector('#f-editor');
+    function draw() {
+      body.querySelector('#f-folders').innerHTML = userData.fileFolders.map((f) =>
+        `<button class="rowitem ${f === folder ? 'sel' : ''}" data-f="${MH.esc(f)}">${iconSvg('folder')} ${MH.esc(f)} <span class="muted" style="margin-left:auto">${userData.files.filter((x) => x.folder === f).length}</span></button>`).join('') +
+        `<div class="pad muted" style="padding-top:8px">${MH.fmtBytes(JSON.stringify(userData.files).length)} of text stored<br>on this device.</div>`;
+      body.querySelectorAll('[data-f]').forEach((b) => b.onclick = () => { folder = b.dataset.f; selected = null; draw(); });
+      const items = userData.files.filter((x) => x.folder === folder);
+      main.innerHTML = items.length ? `<div class="file-grid">${items.map((f) => `
+        <button class="file-item ${f.id === selected ? 'sel' : ''}" data-id="${f.id}"><span class="ic">${iconSvg('file-text')}</span>${MH.esc(f.name)}<span class="muted">${MH.fmtBytes(f.content.length)}</span></button>`).join('')}</div>`
+        : `<div class="pad muted">This folder is empty. Create a text file to get started.</div>`;
+      main.querySelectorAll('.file-item').forEach((b) => {
+        b.onclick = () => { selected = b.dataset.id; draw(); };
+        b.ondblclick = () => { selected = b.dataset.id; draw(); edit(); };
+      });
+      const f = userData.files.find((x) => x.id === selected);
+      ed.innerHTML = f ? `<div style="border-top:1px solid var(--line);background:#111">
+          <div class="appbar"><strong style="margin-right:auto">${iconSvg('file-text')} ${MH.esc(f.name)}</strong>
+          <button class="btn sm" id="fe-rename">Rename</button><button class="btn sm" id="fe-dl">${iconSvg('download')} Download</button><button class="btn sm primary" id="fe-save">Save</button></div>
+          <textarea id="fe-text" rows="9" style="border:0;border-radius:0;resize:vertical">${MH.esc(f.content)}</textarea></div>` : '';
+      if (f) {
+        const ta = ed.querySelector('#fe-text');
+        ed.querySelector('#fe-save').onclick = () => { f.content = ta.value; f.updated = Date.now(); saveData(); draw(); MH.toast('File saved.'); };
+        ta.addEventListener('input', () => { f.content = ta.value; f.updated = Date.now(); saveData(); });
+        ed.querySelector('#fe-dl').onclick = () => MH.download(f.name, f.content);
+        ed.querySelector('#fe-rename').onclick = () => { const n = prompt('File name:', f.name); if (n?.trim()) { f.name = n.trim(); saveData(); draw(); } };
+      }
+    }
+    function edit() { const f = userData.files.find((x) => x.id === selected); if (f) ed.querySelector('#fe-text')?.focus(); }
+    body.querySelector('#f-new').onclick = () => {
+      const name = prompt('File name:', 'Untitled.txt'); if (!name?.trim()) return;
+      const f = { id: MH.uid(), name: name.trim(), folder, type: 'text', content: '', updated: Date.now() };
+      userData.files.push(f); selected = f.id; saveData(); draw(); edit();
+    };
+    body.querySelector('#f-folder').onclick = () => {
+      const name = prompt('Folder name:'); if (!name?.trim()) return;
+      if (!userData.fileFolders.includes(name.trim())) userData.fileFolders.push(name.trim());
+      folder = name.trim(); saveData(); draw();
+    };
+    body.querySelector('#f-del').onclick = () => {
+      const f = userData.files.find((x) => x.id === selected);
+      if (!f) { MH.toast('Select a file first.'); return; }
+      if (confirmBox(`Delete ${f.name}?`)) { userData.files = userData.files.filter((x) => x.id !== f.id); selected = null; saveData(); draw(); }
+    };
+    body.querySelector('#f-import').onchange = async (e) => {
+      const file = e.target.files[0]; if (!file) return;
+      userData.files.push({ id: MH.uid(), name: file.name, folder, type: 'text', content: await file.text(), updated: Date.now() });
+      saveData(); draw(); MH.toast(`Imported ${file.name}`);
+    };
+    draw();
+  },
+});
+</script>
+</body>
+</html>

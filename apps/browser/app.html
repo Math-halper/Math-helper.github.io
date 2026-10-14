@@ -1,0 +1,92 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Browser - proton app</title>
+</head>
+<body>
+<p>This file is a proton app. It is not meant to be opened on its own:
+open <a href="../../index.html">proton</a> and launch <b>Browser</b> from the
+proton menu. The script below is fetched and run by proton's HTML loader
+(assets/html-loader.js) at boot.</p>
+<!-- proton app: everything that registers and renders this app lives in
+     this one script block. Edit it, then reload proton. -->
+<script data-proton-app>
+/* proton app module: browser — edit this file to change this app.
+ * Loaded by index.html; calls registerApp() (see apps/README.md).
+ *
+ * The Browser renders BUILT-IN WEBSITES from the SITES registry. Every
+ * built-in site is a real HTML page in its own folder:
+ * websites/<name>/site.html. Add a site there + one <link> line in
+ * index.html and it shows up here automatically. The user's own saved
+ * websites live in userData and are managed by apps/app-center
+ * and on the Browser home page below.
+ */
+'use strict';
+
+registerApp({
+  id: 'browser', name: 'Browser', icon: 'globe', cat: 'Learn', desc: 'Built-in websites (each in websites/<name>/site.html) + your saved sites', w: 940, h: 600,
+  render(body) {
+    body.innerHTML = `${bar('Browser', `<button class="btn sm" id="b-home">${iconSvg('home')} Home</button><select id="b-sites-menu" title="Built-in websites"><option value="">Built-in websites…</option>${Object.values(SITES).map((s) => `<option value="${s.id}">${MH.esc(s.name)}</option>`).join('')}</select>`)}
+    <div class="appbar" style="background:#111"><span>${iconSvg('lock')}</span><input id="b-url" type="text" value="proton://home" style="flex:1;padding:7px 10px"><button class="btn sm primary" id="b-go">Go</button></div>
+    <div class="app-main" id="b-main"></div>`;
+    const main = body.querySelector('#b-main');
+    const ctx = { openApp, loadExternal, showHome: () => showHome(), showSite };
+    /* Built-in site.html pages run in a frame and reach this context as
+     * window.parent.__protonSiteCtx (same-origin, this device only). */
+    window.__protonSiteCtx = ctx;
+
+    function showHome() {
+      body.querySelector('#b-url').value = 'proton://home';
+      normalizeUserData();
+      main.innerHTML = `<div class="pad"><h2>Welcome to the (tiny) proton web</h2>
+      <p class="muted">This static site has no server, so the Browser ships with built-in websites — each one is a real HTML page in <span class="kbd">websites/&lt;name&gt;/site.html</span>, like the original project's bundled sites in <span class="kbd">internet/</span>. Real websites can be opened from the address bar too, though many refuse to be embedded.</p>
+      <h3>${iconSvg('book')} Built-in websites</h3><div class="grid-cards">
+      ${Object.values(SITES).map((s) => `<div class="card"><div class="card-ic" style="font-size:24px">${iconFor(s.icon, 'globe')}</div><h3 style="margin:5px 0 3px">${MH.esc(s.name)}</h3><p class="muted">${MH.esc(s.desc || '')}</p><button class="btn primary" data-site="${s.id}">Visit</button></div>`).join('')}
+      </div>
+      <h3 style="margin-top:20px">${iconSvg('globe')} Your websites</h3><div class="grid-cards" id="b-sites"></div>
+      <p class="muted" style="margin-top:14px">Adding websites is disabled. Type any address in the bar above to visit it without saving it, or open one of the built-in websites.</p></div>`;
+      main.querySelectorAll('[data-site]').forEach((b) => b.onclick = () => showSite(b.dataset.site));
+      const sitesBox = main.querySelector('#b-sites');
+      sitesBox.innerHTML = userData.websites.length ? userData.websites.map((s) => `
+        <div class="card"><div class="card-ic" style="font-size:24px">${iconFor(s.icon, 'globe')}</div><h3 style="margin:5px 0 3px">${MH.esc(s.name)}</h3>
+        <p class="muted site-url">${MH.esc(s.url)}</p><button class="btn sm primary" data-open="${s.id}">Open</button>
+        <button class="btn sm" data-del="${s.id}">Remove</button></div>`).join('')
+        : '<p class="muted">No websites saved on this account. Adding websites is disabled.</p>';
+      sitesBox.querySelectorAll('[data-open]').forEach((b) => b.onclick = () => { const s = userData.websites.find((x) => x.id === b.dataset.open); if (s) loadExternal(s.url); });
+      sitesBox.querySelectorAll('[data-del]').forEach((b) => b.onclick = () => {
+        userData.websites = userData.websites.filter((x) => x.id !== b.dataset.del); saveData(); showHome();
+      });
+    }
+    function showSite(id) {
+      const site = SITES[id];
+      if (!site) { showHome(); return; }
+      body.querySelector('#b-url').value = 'proton://' + id;
+      /* Built-in websites are standalone HTML pages (websites/<name>/site.html),
+       * loaded in a frame. Their scripts can call back into the desktop via
+       * window.parent.__protonSiteCtx (openApp / showSite / showHome). */
+      main.innerHTML = `<iframe class="site-frame" title="${MH.esc(site.name)}" src="${MH.esc(site.page)}" style="width:100%;height:100%;min-height:420px;border:0;display:block;background:#050505"></iframe>`;
+    }
+    function loadExternal(url) {
+      body.querySelector('#b-url').value = url;
+      main.innerHTML = `<div style="display:flex;flex-direction:column;height:100%"><div class="pad muted" style="padding-bottom:6px">Loading <b>${MH.esc(url)}</b> — if it stays blank, that site refuses embedding. <a href="${MH.esc(url)}" target="_blank" rel="noopener">Open in a new tab</a></div><iframe src="${MH.esc(url)}" style="flex:1;border:0;width:100%" title="Web page"></iframe></div>`;
+    }
+    function go() {
+      const raw = body.querySelector('#b-url').value.trim();
+      if (raw === 'proton://home' || raw === 'home') { showHome(); return; }
+      const id = raw.replace(/^proton:\/\//i, '').split(/[/?#]/)[0].toLowerCase();
+      if (SITES[id]) { showSite(id); return; }
+      loadExternal(/^https?:\/\//i.test(raw) ? raw : 'https://' + raw);
+    }
+    body.querySelector('#b-home').onclick = showHome;
+    body.querySelector('#b-go').onclick = go;
+    body.querySelector('#b-sites-menu').onchange = (e) => { if (e.target.value) showSite(e.target.value); e.target.value = ''; };
+    body.querySelector('#b-url').addEventListener('keydown', (e) => { if (e.key === 'Enter') go(); });
+    if (pendingBrowserURL) { const u = pendingBrowserURL; pendingBrowserURL = ''; loadExternal(u); }
+    else showHome();
+  },
+});
+</script>
+</body>
+</html>

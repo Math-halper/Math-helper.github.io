@@ -1,1 +1,107 @@
-# Math-helper.github.io
+# proton — a browser desktop (static Mixt clone)
+
+A complete desktop in your browser: Mint-style bottom panel and proton menu,
+draggable/resizable windows, and 20+ apps — cloned and rebranded from
+[Mixt (`proton-arcade/mlp` @ `arena/170861f7-mlp`)](https://github.com/proton-arcade/mlp/tree/arena/170861f7-mlp)
+and rebuilt to run as a **pure static website** (no server, no build step,
+no dependencies). It ships a **black-and-white theme: black backgrounds, white text, and
+white/grey accents** (no colour in the UI; only physical game pieces
+such as cards and checkers keep their colours).
+
+## Run it
+
+It's just static files — serve the folder (apps and websites are HTML
+files loaded over HTTP, so a `file://` tab won't work):
+
+```bash
+python3 -m http.server 8000
+# then open http://localhost:8000
+```
+
+Deployed on GitHub Pages it works as-is from the repo root.
+
+## Project layout (everything is a module)
+
+- **Apps:** one folder + HTML file each — `apps/<name>/app.html` (24 apps,
+  incl. test apps). Add one by copying `apps/_template/` and adding a
+  `<link rel="proton-app">` line to `index.html`; remove one by deleting
+  that line. Full guide: [`apps/README.md`](apps/README.md).
+- **Built-in websites:** one folder + HTML page each —
+  `websites/<name>/site.html` (5 sites, incl. test sites), loaded by the
+  Browser at `proton://<name>`. Guide: [`websites/README.md`](websites/README.md).
+- **Core only:** `assets/store.js` (accounts/storage), `assets/icons.js`
+  (the SVG icon set - every app/site/button icon is a named vector icon,
+  no emoji icons), `assets/core.js` (desktop/window manager/registries),
+  `assets/html-loader.js` (fetches the app/site HTML files at boot),
+  `assets/styles.css`, `assets/boot.js`.
+
+## Math Helper cover page
+
+The site opens on a **Math Helper** cover page styled like a school maths
+practice site (the `cover` markup in `index.html`, styled in
+`assets/styles.css`). Its practice buttons and links are intentionally
+unavailable — they only report that practice cannot be loaded. Scroll to
+the very bottom and click **Continue to Math Helper** to enter the real
+proton website.
+
+## First launch = create your account
+
+1. After continuing from the cover, first launch asks you to create an
+   account (display name, username, password 6+ chars).
+2. **Refreshing the page signs you out** and skips the cover, going
+   straight to the sign-in screen — your username is listed, but you must
+   enter your password again, exactly like signing out. `Lock` hides the
+   desktop behind your password without signing out during a visit.
+3. Add more accounts later from Settings, or from the sign-in screen.
+
+There is no server, so accounts and data live **only in this browser**
+(localStorage). Passwords are stored as salted SHA-256 hashes, never plain
+text, and never leave the device. Clearing browser data deletes everything —
+export a backup from **Settings → Backup** first.
+
+## What's inside
+
+- **Desktop** — clean wallpaper (no shortcut icons), Mint-Y panel with pinned
+  & running apps, clock, start menu with search, window manager
+  (drag/resize/minimise/maximise), toasts
+- **Calculator** *(new for this rebrand)* — calculator, linear &
+  quadratic solver with steps, percentage/Pythagoras, formula cards,
+  function graph plotter
+- **Productivity** — Files (virtual drive), Notes (rich text), Calendar,
+  Spreadsheet (formulas incl. `SUM`/`AVERAGE` ranges), Presentation with
+  present mode, Contacts, PDF Viewer, Terminal
+- **Create** — Whiteboard (pen/shapes/text, PNG export)
+- **Games** — Chess (vs computer or 2-player), Checkers, Sudoku
+  (easy/medium/hard, hints), Klondike solitaire, Backgammon practice board
+- **Media** — Media player (MP4/MP3 from your computer)
+- **Everything is the static website — no adding websites.** All apps are
+  built into this static site; there is no way to add a website or create an
+  app from a web address in the UI. The Browser can still visit an address
+  typed into its bar without saving it, and anything already saved on an
+  account (custom apps, websites) stays openable and removable in App Center
+  and the Browser. Built-in apps can be **removed** from the
+  menu and **added back** any time (Settings & App Center are protected so
+  you can't lock yourself out). Mail, Team Chat, Meetings, G-Talk and Admin
+  Vault were removed. All saved per account.
+- **Customize — everything is modular.** Rename any app, change its icon,
+  move it to another (or a brand-new) menu category, reorder it, pin it, remove
+  it and add it back, or reset it — per account. Invent your own **themes**
+  (accent + wallpaper) and **wallpapers** (two-shade gradients) and apply them
+  in one click; they also appear in Settings. Toggle desktop parts (clock,
+  desktop date/hint, lock & account buttons, menu search, panel labels)
+  instantly, and reset all customisations without touching your content.
+- **System** — App Center, Customize, Settings
+  (wallpaper/accent, change password, export/import/delete account), About,
+  built-in Browser with Guide & World History pages
+
+Everything autosaves per account: notes, files, events, contacts,
+slides, whiteboards and game progress.
+
+## Credits & licence
+
+Static clone/rebrand of Mixt — full provenance, what was adapted vs
+rewritten, and what a static site can't do (real mail/chat/video transport,
+cloud sync) is documented in [`CREDITS.md`](CREDITS.md). Licensed
+**AGPL-3.0-only** ([`LICENSE.txt`](LICENSE.txt)), same as upstream
+(Mixt / Puter-derived, © Puter Technologies Inc.). Not affiliated with
+Linux Mint, Cinnamon, Puter, or the Mixt authors.
