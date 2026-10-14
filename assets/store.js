@@ -7,7 +7,8 @@
  *
  * Data layout:
  *   mhOS.accounts.v1       { [usernameLower]: account }
- *   mhOS.session.v1        usernameLower that stays signed in (or "")
+ *   mhOS.session.v1        legacy key from persistent sign-in; now cleared
+ *                          (sign-in lasts only until the page is refreshed)
  *   mhOS.user.<name>.v1    that account's whole desktop state
  */
 'use strict';
@@ -35,8 +36,11 @@ const MH = {
 
   accounts() { return MH.loadJSON(MH.ACCOUNTS_KEY, {}); },
   saveAccounts(a) { MH.saveJSON(MH.ACCOUNTS_KEY, a); },
-  session() { return localStorage.getItem(MH.SESSION_KEY) || ''; },
-  setSession(u) { u ? localStorage.setItem(MH.SESSION_KEY, u) : localStorage.removeItem(MH.SESSION_KEY); },
+  /* Sign-in is deliberately not persisted: refreshing the page must ask
+   * for the password again, exactly like signing out. Any legacy stored
+   * session key is cleared so older visits cannot auto-sign-in either. */
+  session() { return ''; },
+  setSession() { localStorage.removeItem(MH.SESSION_KEY); },
 
   fnv(str) { // fallback hash (not cryptographic — only used off secure contexts)
     let h = 0x811c9dc5;

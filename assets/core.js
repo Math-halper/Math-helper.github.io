@@ -378,7 +378,7 @@ function renderStartMenu(q) {
   if (!list.length) html += `<p style="grid-column:1/-1;opacity:.7;padding:10px 4px">No apps match “${MH.esc(query)}”.</p>`;
   html += `</div>
     <div class="sm-foot">
-      <button class="sm-user" id="sm-user"><span class="avt" style="background:${avatarBg(currentUser)}">${MH.esc(userInitials(currentUser))}</span><span><b>${MH.esc(currentUser.displayName)}</b><span>@${MH.esc(currentUser.username)} · signed in on this device</span></span></button>
+      <button class="sm-user" id="sm-user"><span class="avt" style="background:${avatarBg(currentUser)}">${MH.esc(userInitials(currentUser))}</span><span><b>${MH.esc(currentUser.displayName)}</b><span>@${MH.esc(currentUser.username)} · signed in for this visit</span></span></button>
       <button class="btn sm" id="sm-lock">${iconSvg('lock')} Lock</button>
       <button class="btn sm" id="sm-out">Sign out</button>
     </div>`;
@@ -419,7 +419,7 @@ function authShell(title, sub, bodyHTML) {
 function renderSetup(backToLogin) {
   document.title = 'Create your account — proton';
   authShell('Create your account', 'First launch setup · proton', `
-    <p class="auth-note" style="margin-top:0">Welcome! This static website has <b>no server</b>, so your account is created and stored <b>only in this browser</b>. You'll stay signed in on this device until you sign out.</p>
+    <p class="auth-note" style="margin-top:0">Welcome! This static website has <b>no server</b>, so your account is created and stored <b>only in this browser</b>. Refreshing the page signs you out, so you will be asked for your password again — just like signing out.</p>
     <form id="setup-form">
       <label>Display name<input id="su-name" required maxlength="40" placeholder="e.g. Alex Morgan" autocomplete="name"></label>
       <div class="auth-row">
@@ -455,7 +455,6 @@ function renderSetup(backToLogin) {
     currentUser = accounts[key];
     userData = MH.defaultData(currentUser.displayName);
     MH.saveJSON(MH.userKey(key), userData);
-    MH.setSession(key);
     MH.$('auth').hidden = true;
     enterDesktop();
     MH.toast(`Account created — welcome, ${currentUser.displayName}!`);
@@ -471,10 +470,10 @@ function renderLogin() {
       </label>
       <label>Password<input id="li-pass" type="password" required autocomplete="current-password" placeholder="Your password"></label>
       <div class="auth-err" id="li-err"></div>
-      <button class="btn primary block" type="submit">Sign in &amp; stay signed in</button>
+      <button class="btn primary block" type="submit">Sign in</button>
     </form>
     <p class="auth-switch">New to this device? <a id="li-new">Create an account</a></p>
-    <p class="auth-note">You stay signed in on this device until you choose <b>Sign out</b> in the proton menu. Use <b>Lock</b> to hide the desktop without signing out.</p>`);
+    <p class="auth-note">Refreshing the page signs you out and asks for your password again, just like choosing <b>Sign out</b>. Use <b>Lock</b> to hide the desktop without signing out during this visit.</p>`);
   MH.$('li-new').onclick = () => renderSetup(true);
   MH.$('login-form').onsubmit = async (e) => {
     e.preventDefault();
@@ -485,7 +484,6 @@ function renderLogin() {
     }
     currentUser = acc;
     userData = MH.loadJSON(MH.userKey(key), MH.defaultData(acc.displayName));
-    MH.setSession(key);
     enterDesktop();
   };
 }
@@ -509,14 +507,13 @@ function renderLock() {
   };
 }
 function route() {
+  // A fresh page load always starts signed out: refreshing asks for the
+  // password again (the username is remembered in the sign-in list).
+  MH.setSession('');
+  currentUser = null; userData = null;
   const accounts = MH.accounts();
   if (!Object.keys(accounts).length) { renderSetup(false); return; }
-  const key = MH.session(), acc = accounts[key];
-  if (acc) {
-    currentUser = acc;
-    userData = MH.loadJSON(MH.userKey(key), MH.defaultData(acc.displayName));
-    enterDesktop();
-  } else renderLogin();
+  renderLogin();
 }
 
 /* small shared builders for apps */

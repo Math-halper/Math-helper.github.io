@@ -35,13 +35,23 @@ Deployed on GitHub Pages it works as-is from the repo root.
   `assets/html-loader.js` (fetches the app/site HTML files at boot),
   `assets/styles.css`, `assets/boot.js`.
 
+## Math Helper cover page
+
+The site opens on a **Math Helper** cover page styled like a school maths
+practice site (the `cover` markup in `index.html`, styled in
+`assets/styles.css`). Its practice buttons and links are intentionally
+unavailable — they only report that practice cannot be loaded. Scroll to
+the very bottom and click **Continue to Math Helper** to enter the real
+proton website.
+
 ## First launch = create your account
 
-1. On first launch you're asked to create an account (display name,
-   username, password 6+ chars, avatar).
-2. You **stay signed in** on that device until you sign out — next visit
-   goes straight to the desktop. `Lock` hides the desktop behind your
-   password without signing out.
+1. After continuing from the cover, first launch asks you to create an
+   account (display name, username, password 6+ chars).
+2. **Refreshing the page signs you out** and skips the cover, going
+   straight to the sign-in screen — your username is listed, but you must
+   enter your password again, exactly like signing out. `Lock` hides the
+   desktop behind your password without signing out during a visit.
 3. Add more accounts later from Settings, or from the sign-in screen.
 
 There is no server, so accounts and data live **only in this browser**
