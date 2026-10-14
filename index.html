@@ -1,0 +1,36 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Math Helper OS — Browser Desktop</title>
+<meta name="description" content="Math Helper OS is a static, browser-only desktop cloned and rebranded from Mixt (proton-arcade/mlp). Create an account on first launch — everything is saved on this device.">
+<meta name="theme-color" content="#2d2f31">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Crect width='100' height='100' rx='20' fill='%2368b723'/%3E%3Ctext x='50' y='70' font-size='58' text-anchor='middle' fill='white' font-family='Georgia'%3E%CE%A3%3C/text%3E%3C/svg%3E">
+<link rel="stylesheet" href="assets/styles.css">
+</head>
+<body>
+<noscript><div class="noscript">Math Helper OS needs JavaScript — it is a full desktop that runs entirely in your browser.</div></noscript>
+
+<!-- Boot splash -->
+<div id="boot" class="boot">
+  <div class="boot-logo">Σ</div>
+  <div class="boot-name">Math Helper <span>OS</span></div>
+  <div class="boot-sub">Your browser desktop</div>
+  <div class="boot-bar"><i></i></div>
+</div>
+
+<!-- Auth (first-launch setup / login / lock) is rendered here -->
+<main id="auth" class="auth-wrap" hidden></main>
+
+<!-- Desktop is rendered here -->
+<div id="desktop" class="desktop" hidden></div>
+
+<div id="toasts" class="toasts" aria-live="polite"></div>
+
+<script src="assets/store.js"></script>
+<script src="assets/core.js"></script>
+<script src="assets/apps.js"></script>
+<script src="assets/games.js"></script>
+</body>
+</html>
