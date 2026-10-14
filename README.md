@@ -22,7 +22,7 @@ Deployed on GitHub Pages it works as-is from the repo root.
 
 ## Project layout (everything is a module)
 
-- **Apps:** one folder + HTML file each — `apps/<name>/app.html` (25 apps,
+- **Apps:** one folder + HTML file each — `apps/<name>/app.html` (24 apps,
   incl. test apps). Add one by copying `apps/_template/` and adding a
   `<link rel="proton-app">` line to `index.html`; remove one by deleting
   that line. Full guide: [`apps/README.md`](apps/README.md).
@@ -68,8 +68,8 @@ export a backup from **Settings → Backup** first.
   built into this static site; there is no way to add a website or create an
   app from a web address in the UI. The Browser can still visit an address
   typed into its bar without saving it, and anything already saved on an
-  account (custom apps, websites) stays openable and removable in App Center,
-  the Websites app and the Browser. Built-in apps can be **removed** from the
+  account (custom apps, websites) stays openable and removable in App Center
+  and the Browser. Built-in apps can be **removed** from the
   menu and **added back** any time (Settings & App Center are protected so
   you can't lock yourself out). Mail, Team Chat, Meetings, G-Talk and Admin
   Vault were removed. All saved per account.
@@ -80,7 +80,7 @@ export a backup from **Settings → Backup** first.
   in one click; they also appear in Settings. Toggle desktop parts (clock,
   desktop date/hint, lock & account buttons, menu search, panel labels)
   instantly, and reset all customisations without touching your content.
-- **System** — App Center, Websites manager, Customize, Settings
+- **System** — App Center, Customize, Settings
   (wallpaper/accent, change password, export/import/delete account), About,
   built-in Browser with Guide & World History pages
 

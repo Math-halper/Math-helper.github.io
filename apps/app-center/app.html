@@ -26,7 +26,7 @@ registerApp({
     <div class="app-main pad">
     <div class="card" style="margin-bottom:16px"><h3 style="margin-top:0">Everything here is part of the static proton website</h3>
       <p class="muted">Adding websites and web-address apps is disabled. You can still visit an address from the Browser without saving it, open or remove anything already saved on this account below, and hide or restore the built-in apps.</p>
-      <button class="btn" id="ac-open-websites">${iconSvg('globe')} Open Websites app</button></div>
+</div>
 
     <h3>${iconSvg('grid')} Your apps <span class="muted" id="ac-custom-count"></span></h3>
     <div class="grid-cards" id="ac-custom"></div>
@@ -123,7 +123,6 @@ registerApp({
       });
     }
 
-    body.querySelector('#ac-open-websites').onclick = () => openApp('websites');
     body.querySelector('#ac-q').addEventListener('input', draw);
     draw();
   },

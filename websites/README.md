@@ -13,8 +13,9 @@ the page itself in a frame. The site automatically appears:
 - at its own address, e.g. `proton://test-page`.
 
 (Websites saved on an account before adding was disabled are different —
-those live in account data and can still be opened or removed in
-`apps/websites/` and `apps/app-center/`. Users can no longer add websites;
+those live in account data and can still be opened or removed in App
+Center (`apps/app-center/`) and on the Browser home page. Users can no
+longer add websites;
 typing an address in the Browser visits it without saving it.)
 
 ## Add your own site (developer workflow)

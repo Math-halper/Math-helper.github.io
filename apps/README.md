@@ -40,7 +40,6 @@ in `assets/styles.css` (`.btn`, `.card`, `.appbar`, …). Look at
 | `notes/` | Notes (`notes`) |
 | `calendar/` | Calendar (`calendar`) |
 | `contacts/` | Contacts (`contacts`) |
-| `websites/` | Websites manager (`websites`) |
 | `app-center/` | App Center (`appcenter`) |
 | `customize/` | Customize (`customize`) |
 | `settings/` | Settings (`settings`) |

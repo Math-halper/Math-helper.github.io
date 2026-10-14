@@ -20,15 +20,15 @@ proton menu. The script below is fetched and run by proton's HTML loader
  * built-in site is a real HTML page in its own folder:
  * websites/<name>/site.html. Add a site there + one <link> line in
  * index.html and it shows up here automatically. The user's own saved
- * websites live in userData and are managed by apps/websites +
- * apps/app-center.
+ * websites live in userData and are managed by apps/app-center
+ * and on the Browser home page below.
  */
 'use strict';
 
 registerApp({
   id: 'browser', name: 'Browser', icon: 'globe', cat: 'Learn', desc: 'Built-in websites (each in websites/<name>/site.html) + your saved sites', w: 940, h: 600,
   render(body) {
-    body.innerHTML = `${bar('Browser', `<button class="btn sm" id="b-home">${iconSvg('home')} Home</button><button class="btn sm" id="b-websites">${iconSvg('globe')} Websites</button><select id="b-sites-menu" title="Built-in websites"><option value="">Built-in websites…</option>${Object.values(SITES).map((s) => `<option value="${s.id}">${MH.esc(s.name)}</option>`).join('')}</select>`)}
+    body.innerHTML = `${bar('Browser', `<button class="btn sm" id="b-home">${iconSvg('home')} Home</button><select id="b-sites-menu" title="Built-in websites"><option value="">Built-in websites…</option>${Object.values(SITES).map((s) => `<option value="${s.id}">${MH.esc(s.name)}</option>`).join('')}</select>`)}
     <div class="appbar" style="background:#111"><span>${iconSvg('lock')}</span><input id="b-url" type="text" value="proton://home" style="flex:1;padding:7px 10px"><button class="btn sm primary" id="b-go">Go</button></div>
     <div class="app-main" id="b-main"></div>`;
     const main = body.querySelector('#b-main');
@@ -81,7 +81,6 @@ registerApp({
     }
     body.querySelector('#b-home').onclick = showHome;
     body.querySelector('#b-go').onclick = go;
-    body.querySelector('#b-websites').onclick = () => openApp('websites');
     body.querySelector('#b-sites-menu').onchange = (e) => { if (e.target.value) showSite(e.target.value); e.target.value = ''; };
     body.querySelector('#b-url').addEventListener('keydown', (e) => { if (e.key === 'Enter') go(); });
     if (pendingBrowserURL) { const u = pendingBrowserURL; pendingBrowserURL = ''; loadExternal(u); }
