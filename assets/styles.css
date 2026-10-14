@@ -65,12 +65,6 @@ button{cursor:pointer}
 .wp-grape{background:radial-gradient(900px 500px at 75% 15%,rgba(255,255,255,.22),transparent 55%),linear-gradient(150deg,#a678d8,#6b3fa0 55%,#3d2163)}
 .wp-slate{background:radial-gradient(900px 500px at 75% 15%,rgba(255,255,255,.14),transparent 55%),linear-gradient(150deg,#5b6470,#333a42 55%,#1e2227)}
 .wp-rose{background:radial-gradient(900px 500px at 75% 15%,rgba(255,255,255,.25),transparent 55%),linear-gradient(150deg,#ef8fb5,#c74d7c 55%,#7e2c4e)}
-.desktop-icons{position:absolute;top:12px;left:12px;bottom:56px;display:flex;flex-direction:column;flex-wrap:wrap;gap:6px;align-content:flex-start}
-.dicon{width:88px;padding:9px 4px 7px;display:flex;flex-direction:column;align-items:center;gap:5px;border:1px solid transparent;border-radius:8px;color:#fff;background:transparent}
-.dicon .ic{font-size:30px;filter:drop-shadow(0 2px 3px rgba(0,0,0,.5))}
-.dicon .lb{font-size:12px;text-align:center;text-shadow:0 1px 3px rgba(0,0,0,.8);line-height:1.25}
-.dicon:hover{background:rgba(255,255,255,.13)}
-.dicon.sel{background:rgba(255,255,255,.22);border-color:rgba(255,255,255,.5)}
 .desktop-hint{position:absolute;right:16px;top:14px;color:rgba(255,255,255,.85);font-size:12.5px;text-shadow:0 1px 3px rgba(0,0,0,.7);text-align:right;line-height:1.5;pointer-events:none}
 
 /* ---------- panel (taskbar) ---------- */

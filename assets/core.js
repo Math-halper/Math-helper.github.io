@@ -112,8 +112,8 @@ function openApp(id) {
 }
 
 /* ---------------- desktop ---------------- */
-const DEFAULT_DESKTOP = ['files', 'math', 'notes', 'browser', 'appcenter', 'settings'];
-function desktopApps() { return userData.settings.desktopApps || DEFAULT_DESKTOP; }
+/* No shortcut icons on the desktop itself: apps open from the proton menu
+ * or the panel. (Older saved settings may still carry desktopApps — ignored.) */
 
 function enterDesktop() {
   locked = false;
@@ -123,8 +123,7 @@ function enterDesktop() {
   document.title = `proton — ${currentUser.displayName}`;
   d.innerHTML = `
     <div class="wallpaper wp-${MH.esc(userData.settings.wallpaper)}"></div>
-    <div class="desktop-icons" id="dicons"></div>
-    <div class="desktop-hint">${MH.esc(new Date().toLocaleDateString(undefined, { weekday: 'long', day: 'numeric', month: 'long' }))}<br>Double-click an icon, or press the proton menu</div>
+    <div class="desktop-hint">${MH.esc(new Date().toLocaleDateString(undefined, { weekday: 'long', day: 'numeric', month: 'long' }))}<br>Press the proton menu to open apps</div>
     <div class="windows-layer" id="windows"></div>
     <div class="startmenu" id="startmenu" hidden></div>
     <footer class="panel">
@@ -137,7 +136,7 @@ function enterDesktop() {
       </div>
     </footer>`;
   MH.$('tray-avt').textContent = currentUser.avatar || '😀';
-  renderDesktopIcons(); renderPanelApps(); renderStartMenu('');
+  renderPanelApps(); renderStartMenu('');
   MH.$('menubtn').onclick = () => {
     const sm = MH.$('startmenu'), open = sm.hidden;
     sm.hidden = !open; MH.$('menubtn').classList.toggle('open', open);
@@ -156,18 +155,6 @@ function tickClock() {
   const now = new Date();
   t.textContent = now.toLocaleTimeString(undefined, { hour: '2-digit', minute: '2-digit' });
   d.textContent = now.toLocaleDateString(undefined, { day: 'numeric', month: 'short' });
-}
-function renderDesktopIcons() {
-  const box = MH.$('dicons'); if (!box) return;
-  box.innerHTML = desktopApps().filter((id) => APPS[id]).map((id) => {
-    const a = APPS[id];
-    return `<button class="dicon" data-app="${id}"><span class="ic">${a.icon}</span><span class="lb">${MH.esc(a.name)}</span></button>`;
-  }).join('');
-  box.querySelectorAll('.dicon').forEach((b) => {
-    b.addEventListener('click', () => { box.querySelectorAll('.dicon').forEach((x) => x.classList.remove('sel')); b.classList.add('sel'); });
-    b.addEventListener('dblclick', () => openApp(b.dataset.app));
-    b.addEventListener('keydown', (e) => { if (e.key === 'Enter') openApp(b.dataset.app); });
-  });
 }
 function renderPanelApps() {
   const box = MH.$('panelapps'); if (!box || !currentUser) return;
@@ -658,7 +645,7 @@ registerApp({
 
 /* ============================ APP CENTER ============================ */
 registerApp({
-  id: 'appcenter', name: 'App Center', icon: '🧩', cat: 'System', desc: 'Every app — pin to panel or add to desktop', w: 920, h: 580,
+  id: 'appcenter', name: 'App Center', icon: '🧩', cat: 'System', desc: 'Every app — open it, or pin it to the panel', w: 920, h: 580,
   render(body) {
     body.innerHTML = `${bar('App Center', `<input type="search" id="ac-q" placeholder="Search apps">`)}<div class="app-main pad"><div class="grid-cards" id="ac-grid"></div></div>`;
     function draw() {
@@ -666,23 +653,17 @@ registerApp({
       body.querySelector('#ac-grid').innerHTML = Object.values(APPS)
         .filter((a) => a.id !== 'appcenter' && (!q || (a.name + a.desc).toLowerCase().includes(q)))
         .map((a) => {
-          const pinned = (userData.settings.pinned || []).includes(a.id), onDesk = desktopApps().includes(a.id);
+          const pinned = (userData.settings.pinned || []).includes(a.id);
           return `<div class="card"><div style="font-size:30px">${a.icon}</div><h3 style="margin:7px 0 3px">${MH.esc(a.name)}</h3>
           <p class="muted" style="min-height:34px">${MH.esc(a.desc)}</p><span class="chip">${a.cat}</span>
           <div style="display:flex;gap:6px;flex-wrap:wrap;margin-top:11px"><button class="btn sm primary" data-open="${a.id}">Open</button>
-          <button class="btn sm" data-pin="${a.id}">${pinned ? 'Unpin' : '📌 Pin'}</button>
-          <button class="btn sm" data-desk="${a.id}">${onDesk ? 'Remove icon' : 'Add icon'}</button></div></div>`;
+          <button class="btn sm" data-pin="${a.id}">${pinned ? 'Unpin' : '📌 Pin'}</button></div></div>`;
         }).join('');
       body.querySelectorAll('[data-open]').forEach((b) => b.onclick = () => openApp(b.dataset.open));
       body.querySelectorAll('[data-pin]').forEach((b) => b.onclick = () => {
         const id = b.dataset.pin, p = userData.settings.pinned;
         userData.settings.pinned = p.includes(id) ? p.filter((x) => x !== id) : [...p, id];
         saveData(); renderPanelApps(); draw();
-      });
-      body.querySelectorAll('[data-desk]').forEach((b) => b.onclick = () => {
-        const id = b.dataset.desk, d = desktopApps();
-        userData.settings.desktopApps = d.includes(id) ? d.filter((x) => x !== id) : [...d, id];
-        saveData(); renderDesktopIcons(); draw();
       });
     }
     body.querySelector('#ac-q').addEventListener('input', draw);
@@ -773,7 +754,7 @@ registerApp({
         if (!parsed.data?.settings) throw new Error('bad file');
         userData = parsed.data; saveDataNow();
         document.querySelector('.wallpaper').className = 'wallpaper wp-' + userData.settings.wallpaper;
-        applyAccent(); renderDesktopIcons(); renderPanelApps();
+        applyAccent(); renderPanelApps();
         MH.toast('Backup imported — your desktop was restored.');
       } catch { MH.toast('That file is not a proton backup.'); }
     };

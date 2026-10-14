@@ -33,7 +33,7 @@ export a backup from **Settings → Backup** first.
 
 ## 🖥 What's inside
 
-- **Desktop** — wallpaper choices, desktop icons, Mint-Y panel with pinned
+- **Desktop** — clean wallpaper (no shortcut icons), Mint-Y panel with pinned
   & running apps, clock, start menu with search, window manager
   (drag/resize/minimise/maximise), toasts
 - **Calculator** *(new for this rebrand)* — calculator, linear &
@@ -47,7 +47,7 @@ export a backup from **Settings → Backup** first.
   (easy/medium/hard, hints), Klondike solitaire, Backgammon practice board
 - **Chat & media** — Team Chat + G-Talk with Nova the on-device helper bot,
   Meetings planner, Media player (MP4/MP3 from your computer)
-- **System** — App Center (pin/unpin, desktop icons), Admin Vault
+- **System** — App Center (open/pin apps), Admin Vault
   (password-gated private notes), Settings (wallpaper/accent, change
   password, export/import/delete account), About, built-in Browser with
   Guide & World History pages
