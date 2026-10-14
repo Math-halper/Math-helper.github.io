@@ -220,3 +220,9 @@ details.help{margin:10px 0}details.help summary{cursor:pointer;font-weight:700}
 .present-stage{flex:1;background:#20242a;color:#fff;display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;padding:30px;gap:14px}
 .present-stage h1{font-size:clamp(24px,4.5vw,44px);margin:0}
 input[type=range]{accent-color:var(--accent)}
+
+/* add/remove apps & websites forms */
+.add-form{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:10px;align-items:end}
+.add-form .field{margin:0}
+.add-form input{width:100%;padding:8px 10px}
+.site-url{word-break:break-all}

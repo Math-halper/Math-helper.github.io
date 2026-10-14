@@ -47,7 +47,14 @@ export a backup from **Settings → Backup** first.
   (easy/medium/hard, hints), Klondike solitaire, Backgammon practice board
 - **Chat & media** — Team Chat + G-Talk with Nova the on-device helper bot,
   Meetings planner, Media player (MP4/MP3 from your computer)
-- **System** — App Center (open/pin apps), Admin Vault
+- **Add & remove apps/websites (like Mixt)** — App Center has one-click forms:
+  **Add an app** (name, icon, web address → appears in proton menu → *My Apps*,
+  pinnable, opens in its own window), **Add a website** (saved sites also live in
+  the new **Websites** app and on the Browser home page, and can be turned into
+  apps). Custom apps/websites can be edited or removed; built-in apps can be
+  **removed** from the menu and **added back** any time (Settings & App Center
+  are protected so you can't lock yourself out). All saved per account.
+- **System** — App Center, Websites manager, Admin Vault
   (password-gated private notes), Settings (wallpaper/accent, change
   password, export/import/delete account), About, built-in Browser with
   Guide & World History pages

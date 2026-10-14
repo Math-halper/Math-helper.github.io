@@ -373,7 +373,7 @@ registerApp({
 registerApp({
   id: 'browser', name: 'Browser', icon: '🌐', cat: 'Learn', desc: 'Built-in pages: welcome, guide & world history (from the original /internet)', w: 940, h: 600,
   render(body) {
-    body.innerHTML = `${bar('Browser', `<button class="btn sm" data-page="home">⌂ Home</button><button class="btn sm" data-page="guide">📖 Guide</button><button class="btn sm" data-page="history">🏛 World History</button><button class="btn sm" data-page="maths">Σ Maths resources</button>`)}
+    body.innerHTML = `${bar('Browser', `<button class="btn sm" data-page="home">⌂ Home</button><button class="btn sm" id="b-websites">🌍 Websites</button><button class="btn sm" data-page="guide">📖 Guide</button><button class="btn sm" data-page="history">🏛 World History</button><button class="btn sm" data-page="maths">Σ Maths resources</button>`)}
     <div class="appbar" style="background:#fff"><span>🔒</span><input id="b-url" type="text" value="proton://home" style="flex:1;padding:7px 10px"><button class="btn sm primary" id="b-go">Go</button></div>
     <div class="app-main" id="b-main"></div>`;
     const main = body.querySelector('#b-main');
@@ -381,7 +381,14 @@ registerApp({
       home: `<div class="pad"><h2>Welcome to the (tiny) proton web 🌐</h2><p class="muted">This static site has no server, so the Browser ships with built-in pages — like the original project's bundled sites in <span class="kbd">internet/</span>. Real websites can be opened below too, though many refuse to be embedded.</p>
       <div class="grid-cards"><div class="card"><h3>📖 Guide</h3><p>How this desktop works: accounts, saving, windows, backups.</p><button class="btn primary" data-go="guide">Read the guide</button></div>
       <div class="card"><h3>🏛 World History</h3><p>A short interactive timeline, adapted from the original bundled site.</p><button class="btn primary" data-go="history">Open timeline</button></div>
-      <div class="card"><h3>Σ Maths resources</h3><p>Formula reminders and practice ideas.</p><button class="btn primary" data-go="maths">Study up</button></div></div></div>`,
+      <div class="card"><h3>Σ Maths resources</h3><p>Formula reminders and practice ideas.</p><button class="btn primary" data-go="maths">Study up</button></div></div>
+      <h3 style="margin-top:20px">🌍 Your websites</h3><div class="grid-cards" id="b-sites"></div>
+      <div class="card" style="margin-top:12px"><b>＋ Add a website</b>
+        <form id="b-site-form" class="add-form" style="margin-top:8px">
+          <div class="field"><label>Site name</label><input id="b-site-name" required maxlength="50" placeholder="e.g. Wikipedia"></div>
+          <div class="field"><label>Address</label><input id="b-site-url" required placeholder="e.g. wikipedia.org" inputmode="url"></div>
+          <button class="btn primary" type="submit">Add website</button>
+        </form></div></div>`,
       guide: `<div class="pad" style="max-width:720px"><h2>Guide</h2>
       <details class="help" open><summary>Your account</summary><p>Created on first launch, stored only in this browser (salted SHA-256 password hash). You stay signed in until you sign out. Lock hides the desktop behind your password.</p></details>
       <details class="help"><summary>Windows</summary><p>Drag title bars to move, drag the bottom-right corner to resize, double-click a title bar to maximise. The panel (bottom) shows pinned + running apps; the active app gets a green underline — just like Mixt's Mint-Y panel.</p></details>
@@ -406,18 +413,43 @@ registerApp({
       main.innerHTML = PAGES[page] || PAGES.home;
       main.querySelectorAll('[data-go]').forEach((b) => b.onclick = () => show(b.dataset.go));
       main.querySelector('#b-openmath')?.addEventListener('click', () => openApp('math'));
+      const sitesBox = main.querySelector('#b-sites');
+      if (sitesBox) {
+        normalizeUserData();
+        sitesBox.innerHTML = userData.websites.length ? userData.websites.map((s) => `
+          <div class="card"><div style="font-size:24px">${MH.esc(s.icon || '🌐')}</div><h3 style="margin:5px 0 3px">${MH.esc(s.name)}</h3>
+          <p class="muted site-url">${MH.esc(s.url)}</p><button class="btn sm primary" data-site-open="${s.id}">Open</button>
+          <button class="btn sm" data-site-del="${s.id}">Remove</button></div>`).join('')
+          : '<p class="muted">No websites saved yet — add one below, in the Websites app, or in App Center.</p>';
+        sitesBox.querySelectorAll('[data-site-open]').forEach((b) => b.onclick = () => { const s = userData.websites.find((x) => x.id === b.dataset.siteOpen); if (s) loadExternal(s.url); });
+        sitesBox.querySelectorAll('[data-site-del]').forEach((b) => b.onclick = () => {
+          userData.websites = userData.websites.filter((x) => x.id !== b.dataset.siteDel); saveData(); show('home');
+        });
+        main.querySelector('#b-site-form').onsubmit = (e) => {
+          e.preventDefault();
+          const url = normalizeUrl(main.querySelector('#b-site-url').value);
+          if (!url) { MH.toast('Please enter a valid address, e.g. example.com'); return; }
+          userData.websites.push({ id: 'site-' + MH.uid(), name: main.querySelector('#b-site-name').value.trim(), icon: '🌐', url });
+          saveData(); show('home'); MH.toast('Website added.');
+        };
+      }
+    }
+    function loadExternal(url) {
+      body.querySelector('#b-url').value = url;
+      main.innerHTML = `<div style="display:flex;flex-direction:column;height:100%"><div class="pad muted" style="padding-bottom:6px">Loading <b>${MH.esc(url)}</b> — if it stays blank, that site refuses embedding. <a href="${MH.esc(url)}" target="_blank" rel="noopener">Open in a new tab ↗</a></div><iframe src="${MH.esc(url)}" style="flex:1;border:0;width:100%" title="Web page"></iframe></div>`;
     }
     function go() {
       const raw = body.querySelector('#b-url').value.trim();
       const page = Object.keys(PAGES).find((p) => raw.toLowerCase().includes(p));
       if (raw.startsWith('proton://') || page) { show(page || 'home', raw); return; }
-      const url = /^https?:\/\//i.test(raw) ? raw : 'https://' + raw;
-      main.innerHTML = `<div style="display:flex;flex-direction:column;height:100%"><div class="pad muted" style="padding-bottom:6px">Loading <b>${MH.esc(url)}</b> — if it stays blank, that site refuses embedding. <a href="${MH.esc(url)}" target="_blank" rel="noopener">Open in a new tab ↗</a></div><iframe src="${MH.esc(url)}" style="flex:1;border:0;width:100%" title="Web page"></iframe></div>`;
+      loadExternal(/^https?:\/\//i.test(raw) ? raw : 'https://' + raw);
     }
     body.querySelectorAll('[data-page]').forEach((b) => b.onclick = () => show(b.dataset.page));
     body.querySelector('#b-go').onclick = go;
+    body.querySelector('#b-websites').onclick = () => openApp('websites');
     body.querySelector('#b-url').addEventListener('keydown', (e) => { if (e.key === 'Enter') go(); });
-    show('home');
+    if (pendingBrowserURL) { const u = pendingBrowserURL; pendingBrowserURL = ''; loadExternal(u); }
+    else show('home');
   },
 });
 

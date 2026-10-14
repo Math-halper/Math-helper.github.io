@@ -9,6 +9,71 @@
 const APPS = {};
 function registerApp(def) { APPS[def.id] = def; }
 
+
+/* ---------- user-added apps & websites (Mixt-style add/remove) ---------- */
+const dynamicAppIds = new Set();
+let pendingBrowserURL = '';
+
+function normalizeUserData() {
+  if (!userData) return;
+  userData.customApps ||= [];
+  userData.websites ||= [];
+  userData.hiddenApps ||= [];
+  userData.settings.pinned ||= [];
+}
+/* Turn "example.com" / "example.com/x" into a safe http(s) URL, or null. */
+function normalizeUrl(raw) {
+  let s = String(raw || '').trim();
+  if (!s) return null;
+  if (!/^https?:\/\//i.test(s)) s = 'https://' + s;
+  try {
+    const u = new URL(s);
+    return (u.protocol === 'http:' || u.protocol === 'https:') ? u.href : null;
+  } catch { return null; }
+}
+function clearDynamicApps() {
+  for (const id of dynamicAppIds) delete APPS[id];
+  dynamicAppIds.clear();
+  pendingBrowserURL = '';
+}
+/* (Re)register this account's custom apps so they behave exactly like
+ * built-ins: proton menu, pinning, windows, search. */
+function syncCustomApps() {
+  clearDynamicApps();
+  if (!userData) return;
+  normalizeUserData();
+  for (const def of userData.customApps) {
+    APPS[def.id] = {
+      id: def.id, name: def.name, icon: def.icon || '🧩', cat: 'My Apps',
+      desc: def.desc || def.url, w: 980, h: 620,
+      render(body) {
+        body.innerHTML = `${bar(def.name, `<span class="muted" style="max-width:340px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${MH.esc(def.url)}</span><button class="btn sm" data-w="reload">↻ Reload</button><button class="btn sm primary" data-w="ext">Open in new tab ↗</button>`)}
+        <div class="app-main"><iframe title="${MH.esc(def.name)}" src="${MH.esc(def.url)}" style="width:100%;height:100%;min-height:420px;border:0" sandbox="allow-scripts allow-same-origin allow-forms allow-popups"></iframe>
+        <p class="muted" style="padding:8px 14px">If this stays blank, ${MH.esc(def.name)} refuses to be embedded — use “Open in new tab”. proton never uploads or proxies it; your browser loads it directly.</p></div>`;
+        body.querySelector('[data-w="ext"]').onclick = () => window.open(def.url, '_blank', 'noopener');
+        body.querySelector('[data-w="reload"]').onclick = () => { const f = body.querySelector('iframe'); f.src = def.url; };
+      },
+    };
+    dynamicAppIds.add(def.id);
+  }
+}
+function refreshChrome() { renderStartMenu(''); renderPanelApps(); }
+/* Open a saved website in the Browser app (fresh window so it navigates). */
+function openWebsite(site) {
+  pendingBrowserURL = site.url;
+  if (wins.has('browser')) closeWin('browser');
+  openApp('browser');
+}
+/* Turn a saved website into its own windowed app. Returns true if created. */
+function websiteAsApp(site) {
+  normalizeUserData();
+  if (userData.customApps.some((a) => a.url === site.url)) { MH.toast('That website is already one of your apps.'); return false; }
+  userData.customApps.push({ id: 'custom-' + MH.uid(), name: site.name, icon: site.icon || '🌐', desc: 'Website app — ' + site.url, url: site.url });
+  syncCustomApps(); saveData(); refreshChrome();
+  MH.toast(`“${site.name}” added as an app — find it in the proton menu → My Apps.`);
+  return true;
+}
+
 const ACCENTS = {
   '#68b723': { dim: '#4e8f17', soft: '#e6f1d9', name: 'Mint green' },
   '#3d7fca': { dim: '#2c5f9e', soft: '#d9e8f7', name: 'Blue' },
@@ -116,6 +181,7 @@ function openApp(id) {
  * or the panel. (Older saved settings may still carry desktopApps — ignored.) */
 
 function enterDesktop() {
+  normalizeUserData(); syncCustomApps();
   locked = false;
   MH.$('auth').hidden = true;
   const d = MH.$('desktop'); d.hidden = false;
@@ -159,7 +225,7 @@ function tickClock() {
 function renderPanelApps() {
   const box = MH.$('panelapps'); if (!box || !currentUser) return;
   const pinned = userData.settings.pinned || [];
-  const ids = [...new Set([...pinned, ...wins.keys()])];
+  const ids = [...new Set([...pinned, ...wins.keys()])].filter((id) => !(userData.hiddenApps || []).includes(id));
   box.innerHTML = ids.filter((id) => APPS[id]).map((id) => {
     const a = APPS[id], run = wins.has(id), act = activeApp === id;
     return `<button class="pitem ${run ? 'running' : ''} ${act ? 'active' : ''}" data-app="${id}" title="${MH.esc(a.name)}${run ? ' (open)' : ''}"><span>${a.icon}</span>${pinned.includes(id) ? '' : `<span class="pl">${MH.esc(a.name)}</span>`}</button>`;
@@ -169,11 +235,11 @@ function renderPanelApps() {
     wins.has(id) ? (activeApp === id ? toggleMin(id) : focusWin(id)) : openApp(id);
   });
 }
-const CATS = ['Productivity', 'Learn', 'Create', 'Games', 'Chat & Media', 'System'];
+const CATS = ['Productivity', 'Learn', 'Create', 'Games', 'Chat & Media', 'My Apps', 'System'];
 function renderStartMenu(q) {
   const sm = MH.$('startmenu'); if (!sm) return;
   const query = (q ?? MH.$('sm-search-input')?.value ?? '').trim().toLowerCase();
-  const list = Object.values(APPS).filter((a) => !query || (a.name + ' ' + a.desc).toLowerCase().includes(query));
+  const list = Object.values(APPS).filter((a) => !(userData.hiddenApps || []).includes(a.id)).filter((a) => !query || (a.name + ' ' + a.desc).toLowerCase().includes(query));
   let html = `<div class="sm-search"><input id="sm-search-input" type="search" placeholder="Search apps…" value="${MH.esc(query)}" aria-label="Search apps"></div><div class="sm-grid">`;
   for (const cat of CATS) {
     const inCat = list.filter((a) => a.cat === cat);
@@ -200,7 +266,7 @@ document.addEventListener('pointerdown', (e) => {
   if (sm && !sm.hidden && !e.target.closest('#startmenu,#menubtn')) { sm.hidden = true; MH.$('menubtn')?.classList.remove('open'); }
 });
 function signOut() {
-  saveDataNow(); MH.setSession('');
+  saveDataNow(); clearDynamicApps(); MH.setSession('');
   wins.clear(); currentUser = null; userData = null; locked = false;
   MH.$('desktop').hidden = true; MH.$('desktop').innerHTML = '';
   route();
@@ -636,21 +702,166 @@ registerApp({
   },
 });
 
+/* ============================ WEBSITES ============================ */
+registerApp({
+  id: 'websites', name: 'Websites', icon: '🌍', cat: 'Productivity', desc: 'Your saved websites — add, open, turn into apps, remove', w: 900, h: 580,
+  render(body) {
+    body.innerHTML = `${bar('Websites')}<div class="app-main pad">
+    <div class="card"><h3 style="margin-top:0">＋ Add a website</h3>
+      <form id="ws-form" class="add-form">
+        <div class="field"><label>Site name</label><input id="ws-name" required maxlength="50" placeholder="e.g. Khan Academy"></div>
+        <div class="field"><label>Address</label><input id="ws-url" required placeholder="e.g. khanacademy.org" inputmode="url"></div>
+        <div class="field"><label>Icon (emoji)</label><input id="ws-icon" maxlength="4" value="🌐"></div>
+        <button class="btn primary" type="submit">Add website</button>
+      </form>
+      <p class="muted">Saved websites live here and on the Browser home page. “＋ App” turns a site into its own windowed app in the proton menu. Everything is saved on this device, per account.</p></div>
+    <h3>Your websites <span class="muted" id="ws-count"></span></h3>
+    <div class="grid-cards" id="ws-list"></div></div>`;
+    function draw() {
+      body.querySelector('#ws-count').textContent = `(${userData.websites.length})`;
+      body.querySelector('#ws-list').innerHTML = userData.websites.length ? userData.websites.map((s) => `
+        <div class="card"><div style="font-size:28px">${MH.esc(s.icon || '🌐')}</div>
+        <h3 style="margin:6px 0 3px">${MH.esc(s.name)}</h3>
+        <p class="muted site-url" style="min-height:32px">${MH.esc(s.url)}</p>
+        <div style="display:flex;gap:6px;flex-wrap:wrap"><button class="btn sm primary" data-open="${s.id}">Open</button>
+        <button class="btn sm" data-app="${s.id}">＋ App</button>
+        <button class="btn sm" data-edit="${s.id}">Edit</button>
+        <button class="btn sm" data-remove="${s.id}">Remove</button></div></div>`).join('')
+        : '<p class="muted">No websites yet — add your first one above.</p>';
+      body.querySelectorAll('[data-open]').forEach((b) => b.onclick = () => { const s = userData.websites.find((x) => x.id === b.dataset.open); if (s) openWebsite(s); });
+      body.querySelectorAll('[data-app]').forEach((b) => b.onclick = () => { const s = userData.websites.find((x) => x.id === b.dataset.app); if (s) websiteAsApp(s); });
+      body.querySelectorAll('[data-edit]').forEach((b) => b.onclick = () => {
+        const s = userData.websites.find((x) => x.id === b.dataset.edit); if (!s) return;
+        const name = prompt('Site name:', s.name); if (name === null) return;
+        const url = normalizeUrl(prompt('Address:', s.url) ?? '');
+        if (!url) { MH.toast('That address does not look valid.'); return; }
+        s.name = name.trim() || s.name; s.url = url; saveData(); draw();
+      });
+      body.querySelectorAll('[data-remove]').forEach((b) => b.onclick = () => {
+        const s = userData.websites.find((x) => x.id === b.dataset.remove);
+        if (s && confirmBox(`Remove the website “${s.name}”? (Any app made from it stays.)`)) {
+          userData.websites = userData.websites.filter((x) => x.id !== s.id); saveData(); draw(); MH.toast('Website removed.');
+        }
+      });
+    }
+    body.querySelector('#ws-form').onsubmit = (e) => {
+      e.preventDefault();
+      const url = normalizeUrl(body.querySelector('#ws-url').value);
+      if (!url) { MH.toast('Please enter a valid address, e.g. example.com'); return; }
+      userData.websites.push({ id: 'site-' + MH.uid(), name: body.querySelector('#ws-name').value.trim(), icon: body.querySelector('#ws-icon').value.trim() || '🌐', url });
+      saveData(); e.target.reset(); body.querySelector('#ws-icon').value = '🌐'; draw();
+      MH.toast('Website added — open it here or from the Browser home page.');
+    };
+    draw();
+  },
+});
+
 /* ============================ APP CENTER ============================ */
 registerApp({
-  id: 'appcenter', name: 'App Center', icon: '🧩', cat: 'System', desc: 'Every app — open it, or pin it to the panel', w: 920, h: 580,
+  id: 'appcenter', name: 'App Center', icon: '🧩', cat: 'System', desc: 'Add & remove apps and websites, like Mixt', w: 980, h: 640,
   render(body) {
-    body.innerHTML = `${bar('App Center', `<input type="search" id="ac-q" placeholder="Search apps">`)}<div class="app-main pad"><div class="grid-cards" id="ac-grid"></div></div>`;
+    normalizeUserData();
+    body.innerHTML = `${bar('App Center', `<input type="search" id="ac-q" placeholder="Search apps & websites">`)}
+    <div class="app-main pad">
+    <div class="grid-cards" style="grid-template-columns:repeat(auto-fit,minmax(300px,1fr));margin-bottom:16px">
+      <div class="card"><h3 style="margin-top:0">＋ Add an app</h3>
+        <form id="ac-app-form">
+          <div class="field"><label>App name</label><input id="ac-app-name" required maxlength="40" placeholder="e.g. Desmos Graphing"></div>
+          <div class="field"><label>Web address it opens</label><input id="ac-app-url" required placeholder="e.g. desmos.com/calculator" inputmode="url"></div>
+          <div class="auth-row" style="display:grid;grid-template-columns:90px 1fr;gap:10px">
+            <div class="field"><label>Icon</label><input id="ac-app-icon" maxlength="4" value="🧩"></div>
+            <div class="field"><label>Description (optional)</label><input id="ac-app-desc" maxlength="90" placeholder="What is it for?"></div>
+          </div>
+          <button class="btn primary" type="submit">Add app</button>
+          <p class="muted">It appears in the proton menu → <b>My Apps</b>, can be pinned to the panel, and opens in its own window. (Some sites refuse to be embedded — those get an “Open in new tab” button.)</p>
+        </form></div>
+      <div class="card"><h3 style="margin-top:0">＋ Add a website</h3>
+        <form id="ac-site-form">
+          <div class="field"><label>Site name</label><input id="ac-site-name" required maxlength="50" placeholder="e.g. BBC Bitesize"></div>
+          <div class="field"><label>Address</label><input id="ac-site-url" required placeholder="e.g. bbc.co.uk/bitesize" inputmode="url"></div>
+          <div class="field"><label>Icon (emoji)</label><input id="ac-site-icon" maxlength="4" value="🌐"></div>
+          <button class="btn primary" type="submit">Add website</button>
+          <p class="muted">Websites are bookmarks with superpowers: open them in the Browser, or turn them into apps. Manage them all in the <b>Websites</b> app.</p>
+        </form>
+        <button class="btn" id="ac-open-websites">🌍 Open Websites app</button></div>
+    </div>
+
+    <h3>🧩 Your apps <span class="muted" id="ac-custom-count"></span></h3>
+    <div class="grid-cards" id="ac-custom"></div>
+    <h3>🌍 Your websites <span class="muted" id="ac-sites-count"></span></h3>
+    <div class="grid-cards" id="ac-sites"></div>
+    <h3>📦 All apps</h3>
+    <div class="grid-cards" id="ac-grid"></div></div>`;
+
+    const PROTECTED = ['appcenter', 'settings']; // removing these would lock you out of managing apps
     function draw() {
       const q = body.querySelector('#ac-q').value.trim().toLowerCase();
+      const match = (a) => !q || (a.name + ' ' + (a.desc || '') + ' ' + (a.url || '')).toLowerCase().includes(q);
+
+      body.querySelector('#ac-custom-count').textContent = `(${userData.customApps.length})`;
+      body.querySelector('#ac-custom').innerHTML = userData.customApps.filter(match).length ? userData.customApps.filter(match).map((a) => `
+        <div class="card"><div style="font-size:30px">${MH.esc(a.icon || '🧩')}</div><h3 style="margin:7px 0 3px">${MH.esc(a.name)}</h3>
+        <p class="muted site-url" style="min-height:34px">${MH.esc(a.desc || a.url)}</p><span class="chip">My Apps</span>
+        <div style="display:flex;gap:6px;flex-wrap:wrap;margin-top:11px"><button class="btn sm primary" data-copen="${a.id}">Open</button>
+        <button class="btn sm" data-cpin="${a.id}">${(userData.settings.pinned || []).includes(a.id) ? 'Unpin' : '📌 Pin'}</button>
+        <button class="btn sm" data-cedit="${a.id}">Edit</button>
+        <button class="btn sm" data-cdel="${a.id}">Remove</button></div></div>`).join('')
+        : '<p class="muted">No custom apps yet — add one with the form above and it lands in the proton menu → My Apps.</p>';
+      body.querySelectorAll('[data-copen]').forEach((b) => b.onclick = () => openApp(b.dataset.copen));
+      body.querySelectorAll('[data-cpin]').forEach((b) => b.onclick = () => {
+        const id = b.dataset.cpin, p = userData.settings.pinned;
+        userData.settings.pinned = p.includes(id) ? p.filter((x) => x !== id) : [...p, id];
+        saveData(); renderPanelApps(); draw();
+      });
+      body.querySelectorAll('[data-cedit]').forEach((b) => b.onclick = () => {
+        const a = userData.customApps.find((x) => x.id === b.dataset.cedit); if (!a) return;
+        const name = prompt('App name:', a.name); if (name === null) return;
+        const url = normalizeUrl(prompt('Web address:', a.url) ?? '');
+        if (!url) { MH.toast('That address does not look valid.'); return; }
+        const icon = prompt('Icon (emoji):', a.icon || '🧩');
+        a.name = name.trim() || a.name; a.url = url; if (icon) a.icon = icon.trim() || a.icon;
+        syncCustomApps(); saveData(); refreshChrome(); draw(); MH.toast('App updated.');
+      });
+      body.querySelectorAll('[data-cdel]').forEach((b) => b.onclick = () => {
+        const a = userData.customApps.find((x) => x.id === b.dataset.cdel);
+        if (!a || !confirmBox(`Remove the app “${a.name}”? This deletes it from this account.`)) return;
+        closeWin(a.id);
+        userData.customApps = userData.customApps.filter((x) => x.id !== a.id);
+        userData.settings.pinned = (userData.settings.pinned || []).filter((x) => x !== a.id);
+        syncCustomApps(); saveData(); refreshChrome(); draw(); MH.toast(`App “${a.name}” removed.`);
+      });
+
+      body.querySelector('#ac-sites-count').textContent = `(${userData.websites.length})`;
+      body.querySelector('#ac-sites').innerHTML = userData.websites.filter(match).length ? userData.websites.filter(match).map((s) => `
+        <div class="card"><div style="font-size:30px">${MH.esc(s.icon || '🌐')}</div><h3 style="margin:7px 0 3px">${MH.esc(s.name)}</h3>
+        <p class="muted site-url" style="min-height:34px">${MH.esc(s.url)}</p><span class="chip">Website</span>
+        <div style="display:flex;gap:6px;flex-wrap:wrap;margin-top:11px"><button class="btn sm primary" data-sopen="${s.id}">Open</button>
+        <button class="btn sm" data-sapp="${s.id}">＋ App</button>
+        <button class="btn sm" data-sdel="${s.id}">Remove</button></div></div>`).join('')
+        : '<p class="muted">No websites yet — add one above.</p>';
+      body.querySelectorAll('[data-sopen]').forEach((b) => b.onclick = () => { const s = userData.websites.find((x) => x.id === b.dataset.sopen); if (s) openWebsite(s); });
+      body.querySelectorAll('[data-sapp]').forEach((b) => b.onclick = () => { const s = userData.websites.find((x) => x.id === b.dataset.sapp); if (s) { websiteAsApp(s); draw(); } });
+      body.querySelectorAll('[data-sdel]').forEach((b) => b.onclick = () => {
+        const s = userData.websites.find((x) => x.id === b.dataset.sdel);
+        if (s && confirmBox(`Remove the website “${s.name}”?`)) { userData.websites = userData.websites.filter((x) => x.id !== s.id); saveData(); draw(); }
+      });
+
       body.querySelector('#ac-grid').innerHTML = Object.values(APPS)
-        .filter((a) => a.id !== 'appcenter' && (!q || (a.name + a.desc).toLowerCase().includes(q)))
+        .filter((a) => a.id !== 'appcenter' && !dynamicAppIds.has(a.id) && match(a))
         .map((a) => {
           const pinned = (userData.settings.pinned || []).includes(a.id);
-          return `<div class="card"><div style="font-size:30px">${a.icon}</div><h3 style="margin:7px 0 3px">${MH.esc(a.name)}</h3>
-          <p class="muted" style="min-height:34px">${MH.esc(a.desc)}</p><span class="chip">${a.cat}</span>
-          <div style="display:flex;gap:6px;flex-wrap:wrap;margin-top:11px"><button class="btn sm primary" data-open="${a.id}">Open</button>
-          <button class="btn sm" data-pin="${a.id}">${pinned ? 'Unpin' : '📌 Pin'}</button></div></div>`;
+          const removed = (userData.hiddenApps || []).includes(a.id);
+          let buttons;
+          if (removed) buttons = `<button class="btn sm primary" data-restore="${a.id}">＋ Add back</button>`;
+          else {
+            buttons = `<button class="btn sm primary" data-open="${a.id}">Open</button><button class="btn sm" data-pin="${a.id}">${pinned ? 'Unpin' : '📌 Pin'}</button>`;
+            buttons += PROTECTED.includes(a.id)
+              ? '<span class="muted" title="This one keeps the desktop manageable">Built-in</span>'
+              : `<button class="btn sm" data-remove="${a.id}">Remove</button>`;
+          }
+          return `<div class="card" ${removed ? 'style="opacity:.62"' : ''}><div style="font-size:30px">${a.icon}</div><h3 style="margin:7px 0 3px">${MH.esc(a.name)}</h3>
+          <p class="muted" style="min-height:34px">${MH.esc(a.desc)}</p><span class="chip">${a.cat}</span>${removed ? ' <span class="chip" style="background:#f8d7d4;color:#8c2b24">Removed</span>' : ''}
+          <div style="display:flex;gap:6px;flex-wrap:wrap;margin-top:11px">${buttons}</div></div>`;
         }).join('');
       body.querySelectorAll('[data-open]').forEach((b) => b.onclick = () => openApp(b.dataset.open));
       body.querySelectorAll('[data-pin]').forEach((b) => b.onclick = () => {
@@ -658,7 +869,40 @@ registerApp({
         userData.settings.pinned = p.includes(id) ? p.filter((x) => x !== id) : [...p, id];
         saveData(); renderPanelApps(); draw();
       });
+      body.querySelectorAll('[data-remove]').forEach((b) => b.onclick = () => {
+        const a = APPS[b.dataset.remove];
+        if (!a || !confirmBox(`Remove “${a.name}” from the proton menu? You can add it back here any time.`)) return;
+        closeWin(a.id);
+        userData.hiddenApps.push(a.id);
+        userData.settings.pinned = (userData.settings.pinned || []).filter((x) => x !== a.id);
+        saveData(); refreshChrome(); draw(); MH.toast(`“${a.name}” removed — find it here to add it back.`);
+      });
+      body.querySelectorAll('[data-restore]').forEach((b) => b.onclick = () => {
+        userData.hiddenApps = userData.hiddenApps.filter((x) => x !== b.dataset.restore);
+        saveData(); refreshChrome(); draw(); MH.toast('App added back to the proton menu.');
+      });
     }
+
+    body.querySelector('#ac-app-form').onsubmit = (e) => {
+      e.preventDefault();
+      const url = normalizeUrl(body.querySelector('#ac-app-url').value);
+      if (!url) { MH.toast('Please enter a valid address, e.g. example.com'); return; }
+      const def = { id: 'custom-' + MH.uid(), name: body.querySelector('#ac-app-name').value.trim(), icon: body.querySelector('#ac-app-icon').value.trim() || '🧩', desc: body.querySelector('#ac-app-desc').value.trim(), url };
+      userData.customApps.push(def);
+      syncCustomApps(); saveData(); refreshChrome();
+      e.target.reset(); body.querySelector('#ac-app-icon').value = '🧩';
+      draw(); MH.toast(`App “${def.name}” added — proton menu → My Apps. Opening it…`);
+      openApp(def.id);
+    };
+    body.querySelector('#ac-site-form').onsubmit = (e) => {
+      e.preventDefault();
+      const url = normalizeUrl(body.querySelector('#ac-site-url').value);
+      if (!url) { MH.toast('Please enter a valid address, e.g. example.com'); return; }
+      userData.websites.push({ id: 'site-' + MH.uid(), name: body.querySelector('#ac-site-name').value.trim(), icon: body.querySelector('#ac-site-icon').value.trim() || '🌐', url });
+      saveData(); e.target.reset(); body.querySelector('#ac-site-icon').value = '🌐';
+      draw(); MH.toast('Website added.');
+    };
+    body.querySelector('#ac-open-websites').onclick = () => openApp('websites');
     body.querySelector('#ac-q').addEventListener('input', draw);
     draw();
   },
@@ -745,7 +989,7 @@ registerApp({
       try {
         const parsed = JSON.parse(await f.text());
         if (!parsed.data?.settings) throw new Error('bad file');
-        userData = parsed.data; saveDataNow();
+        userData = parsed.data; normalizeUserData(); syncCustomApps(); saveDataNow(); refreshChrome();
         document.querySelector('.wallpaper').className = 'wallpaper wp-' + userData.settings.wallpaper;
         applyAccent(); renderPanelApps();
         MH.toast('Backup imported — your desktop was restored.');

@@ -97,6 +97,15 @@ const MH = {
       vault: [{ id: MH.uid(), title: 'Example secret', body: 'The vault asks for your account password again before showing these notes.' }],
       games: {},
       counters: { windowsOpened: 0 },
+      /* Apps & websites the user adds themselves (Mixt-style install/remove).
+       * customApps: [{id,name,icon,desc,url}] — each becomes a real proton app.
+       * websites:   [{id,name,icon,url}]   — saved sites, opened in Browser.
+       * hiddenApps: [appId]                — built-ins the user "removed"
+       *                                      (hidden from menu, restorable). */
+      customApps: [],
+      websites: [{ id: 'site-mixt', name: 'Mixt — the original project', icon: '⚛', url: 'https://github.com/proton-arcade/mlp/tree/arena/170861f7-mlp' }],
+      hiddenApps: [],
+
     };
   },
 
