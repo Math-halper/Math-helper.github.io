@@ -93,7 +93,7 @@ registerApp({
           ctx.strokeStyle = '#2b2b2b'; ctx.fillStyle = '#aaa'; ctx.font = '11px system-ui';
           for (let gx = Math.ceil(min); gx <= max; gx++) { ctx.beginPath(); ctx.moveTo(X(gx), 0); ctx.lineTo(X(gx), H); ctx.stroke(); ctx.fillText(gx, X(gx) + 3, Y(0) - 4 < 12 ? 12 : Y(0) - 4); }
           ctx.strokeStyle = '#555'; ctx.beginPath(); ctx.moveTo(0, Y(0)); ctx.lineTo(W, Y(0)); ctx.moveTo(X(0), 0); ctx.lineTo(X(0), H); ctx.stroke();
-          ctx.strokeStyle = '#68b723'; ctx.lineWidth = 2.4; ctx.beginPath(); let pen = false;
+          ctx.strokeStyle = '#ffffff'; ctx.lineWidth = 2.4; ctx.beginPath(); let pen = false;
           vals.forEach((y, i) => { if (!Number.isFinite(y) || Math.abs(y) > 1e7) { pen = false; return; } const px = i, py = Y(y); pen ? ctx.lineTo(px, py) : ctx.moveTo(px, py); pen = true; });
           ctx.stroke(); ctx.lineWidth = 1;
           main.querySelector('#g-msg').textContent = `Plotted f(x) = ${main.querySelector('#g-f').value} for x ∈ [${min}, ${max}], y ∈ [${fmtNum(lo)}, ${fmtNum(hi)}]`;

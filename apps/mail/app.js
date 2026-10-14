@@ -17,7 +17,7 @@ registerApp({
       body.querySelectorAll('[data-f]').forEach((b) => b.classList.toggle('sel', b.dataset.f === folder));
       const items = userData.mail.filter((m) => m.folder === folder).sort((a, b) => b.date - a.date);
       body.querySelector('#m-list').innerHTML = items.length ? items.map((m) => `
-        <button class="rowitem ${m.id === sel ? 'sel' : ''}" data-id="${m.id}"><span>${m.read || folder !== 'inbox' ? '' : '<span class="pdot" style="background:#3d7fca" title="Unread"></span> '}<b>${MH.esc(folder === 'inbox' ? m.from : m.to)}</b> — ${MH.esc(m.subject)}<br><span class="muted">${new Date(m.date).toLocaleString()} · ${MH.esc(m.body.slice(0, 60))}…</span></span></button>`).join('')
+        <button class="rowitem ${m.id === sel ? 'sel' : ''}" data-id="${m.id}"><span>${m.read || folder !== 'inbox' ? '' : '<span class="pdot" style="background:#ffffff" title="Unread"></span> '}<b>${MH.esc(folder === 'inbox' ? m.from : m.to)}</b> — ${MH.esc(m.subject)}<br><span class="muted">${new Date(m.date).toLocaleString()} · ${MH.esc(m.body.slice(0, 60))}…</span></span></button>`).join('')
         : '<div class="pad muted">Nothing here yet.</div>';
       body.querySelectorAll('#m-list [data-id]').forEach((b) => b.onclick = () => {
         sel = b.dataset.id; const m = userData.mail.find((x) => x.id === sel);

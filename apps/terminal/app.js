@@ -12,7 +12,7 @@ registerApp({
     print('proton terminal — type "help" and press Enter.');
     print(`Signed in as ${currentUser.username} on this device. Everything here is a simulation: no real shell, no network.`);
     function prompt() {
-      out.insertAdjacentHTML('beforeend', `<span style="color:#8ee08a">${MH.esc(currentUser.username)}@proton</span>:~$ <input id="t-in" autocomplete="off" spellcheck="false">\n`);
+      out.insertAdjacentHTML('beforeend', `<span style="color:#ffffff">${MH.esc(currentUser.username)}@proton</span>:~$ <input id="t-in" autocomplete="off" spellcheck="false">\n`);
       const inp = body.querySelector('#t-in'); inp.focus();
       out.onclick = () => inp.focus();
       inp.addEventListener('keydown', (e) => { if (e.key === 'Enter') { const cmd = inp.value; inp.remove(); print(cmd); run(cmd.trim()); } });
@@ -23,7 +23,7 @@ registerApp({
       const done = () => prompt();
       if (!raw) return done();
       switch (cmd.toLowerCase()) {
-        case 'help': print('Commands:\n  help                 this list\n  apps                 list every app\n  open <app-id>        open an app (e.g. open notes)\n  whoami / date / echo <text>\n  math <expression>    e.g. math 12*8+sqrt(81)\n  solve a b c          solve a·x+b=c  →  solve 2 3 11\n  wallpaper <name>     mint|ocean|sunset|grape|slate|rose\n  accent <hex>         e.g. accent #3d7fca\n  notes                how many notes you have\n  clear                clear the terminal\n  about                about this OS'); break;
+        case 'help': print('Commands:\n  help                 this list\n  apps                 list every app\n  open <app-id>        open an app (e.g. open notes)\n  whoami / date / echo <text>\n  math <expression>    e.g. math 12*8+sqrt(81)\n  solve a b c          solve a·x+b=c  →  solve 2 3 11\n  wallpaper <name>     mint|ocean|sunset|grape|slate|rose\n  accent <hex>         e.g. accent #ffffff\n  notes                how many notes you have\n  clear                clear the terminal\n  about                about this OS'); break;
         case 'apps': print(Object.values(APPS).map((a) => `  ${a.id.padEnd(14)} ${iconNameFrom(a.icon)} - ${a.name}`).join('\n')); break;
         case 'open': { const a = APPS[arg.toLowerCase()]; a ? (print(`Opening ${a.name}…`), openApp(a.id)) : print(`No app called "${arg}". Try: apps`); break; }
         case 'whoami': print(`${currentUser.username} — ${currentUser.displayName} (account created ${new Date(currentUser.createdAt).toLocaleString()}, stored only in this browser)`); break;

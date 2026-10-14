@@ -8,7 +8,7 @@ registerApp({
   render(body) {
     normalizeUserData(); applyModuleOverrides();
     const PROTECTED = ['appcenter', 'settings', 'customize'];
-    const WP_BUILTINS = [['mint', 'Mint'], ['ocean', 'Ocean'], ['sunset', 'Sunset'], ['grape', 'Grape'], ['slate', 'Slate'], ['rose', 'Rose']];
+    const WP_BUILTINS = [['mint', 'Charcoal'], ['ocean', 'Smoke'], ['sunset', 'Ash'], ['grape', 'Graphite'], ['slate', 'Slate'], ['rose', 'Silver']];
     body.innerHTML = `${bar('Customize — everything is a module')}
     <div class="app-main pad">
     <p class="muted" style="margin-top:0">Rename apps, change their icons, move them between categories, reorder them, hide or restore them — then invent your own themes and wallpapers. Everything here is saved per account, and <b>Reset customisations</b> at the bottom undoes it all without touching your notes, files or other content.</p>
@@ -27,7 +27,7 @@ registerApp({
     <div class="card" style="margin-top:12px"><b>Add a theme</b>
       <form id="cust-theme-form" class="add-form" style="margin-top:8px">
         <div class="field"><label>Theme name</label><input id="ct-name" required maxlength="36" placeholder="e.g. Midnight Forest"></div>
-        <div class="field"><label>Accent colour</label><input id="ct-accent" type="color" value="#68b723" style="height:38px;padding:2px"></div>
+        <div class="field"><label>Accent colour</label><input id="ct-accent" type="color" value="#ffffff" style="height:38px;padding:2px"></div>
         <div class="field"><label>Wallpaper</label><select id="ct-wallpaper"></select></div>
         <button class="btn primary" type="submit">Add & apply theme</button>
       </form></div>
@@ -37,7 +37,7 @@ registerApp({
     <div class="card" style="margin-top:12px"><b>Add a wallpaper</b>
       <form id="cust-wall-form" class="add-form" style="margin-top:8px">
         <div class="field"><label>Wallpaper name</label><input id="cw-name" required maxlength="36" placeholder="e.g. Deep Space"></div>
-        <div class="field"><label>Colour 1</label><input id="cw-from" type="color" value="#0b1026" style="height:38px;padding:2px"></div>
+        <div class="field"><label>Colour 1</label><input id="cw-from" type="color" value="#1a1a1a" style="height:38px;padding:2px"></div>
         <div class="field"><label>Colour 2</label><input id="cw-to" type="color" value="#000000" style="height:38px;padding:2px"></div>
         <button class="btn primary" type="submit">Add & apply wallpaper</button>
       </form></div>
@@ -128,7 +128,7 @@ registerApp({
       body.querySelector('#cust-themelist').innerHTML = `
         <div class="card" ${active === 'proton-dark' ? 'style="outline:2px solid var(--accent)"' : ''}><div class="card-ic" style="font-size:26px">${iconSvg('moon')}</div>
           <h3 style="margin:6px 0 3px">proton Dark ${active === 'proton-dark' ? '<span class="chip">Active</span>' : ''}</h3>
-          <p class="muted">The built-in theme: black backgrounds, white text, your chosen accent.</p>
+          <p class="muted">The built-in theme: black backgrounds, white text, and a white/grey accent shade.</p>
           <div class="field"><label>Accent</label><select data-builtin-accent>${Object.entries(ACCENTS).map(([hex, a]) => `<option value="${hex}" ${userData.settings.accent === hex && active === 'proton-dark' ? 'selected' : ''}>${a.name}</option>`).join('')}</select></div>
           ${active === 'proton-dark' ? '' : '<button class="btn sm primary" data-theme-builtin="1">Apply</button>'}</div>` +
         userData.customThemes.map((th) => `
@@ -233,7 +233,7 @@ registerApp({
       userData.settings.activeThemeId = th.id; userData.settings.accent = th.accent;
       if (th.wallpaper) userData.settings.wallpaper = th.wallpaper;
       saveData(); applyAccent(); applyWallpaper();
-      e.target.reset(); body.querySelector('#ct-accent').value = '#68b723';
+      e.target.reset(); body.querySelector('#ct-accent').value = '#ffffff';
       drawThemes(); MH.toast(`Theme “${th.name}” added and applied.`);
     };
     body.querySelector('#cust-wall-form').onsubmit = (e) => {
@@ -250,7 +250,7 @@ registerApp({
       userData.settings.pinned = ['files', 'math', 'notes', 'browser', 'terminal'];
       userData.customThemes = []; userData.customWallpapers = [];
       userData.settings.activeThemeId = 'proton-dark';
-      userData.settings.accent = '#68b723'; userData.settings.wallpaper = 'mint';
+      userData.settings.accent = '#ffffff'; userData.settings.wallpaper = 'mint';
       userData.settings.components = { clock: true, desktopHint: true, lockButton: true, userButton: true, startSearch: true, panelLabels: false };
       applyModuleOverrides(); saveData(); applyAccent(); applyWallpaper(); applyComponents(); refreshChrome();
       drawModules(); drawThemes(); drawWalls(); drawComponents();

@@ -4,8 +4,9 @@ A complete desktop in your browser: Mint-style bottom panel and proton menu,
 draggable/resizable windows, and 20+ apps — cloned and rebranded from
 [Mixt (`proton-arcade/mlp` @ `arena/170861f7-mlp`)](https://github.com/proton-arcade/mlp/tree/arena/170861f7-mlp)
 and rebuilt to run as a **pure static website** (no server, no build step,
-no dependencies). It ships a **dark theme: primarily black backgrounds with
-white text**, keeping Mixt's green as the accent colour.
+no dependencies). It ships a **black-and-white theme: black backgrounds, white text, and
+white/grey accents** (no colour in the UI; only physical game pieces
+such as cards and checkers keep their colours).
 
 ## Run it
 
@@ -73,7 +74,7 @@ export a backup from **Settings → Backup** first.
 - **Customize — everything is modular.** Rename any app, change its icon,
   move it to another (or a brand-new) menu category, reorder it, pin it, remove
   it and add it back, or reset it — per account. Invent your own **themes**
-  (accent + wallpaper) and **wallpapers** (two-colour gradients) and apply them
+  (accent + wallpaper) and **wallpapers** (two-shade gradients) and apply them
   in one click; they also appear in Settings. Toggle desktop parts (clock,
   desktop date/hint, lock & account buttons, menu search, panel labels)
   instantly, and reset all customisations without touching your content.

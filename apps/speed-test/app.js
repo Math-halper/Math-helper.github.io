@@ -11,7 +11,7 @@ registerApp({
     body.innerHTML = `${bar('Speed Test')}<div class="app-main pad">
       <div class="card" style="text-align:center">
         <h3 style="margin-top:0">Reaction timer</h3>
-        <button id="st-pad" class="btn" style="width:100%;min-height:110px;font-size:19px">Click to start, then wait for green…</button>
+        <button id="st-pad" class="btn" style="width:100%;min-height:110px;font-size:19px">Click to start, then wait for the pad to turn white</button>
         <p id="st-result" class="muted">${state.best ? 'Best so far: ' + state.best + ' ms' : 'No attempts yet.'}</p></div>
       <div class="card" style="margin-top:12px;text-align:center">
         <h3 style="margin-top:0">Device benchmark</h3>
@@ -26,11 +26,11 @@ registerApp({
         : 'Nothing yet — try the timer!';
     };
     drawRuns();
-    const setPad = (text, bg) => { pad.textContent = text; pad.style.background = bg; };
+    const setPad = (text, bg, fg = '#ffffff') => { pad.textContent = text; pad.style.background = bg; pad.style.color = fg; };
     pad.onclick = () => {
       if (phase === 'idle') {
-        phase = 'waiting'; setPad('Wait for green…', '#a92c28');
-        timer = setTimeout(() => { phase = 'ready'; startedAt = performance.now(); setPad('CLICK!', '#2f8f1d'); }, 900 + Math.random() * 2200);
+        phase = 'waiting'; setPad('Wait for it...', '#2b2b2b');
+        timer = setTimeout(() => { phase = 'ready'; startedAt = performance.now(); setPad('CLICK!', '#ffffff', '#000000'); }, 900 + Math.random() * 2200);
       } else if (phase === 'waiting') {
         clearTimeout(timer); phase = 'idle'; setPad('Too soon! Click to try again', '#161616');
       } else if (phase === 'ready') {

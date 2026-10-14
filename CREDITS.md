@@ -17,7 +17,7 @@ and look wherever a browser-only equivalent exists:
 
 | Upstream (Mixt) | Here (proton) |
 | --- | --- |
-| Mint-Y theme `src/gui/src/css/mixt.css` (accent `#68b723`, light gradient title bars, dark bottom panel) | Same palette/chrome, reimplemented in `assets/styles.css` |
+| Mint-Y theme `src/gui/src/css/mixt.css` (accent `#68b723`, light gradient title bars, dark bottom panel) | Panel layout/chrome reimplemented in `assets/styles.css`, with the palette changed to black-and-white for proton |
 | Server accounts, `admin` first sign-in, whitelist | First-launch account creation stored **only in this browser** (localStorage), salted SHA-256 password hash, stays signed in, lock screen |
 | IndexedDB app storage (`src/apps/shared/localdb.js`) | Per-account localStorage state, export/import backup in Settings |
 | `src/apps/notes`, `calendar`, `spreadsheet`, `whiteboard`, `presentation`, `terminal`, `pdf-editor`, `media`, `mail`, `contacts` | Browser-only rewrites with the same core behaviour |

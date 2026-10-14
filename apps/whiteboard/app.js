@@ -11,7 +11,7 @@ registerApp({
     let board = userData.boards[0], tool = 'pen', drawing = false, start = null, snapshot = null;
     body.innerHTML = `${bar('Whiteboard', `<select id="w-list"></select><button class="btn sm" id="w-new">${iconSvg('plus')} Board</button><button class="btn sm" id="w-del">Delete</button><button class="btn sm" id="w-png">${iconSvg('download')} PNG</button>`)}
     <div class="appbar" style="background:#111">${['pen', 'line', 'rect', 'ellipse', 'text', 'eraser'].map((t) => `<button class="btn sm" data-tool="${t}">${{ pen: 'Pen', line: 'Line', rect: 'Rectangle', ellipse: 'Ellipse', text: 'Text', eraser: 'Eraser' }[t]}</button>`).join('')}
-      <input type="color" id="w-color" value="#1d4f91" style="width:38px;height:30px;padding:0"> <label class="muted">Width <input type="range" id="w-width" min="1" max="24" value="3"></label>
+      <input type="color" id="w-color" value="#111111" style="width:38px;height:30px;padding:0"> <label class="muted">Width <input type="range" id="w-width" min="1" max="24" value="3"></label>
       <button class="btn sm" id="w-undo">Undo</button><button class="btn sm" id="w-clear">Clear</button><span class="muted" id="w-saved" style="margin-left:auto"></span></div>
     <div class="wb-stage"><canvas id="w-cv"></canvas></div>`;
     const cv = body.querySelector('#w-cv'), c2 = cv.getContext('2d'), stage = body.querySelector('.wb-stage');

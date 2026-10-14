@@ -36,7 +36,7 @@ registerApp({
       const renderPt = (i) => {
         const p = pts[i], ds = sel !== null ? dests(sel) : [];
         const isDest = ds.some((d) => d.to === i);
-        return `<button data-pt="${i}" style="min-height:74px;border:1px solid var(--line);border-radius:6px;background:${i % 2 ? '#e8dcc3' : '#f5efe0'};${isDest ? 'outline:3px solid var(--accent);' : ''}${sel === i ? 'outline:3px solid #3d7fca;' : ''}padding:4px">
+        return `<button data-pt="${i}" style="min-height:74px;border:1px solid var(--line);border-radius:6px;background:${i % 2 ? '#e8dcc3' : '#f5efe0'};${isDest ? 'outline:3px solid var(--accent);' : ''}${sel === i ? 'outline:3px solid #8a8a8a;' : ''}padding:4px">
           <small style="color:#888">${i}</small><br><span style="font-size:19px;color:${p.c === 'w' ? '#fff' : '#222'};text-shadow:0 0 3px #000">${p.n ? '<span class="bg-pips">' + '<i class="bg-checker ' + p.c + '"></i>'.repeat(Math.min(p.n, 5)) + '</span>' : ''}</span>${p.n > 5 ? `<br><small>×${p.n}</small>` : ''}</button>`;
       };
       body.querySelector('#bg-board').innerHTML = `

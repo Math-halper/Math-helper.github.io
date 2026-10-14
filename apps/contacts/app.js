@@ -13,7 +13,7 @@ registerApp({
       const q = body.querySelector('#ct-q').value.trim().toLowerCase();
       const list = userData.contacts.filter((c) => !q || (c.name + c.email).toLowerCase().includes(q));
       body.querySelector('#ct-list').innerHTML = list.length ? list.map((c) => `
-        <button class="rowitem ${c.id === sel ? 'sel' : ''}" data-id="${c.id}"><span class="lock-avatar" style="width:36px;height:36px;font-size:16px;margin:0;background:${MH.esc(currentUser.color)}">${MH.esc((c.name[0] || '?').toUpperCase())}</span><span><b>${MH.esc(c.name)}</b><br><span class="muted">${MH.esc(c.email)}</span></span></button>`).join('') : '<div class="pad muted">No contacts.</div>';
+        <button class="rowitem ${c.id === sel ? 'sel' : ''}" data-id="${c.id}"><span class="lock-avatar" style="width:36px;height:36px;font-size:16px;margin:0;background:${avatarBg(currentUser)}">${MH.esc((c.name[0] || '?').toUpperCase())}</span><span><b>${MH.esc(c.name)}</b><br><span class="muted">${MH.esc(c.email)}</span></span></button>`).join('') : '<div class="pad muted">No contacts.</div>';
       body.querySelectorAll('#ct-list [data-id]').forEach((b) => b.onclick = () => { sel = b.dataset.id; draw(); });
       const c = userData.contacts.find((x) => x.id === sel);
       body.querySelector('#ct-detail').innerHTML = c ? `

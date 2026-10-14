@@ -169,25 +169,39 @@ function evalMath(expr, xVal = 0) {
 }
 const fmtNum = (v) => Math.abs(v) >= 1e12 || (Math.abs(v) < 1e-9 && v !== 0) ? v.toExponential(6) : String(Math.round(v * 1e10) / 1e10);
 
+/* Black-and-white accent shades. ink = text colour to use on top of it. */
 const ACCENTS = {
-  '#68b723': { dim: '#8ed081', soft: '#1e3512', name: 'Mint green' },
-  '#3d7fca': { dim: '#7db3e8', soft: '#12283f', name: 'Blue' },
-  '#8e5ec9': { dim: '#c39af0', soft: '#2a183f', name: 'Purple' },
-  '#e67e22': { dim: '#f5a65b', soft: '#3a2410', name: 'Orange' },
-  '#d64570': { dim: '#f28bb4', soft: '#3a1626', name: 'Pink' },
+  '#ffffff': { dim: '#ffffff', soft: '#2b2b2b', ink: '#000000', name: 'White' },
+  '#d9d9d9': { dim: '#f0f0f0', soft: '#242424', ink: '#000000', name: 'Silver' },
+  '#b5b5b5': { dim: '#d9d9d9', soft: '#1e1e1e', ink: '#000000', name: 'Light grey' },
+  '#8a8a8a': { dim: '#b5b5b5', soft: '#181818', ink: '#000000', name: 'Grey' },
+  '#5c5c5c': { dim: '#9a9a9a', soft: '#121212', ink: '#ffffff', name: 'Dark grey' },
 };
+/* Any accent saved by an older (coloured) version resolves to White. */
+function accentKey() {
+  return ACCENTS[userData.settings.accent] ? userData.settings.accent : '#ffffff';
+}
+function accentInk(hex) {
+  const n = parseInt(String(hex || '#ffffff').slice(1), 16);
+  if (Number.isNaN(n)) return '#000000';
+  const lum = (0.299 * (n >> 16 & 255) + 0.587 * (n >> 8 & 255) + 0.114 * (n & 255)) / 255;
+  return lum > 0.55 ? '#000000' : '#ffffff';
+}
 function applyAccent() {
   const theme = activeCustomTheme();
+  const root = document.documentElement.style;
   if (theme) {
-    document.documentElement.style.setProperty('--accent', theme.accent);
-    document.documentElement.style.setProperty('--accent-dim', theme.accent);
-    document.documentElement.style.setProperty('--accent-soft', `color-mix(in srgb, ${theme.accent} 26%, black)`);
+    root.setProperty('--accent', theme.accent);
+    root.setProperty('--accent-dim', theme.accent);
+    root.setProperty('--accent-soft', `color-mix(in srgb, ${theme.accent} 26%, black)`);
+    root.setProperty('--accent-ink', accentInk(theme.accent));
     return;
   }
-  const a = ACCENTS[userData.settings.accent] || ACCENTS['#68b723'];
-  document.documentElement.style.setProperty('--accent', userData.settings.accent);
-  document.documentElement.style.setProperty('--accent-dim', a.dim);
-  document.documentElement.style.setProperty('--accent-soft', a.soft);
+  const key = accentKey(), a = ACCENTS[key];
+  root.setProperty('--accent', key);
+  root.setProperty('--accent-dim', a.dim);
+  root.setProperty('--accent-soft', a.soft);
+  root.setProperty('--accent-ink', a.ink);
 }
 
 const wins = new Map(); // appId -> {el, body, title}
@@ -282,6 +296,14 @@ function openApp(id) {
 /* No shortcut icons on the desktop itself: apps open from the proton menu
  * or the panel. (Older saved settings may still carry desktopApps — ignored.) */
 
+/* Avatar background: accounts created by the coloured version keep their
+ * old colour value; map it to a dark grey so avatars stay black-and-white. */
+const AVATAR_GREY = { '#68b723': '#2f2f2f', '#3d7fca': '#4a4a4a', '#8e5ec9': '#5c5c5c', '#e67e22': '#383838', '#d64570': '#666666', '#2aa198': '#222222' };
+function avatarBg(u) {
+  const c = String((u && u.color) || '').toLowerCase();
+  if (/^#[0-9a-f]{6}$/.test(c) && c[1] === c[3] && c[3] === c[5]) return c;
+  return AVATAR_GREY[c] || '#2f2f2f';
+}
 /* Avatar = initials from the account name (no emoji avatars). */
 function userInitials(u) {
   const src = String((u && (u.displayName || u.username)) || 'proton').trim();
@@ -360,7 +382,7 @@ function renderStartMenu(q) {
   if (!list.length) html += `<p style="grid-column:1/-1;opacity:.7;padding:10px 4px">No apps match “${MH.esc(query)}”.</p>`;
   html += `</div>
     <div class="sm-foot">
-      <button class="sm-user" id="sm-user"><span class="avt" style="background:${MH.esc(currentUser.color)}">${MH.esc(userInitials(currentUser))}</span><span><b>${MH.esc(currentUser.displayName)}</b><span>@${MH.esc(currentUser.username)} · signed in on this device</span></span></button>
+      <button class="sm-user" id="sm-user"><span class="avt" style="background:${avatarBg(currentUser)}">${MH.esc(userInitials(currentUser))}</span><span><b>${MH.esc(currentUser.displayName)}</b><span>@${MH.esc(currentUser.username)} · signed in on this device</span></span></button>
       <button class="btn sm" id="sm-lock">${iconSvg('lock')} Lock</button>
       <button class="btn sm" id="sm-out">Sign out</button>
     </div>`;
@@ -390,7 +412,7 @@ function lockDesktop() {
 }
 
 /* ---------------- auth screens ---------------- */
-const COLORS = ['#68b723', '#3d7fca', '#8e5ec9', '#e67e22', '#d64570', '#2aa198'];
+const COLORS = ['#2f2f2f', '#4a4a4a', '#5c5c5c', '#383838', '#666666', '#222222']; // avatar circles: dark greys, white initials
 
 function authShell(title, sub, bodyHTML) {
   const a = MH.$('auth'); a.hidden = false;
@@ -474,7 +496,7 @@ function renderLogin() {
 function renderLock() {
   document.title = 'Locked — proton';
   authShell('Desktop locked', 'Your work is exactly as you left it', `
-    <div style="text-align:center"><div class="lock-avatar" style="background:${MH.esc(currentUser.color)}">${MH.esc(userInitials(currentUser))}</div>
+    <div style="text-align:center"><div class="lock-avatar" style="background:${avatarBg(currentUser)}">${MH.esc(userInitials(currentUser))}</div>
     <b>${MH.esc(currentUser.displayName)}</b><div class="muted">@${MH.esc(currentUser.username)}</div></div>
     <form id="lock-form">
       <label>Password<input id="lk-pass" type="password" required autocomplete="current-password" autofocus></label>

@@ -16,7 +16,7 @@ registerApp({
     </div>
 
     <h3>${iconSvg('palette')} Wallpaper</h3><div class="wall-pick">
-      ${[['mint', 'Mint'], ['ocean', 'Ocean'], ['sunset', 'Sunset'], ['grape', 'Grape'], ['slate', 'Slate'], ['rose', 'Rose']].map(([id, n]) =>
+      ${[['mint', 'Charcoal'], ['ocean', 'Smoke'], ['sunset', 'Ash'], ['grape', 'Graphite'], ['slate', 'Slate'], ['rose', 'Silver']].map(([id, n]) =>
         `<button data-wp="${id}" class="wp-${id} ${userData.settings.wallpaper === id ? 'sel' : ''}">${n}</button>`).join('')}
       ${(userData.customWallpapers || []).map((w) =>
         `<button data-wp="${w.id}" style="background:linear-gradient(150deg, ${MH.esc(w.from)}, ${MH.esc(w.to)})" class="${userData.settings.wallpaper === w.id ? 'sel' : ''}">${MH.esc(w.name)}</button>`).join('')}

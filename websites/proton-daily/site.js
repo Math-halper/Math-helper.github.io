@@ -10,7 +10,7 @@ registerSite({
       ['Local desktop learns new tricks', 'Residents report the proton desktop can now add and remove nearly everything, after a round of modular upgrades. “I renamed my Notes app twice before breakfast,” one user said.'],
       ['Calculator solves equation, asks for harder one', 'The solver, fresh from graphing x² − 3x, is reportedly bored. Teachers recommend parabolas.'],
       ['Sudoku shortage averted', 'Generators confirm puzzles remain plentiful at all three difficulties. Hints remain available for emergencies.'],
-      ['Weather', 'Black backgrounds with a chance of green accents across the whole region. White text expected to continue.'],
+      ['Weather', 'Black backgrounds with white accents across the whole region. Grey skies, white text, no colour expected to continue.'],
     ];
     main.innerHTML = `<div class="pad" style="max-width:760px">
       <h2 style="font-family:Georgia,serif;font-size:30px;margin-bottom:2px">proton Daily</h2>

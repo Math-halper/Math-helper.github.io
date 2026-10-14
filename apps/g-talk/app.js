@@ -7,7 +7,7 @@ registerApp({
   id: 'gtalk', name: 'G-Talk', icon: 'phone', cat: 'Chat & Media', desc: 'Direct chat with Nova (calls are simulated on-device)', w: 760, h: 540,
   render(body) {
     if (!userData.chat.direct) { userData.chat.direct = [{ id: MH.uid(), who: 'Nova', me: false, text: 'This is our direct line. Team Chat has the group channels — here it\'s just us. Ask me maths!', ts: Date.now() }]; saveData(); }
-    body.innerHTML = `${bar('G-Talk — Nova', `<span class="chip"><span class="pdot" style="background:#68b723"></span> on this device</span><button class="btn sm" id="gt-call">${iconSvg('video')} Video call</button>`)}
+    body.innerHTML = `${bar('G-Talk — Nova', `<span class="chip"><span class="pdot" style="background:#ffffff"></span> on this device</span><button class="btn sm" id="gt-call">${iconSvg('video')} Video call</button>`)}
     <div style="display:flex;flex-direction:column;min-height:0;flex:1"><div class="chat-msgs" id="gt-msgs"></div>
     <form id="gt-form" style="display:flex;gap:7px;padding:10px;background:#111;border-top:1px solid var(--line)"><input id="gt-in" style="flex:1;padding:9px 11px" placeholder="Message Nova…" maxlength="500" autocomplete="off"><button class="btn primary">Send</button></form></div>`;
     const box = body.querySelector('#gt-msgs');

@@ -21,8 +21,8 @@ registerSite({
           <button class="btn primary">Echo it</button></form>
           <p id="tp-out" style="min-height:1.4em"></p></div>
         <div class="card"><h3>Colour box</h3>
-          <div id="tp-box" style="height:64px;border-radius:8px;background:#68b723;margin-bottom:8px"></div>
-          <input type="color" id="tp-color" value="#68b723" style="width:100%;height:38px;padding:2px" aria-label="Pick a colour"></div>
+          <div id="tp-box" style="height:64px;border-radius:8px;background:#ffffff;margin-bottom:8px"></div>
+          <input type="color" id="tp-color" value="#ffffff" style="width:100%;height:38px;padding:2px" aria-label="Pick a colour"></div>
       </div></div>`;
     main.querySelector('#tp-inc').onclick = () => { main.querySelector('#tp-count').textContent = ++count; };
     main.querySelector('#tp-reset').onclick = () => { count = 0; main.querySelector('#tp-count').textContent = '0'; };

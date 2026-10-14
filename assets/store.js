@@ -60,7 +60,7 @@ const MH = {
     const today = MH.todayISO();
     return {
       version: 1,
-      settings: { wallpaper: 'mint', accent: '#68b723', pinned: ['files', 'math', 'notes', 'browser', 'terminal'] },
+      settings: { wallpaper: 'mint', accent: '#ffffff', pinned: ['files', 'math', 'notes', 'browser', 'terminal'] },
       notes: [{
         id: MH.uid(), title: 'Welcome to proton',
         html: `<p>This desktop is a <b>static clone of Mixt</b> (from <i>proton-arcade/mlp</i>), rebranded and rebuilt to run with <b>no server at all</b>.</p><h2><span style="font-size:19px">Things to try</span></h2><ul><li>Open the <b>Calculator</b> app — calculator, solver and graph plotter</li><li>Everything you type here is <b>saved on this device</b>, under your account</li><li>Drag windows, pin apps to the panel, change the wallpaper in Settings</li></ul><p>Have fun!</p>`,
