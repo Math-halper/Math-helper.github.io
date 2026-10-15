@@ -8,19 +8,27 @@ A circuit design & simulation environment inspired by
   `proton://logic-sim` in the Browser (and directly at
   `/websites/logic-sim/site.html` when served over HTTP), and
 - the **Logic Sim desktop app** — `apps/logic-sim/app.html` loads these same
-  two files and mounts the editor into a proton window, so app and website
-  are always identical and share one saved library (localStorage key
-  `logic-sim.web.v1`).
+  files (stylesheet + the ordered JS parts) and mounts the editor into a
+  proton window, so app and website are always identical and share one saved
+  library (localStorage key `logic-sim.web.v1`).
 
 There's no build step and no dependency; the Unity original was not ported
-file-by-file — the engine and editor were rewritten in vanilla JS/Canvas.
+file-by-file — the engine and editor were rewritten in vanilla JS/Canvas,
+organised into one file per concern the way the upstream C# is split across
+folders.
 
 ## Files
 
 | File | What it is |
 | --- | --- |
-| `site.html` | Standalone page + `data-proton-site` metadata. Just mounts the editor. |
-| `logic-sim.js` | `Core` (pure simulation: gates, wires, ticks, nested chips) + `mount(el)` editor UI. Also `module.exports` for Node tests. |
+| `site.html` | Standalone page + `data-proton-site` metadata. Loads the JS parts in order, then mounts the editor. |
+| `js/theme.js` | Palette, typography, chip colours, `esc()` (upstream `Graphics/DrawSettings.cs`). |
+| `js/core.js` | Simulation core: gates, wires, ticks, nested chips, examples, (de)serialisation (upstream `Simulation/`, `Description/`, `Game/Project/`). |
+| `js/ui.js` | Toolbar, bottom chip bar, breadcrumbs, status line, modals, MENU (upstream `Graphics/UI/Menus/*`). |
+| `js/interaction.js` | Camera (pan/zoom/fit), hit testing, wire routing, drags, keyboard & clipboard (upstream `Game/Interaction/*`). |
+| `js/renderer.js` | Canvas drawing: workspace, grid, wires, chips, pins, seven-segment display (upstream `Graphics/`). |
+| `js/editor.js` | `mount()` kernel: store, undo/redo, run loop, DOM scaffold + the shared context `S` that links the parts. |
+| `logic-sim.js` | Entry point: assembles the public `{ Core, mount }` API; under Node it `require`s the parts so tests keep one import. |
 | `logic-sim.css` | Original-style UI: gray workspace, bottom chip bar, flat colored chips, red signals. |
 
 ## Features

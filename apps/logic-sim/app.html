@@ -11,9 +11,10 @@ open <a href="../../index.html">proton</a> and launch <b>Logic Sim</b> from the
 proton menu. The script below is fetched and run by proton's HTML loader
 (assets/html-loader.js) at boot.</p>
 <!-- proton app module: logic-sim — the app shares the exact same code as the
-     built-in website (websites/logic-sim/): it loads that page's stylesheet +
-     script and mounts the editor into this window. Edit the website files to
-     change the app. -->
+     built-in website (websites/logic-sim/): it loads that page's stylesheet
+     plus its ordered JS parts (js/theme, core, ui, interaction, renderer,
+     editor + the logic-sim.js entry) and mounts the editor into this window.
+     Edit the website files to change the app. -->
 <script data-proton-app>
 'use strict';
 registerApp({
@@ -29,6 +30,13 @@ registerApp({
     body.appendChild(host);
 
     const BASE = 'websites/logic-sim';
+    /* The editor is split into several JS files (see websites/logic-sim/README.md);
+     * they must load in this order — each attaches to the shared LogicSim
+     * namespace and the entry file assembles the public API. */
+    const JS_FILES = [
+      'js/theme.js', 'js/core.js', 'js/ui.js', 'js/interaction.js',
+      'js/renderer.js', 'js/editor.js', 'logic-sim.js',
+    ];
     function ensureCss() {
       if (!document.getElementById('logic-sim-css')) {
         const l = document.createElement('link');
@@ -38,14 +46,24 @@ registerApp({
         document.head.appendChild(l);
       }
     }
-    function ensureJs() {
+    function loadScript(src) {
       return new Promise((resolve, reject) => {
-        if (window.LogicSim) return resolve();
         const s = document.createElement('script');
-        s.src = BASE + '/logic-sim.js';
+        s.src = src;
         s.onload = () => resolve();
-        s.onerror = () => reject(new Error('Could not load ' + s.src));
+        s.onerror = () => reject(new Error('Could not load ' + src));
         document.head.appendChild(s);
+      });
+    }
+    function ensureJs() {
+      if (window.LogicSim && window.LogicSim.__loaded) return Promise.resolve();
+      return JS_FILES.reduce(
+        (chain, f) => chain.then(() => loadScript(BASE + '/' + f)),
+        Promise.resolve(),
+      ).then(() => {
+        if (!window.LogicSim || !window.LogicSim.mount || !window.LogicSim.Core) {
+          throw new Error('Logic Sim parts loaded but API missing');
+        }
       });
     }
 
