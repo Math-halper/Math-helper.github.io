@@ -50,9 +50,13 @@ authors.
 Added later: a circuit design & simulation module inspired by **Sebastian
 Lague's Digital Logic Sim** (<https://github.com/SebLague/Digital-Logic-Sim>,
 MIT licence) and his video series *Exploring How Computers Work*. This is an
-**independent re-implementation for the web** — no Unity project files, code
-or assets from the original were copied; the simulator engine and editor UI
-were written from scratch so the same module runs both as a built-in website
+**independent re-implementation for the web** — the simulator engine was
+written from scratch. The editor now visually follows the original's layout,
+colours and drawing conventions, referenced from upstream commit
+`7aeb66ddff44f916ff7fafb043ab4476ef4409fe`. Its MIT notice is retained in
+`websites/logic-sim/UPSTREAM-LICENSE.txt`. The bundled JetBrains Mono NL fonts
+are from upstream's resources and are licensed under SIL OFL 1.1 (see
+`websites/logic-sim/fonts/OFL.txt`). The same module runs as a built-in website
 (`proton://logic-sim`) and as the **Logic Sim** desktop app. S. Lague's
 project covers much more (GPU-accelerated big-circuit editing, busses,
 displays); this port focuses on the core experience: gates, input/output

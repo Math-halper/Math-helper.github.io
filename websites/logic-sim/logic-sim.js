@@ -384,14 +384,25 @@ const GAP = 22;          // pin spacing (world units)
 const PIN_R = 5.5;
 const LS_KEY = 'logic-sim.web.v1';
 
+// Palette and typography follow upstream Graphics/DrawSettings.cs (MIT).
+const FONT = '"Logic Mono", monospace';
 const COL = {
-  bg: '#15161a', grid: '#23252d', gridBold: '#2c2f38',
-  body: '#262932', bodyMissing: '#3d2226', edge: '#0d0e12',
-  text: '#e8eaf0', dim: '#969cab', faint: '#6a707e',
-  pinLow: '#3a3f4b', pinEdge: '#101218',
-  wireLow: '#565c69', wireHigh: '#39e06c', sel: '#ffffff',
-  accent: '#ffffff', unstable: '#ffb454',
+  bg: '#424245', grid: '#313133', body: '#ba4242', bodyMissing: '#7d3030',
+  text: '#ffffff', dim: '#cccccc', faint: '#99999c',
+  pinLow: '#000000', pinEdge: '#000000', edge: '#893131',
+  wireLow: '#331a1a', wireHigh: '#f24d4f', sel: '#ffffff',
 };
+const CHIP_COLORS = { nand: '#ba4242', and: '#ba7442', or: '#558f65',
+  nor: '#427c87', xor: '#7260a4', not: '#467db3', dff: '#a16691',
+  clock: '#1a1a1a', button: '#1a1a1a', seg7: '#191717' };
+function chipColor(type, name) {
+  if (CHIP_COLORS[type]) return CHIP_COLORS[type];
+  // Stable colours for user chips, including existing libraries without colours.
+  const colors = ['#4c8a98', '#7860a2', '#b5784c', '#55936a', '#a15b75'];
+  let hash = 0;
+  for (const c of String(name)) hash = (hash * 31 + c.charCodeAt(0)) >>> 0;
+  return colors[hash % colors.length];
+}
 
 function mount(root, opts) {
   opts = opts || {};
@@ -410,6 +421,8 @@ function mount(root, opts) {
           openPath = Array.isArray(d.open) ? d.open : [];
           inStates = d.inStates || {};
           seenWelcome = !!d.seenWelcome;
+          showGrid = !!d.prefs?.showGrid;
+          showTools = !!d.prefs?.showTools;
         }
       }
     } catch (e) { /* corrupted store → start fresh */ }
@@ -450,7 +463,7 @@ function mount(root, opts) {
   }
   function saveNow() {
     try {
-      const out = { circuits: lib.circuits, open: openPath, inStates: {}, seenWelcome };
+      const out = { circuits: lib.circuits, open: openPath, inStates: {}, seenWelcome, prefs: { showGrid, showTools } };
       for (const circ of lib.circuits) {
         const st = statesByCircuit.get(circ.id);
         if (!st) continue;
@@ -542,11 +555,8 @@ function mount(root, opts) {
   root.classList.add('ls-host');
   root.innerHTML = `
   <div class="ls">
+    <div class="ls-paused"><span>Simulation Paused <small>(Enter to advance one step)</small></span><button class="ls-btn" data-a="run" title="Run simulation (Space)">RESUME</button></div>
     <div class="ls-top">
-      <div class="ls-brand" title="Digital Logic Sim — web edition">
-        <svg viewBox="0 0 24 24" width="17" height="17" aria-hidden="true"><path d="M13 2 4.6 13.2c-.3.4 0 1 .5 1h4.9l-1.2 7.2c-.1.6.7 1 1 .4l7.6-11.2c.3-.4 0-1-.5-1h-4.7l1.3-7c.1-.6-.7-1-1.1-.6z" fill="currentColor"/></svg>
-        <span>Digital Logic Sim</span><em>web</em>
-      </div>
       <nav class="ls-crumbs" aria-label="Open chips"></nav>
       <div class="ls-actions">
         <button class="ls-btn" data-a="undo" title="Undo (Ctrl+Z)"><svg viewBox="0 0 24 24"><path d="M8.5 5 4 9.5 8.5 14" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/><path d="M4.5 9.5H14a5.5 5.5 0 0 1 0 11h-3" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg></button>
@@ -561,19 +571,21 @@ function mount(root, opts) {
         <button class="ls-btn" data-a="zin" title="Zoom in"><svg viewBox="0 0 24 24"><circle cx="10.5" cy="10.5" r="6.2" fill="none" stroke="currentColor" stroke-width="1.8"/><path d="M15.2 15.2 20 20M7.6 10.5h5.8M10.5 7.6v5.8" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg></button>
         <button class="ls-btn" data-a="fit" title="Fit circuit to view"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="M4 9V5.5A1.5 1.5 0 0 1 5.5 4H9M15 4h3.5A1.5 1.5 0 0 1 20 5.5V9M20 15v3.5a1.5 1.5 0 0 1-1.5 1.5H15M9 20H5.5A1.5 1.5 0 0 1 4 18.5V15"/></svg></button>
         <span class="ls-sep"></span>
-        <button class="ls-btn" data-a="menu" title="Menu"><svg viewBox="0 0 24 24"><circle cx="5" cy="12" r="1.9" fill="currentColor"/><circle cx="12" cy="12" r="1.9" fill="currentColor"/><circle cx="19" cy="12" r="1.9" fill="currentColor"/></svg></button>
+        <button class="ls-btn" data-a="prefs" title="Preferences">PREFS</button>
       </div>
     </div>
     <div class="ls-body">
-      <aside class="ls-pal">
-        <div class="ls-pal-scroll"></div>
-      </aside>
       <div class="ls-stage">
         <canvas class="ls-cv"></canvas>
         <div class="ls-status"></div>
         <div class="ls-hint"></div>
       </div>
     </div>
+    <footer class="ls-bottom">
+      <button class="ls-menu-btn" data-a="menu" aria-label="Open menu" aria-expanded="false">MENU</button>
+      <aside class="ls-pal" aria-label="Chip palette"><div class="ls-pal-scroll"></div></aside>
+      <button class="ls-library-btn" data-a="library" title="Find or open a chip (Ctrl+L)">LIBRARY</button>
+    </footer>
   </div>`;
 
   const el = (q) => root.querySelector(q);
@@ -586,6 +598,10 @@ function mount(root, opts) {
   const hintEl = el('.ls-hint');
   const speedInput = el('.ls-speed input');
   const speedLabel = el('.ls-speed span');
+  palScroll.addEventListener('wheel', (e) => {
+    if (palScroll.scrollWidth <= palScroll.clientWidth || Math.abs(e.deltaX) > Math.abs(e.deltaY)) return;
+    e.preventDefault(); palScroll.scrollLeft += e.deltaY;
+  }, { passive: false });
 
   /* ---------- editor state ---------- */
   let cam = null;              // alias of current().cam
@@ -595,6 +611,8 @@ function mount(root, opts) {
   let drag = null;
   let mouse = { x: 0, y: 0, wx: 0, wy: 0, inside: false };
   let running = false;
+  let showGrid = false;
+  let showTools = false;
   let tickCount = 0;
   let spaceHeld = false;
   const undoStackKeys = () => stackFor(current().id);
@@ -614,8 +632,8 @@ function mount(root, opts) {
       html += `<div class="ls-pal-sec">${sec.title}</div>`;
       for (const ty of sec.types) {
         const t = C.BUILTINS[ty];
-        html += `<div class="ls-chip" data-put="${ty}" title="${t.desc || t.name}">
-          <span class="ls-chip-ic"><i></i></span><span class="ls-chip-nm">${t.name}</span></div>`;
+        html += `<div class="ls-chip" role="button" tabindex="0" data-put="${ty}" title="${t.desc || t.name}">
+          <span class="ls-chip-nm">${t.name}</span></div>`;
       }
     }
     const customs = lib.circuits.filter((c) => (C.chipPins(c).inputs.length || C.chipPins(c).outputs.length));
@@ -623,8 +641,8 @@ function mount(root, opts) {
     if (!customs.length) html += `<div class="ls-pal-empty">Add IN and OUT pins to a circuit and it appears here as a reusable chip.</div>`;
     for (const c of customs) {
       const p = C.chipPins(c);
-      html += `<div class="ls-chip ${c.id === current().id ? 'current' : ''}" data-put="chip:${c.id}" title="${c.name} — ${p.inputs.length} in / ${p.outputs.length} out">
-        <span class="ls-chip-ic usr"><i></i></span><span class="ls-chip-nm">${esc(c.name)}</span>
+      html += `<div class="ls-chip ${c.id === current().id ? 'current' : ''}" role="button" tabindex="0" data-put="chip:${c.id}" title="${c.name} — ${p.inputs.length} in / ${p.outputs.length} out">
+        <span class="ls-chip-nm">${esc(c.name)}</span>
         <span class="ls-chip-io">${p.inputs.length}·${p.outputs.length}</span>
         ${c.locked ? '' : `<button class="ls-mini ls-ren" data-ren="${c.id}" title="Rename">✎</button><button class="ls-mini ls-del" data-del="${c.id}" title="Delete">✕</button>`}
       </div>`;
@@ -632,6 +650,11 @@ function mount(root, opts) {
     palScroll.innerHTML = html;
     palScroll.querySelectorAll('.ls-chip').forEach((item) => {
       item.addEventListener('pointerdown', onPaletteDown);
+      item.addEventListener('keydown', (e) => {
+        if (e.key !== 'Enter' && e.key !== ' ') return;
+        e.preventDefault(); e.stopPropagation();
+        placeFromPalette(item.dataset.put, (stage.clientWidth / 2 - cam.x) / cam.z - 40, (stage.clientHeight / 2 - cam.y) / cam.z - 25);
+      });
     });
     palScroll.querySelector('[data-palact="new"]').onclick = () => newChipModal();
     palScroll.querySelectorAll('[data-ren]').forEach((b) => b.onclick = (e) => { e.stopPropagation(); renameChipModal(b.dataset.ren); });
@@ -639,6 +662,7 @@ function mount(root, opts) {
   }
 
   function refreshCrumbs() {
+    el('.ls').classList.toggle('ls-nested', openPath.length > 1);
     crumbsEl.innerHTML = openPath.map((id, i) => {
       const c = lib.circuits.find((x) => x.id === id);
       const last = i === openPath.length - 1;
@@ -646,6 +670,12 @@ function mount(root, opts) {
     }).join('') + `<button class="ls-btn ls-newchip" title="New chip"><svg viewBox="0 0 24 24"><path d="M12 5v14M5 12h14" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg></button>`;
     crumbsEl.querySelectorAll('[data-nav]').forEach((b) => b.onclick = () => { openPath.length = +b.dataset.nav + 1; enterCircuit(); });
     crumbsEl.querySelector('.ls-newchip').onclick = () => newChipModal();
+    if (openPath.length > 1) {
+      const back = document.createElement('button');
+      back.className = 'ls-btn ls-back'; back.textContent = 'Back';
+      back.onclick = () => { openPath.pop(); enterCircuit(); };
+      crumbsEl.appendChild(back);
+    }
   }
 
   function refreshStatus() {
@@ -655,6 +685,8 @@ function mount(root, opts) {
     bits.push(`tick ${tickCount}`);
     bits.push(`${c.comps.length} chips · ${c.wires.length} wires`);
     if (selComps.size || selWires.size) bits.push(`${selComps.size + selWires.size} selected`);
+    el('.ls-paused').hidden = running;
+    statusEl.classList.toggle('unstable', !stableFlag);
     statusEl.innerHTML = bits.join('<span class="ls-dot">·</span>');
   }
 
@@ -685,14 +717,17 @@ function mount(root, opts) {
   }
 
   /* ---------- modals ---------- */
+  let modalDismiss = null;
   function openModal(build) {
+    closeMenu();
     closeModal();
     const ov = document.createElement('div');
     ov.className = 'ls-ov';
     ov.innerHTML = `<div class="ls-modal" role="dialog" aria-modal="true"><div class="ls-m-title"></div><div class="ls-m-body"></div><div class="ls-m-btns"></div></div>`;
     root.appendChild(ov);
     const m = ov.querySelector('.ls-modal');
-    const close = () => { ov.remove(); document.removeEventListener('keydown', onEsc, true); };
+    const close = () => { ov.remove(); document.removeEventListener('keydown', onEsc, true); if (modalDismiss === close) modalDismiss = null; };
+    modalDismiss = close;
     const onEsc = (e) => { if (e.key === 'Escape') { e.stopPropagation(); close(); } };
     document.addEventListener('keydown', onEsc, true);
     ov.addEventListener('pointerdown', (e) => { if (e.target === ov) close(); });
@@ -714,7 +749,10 @@ function mount(root, opts) {
     if (inp) { inp.focus(); inp.select(); }
     return close;
   }
-  function closeModal() { root.querySelectorAll('.ls-ov').forEach((o) => o.remove()); }
+  function closeModal() {
+    if (modalDismiss) modalDismiss();
+    root.querySelectorAll('.ls-ov').forEach((o) => o.remove());
+  }
 
   /* ask for a name (modal), calls cb(value) on save */
   function askName(title, value, cb) {
@@ -840,12 +878,63 @@ function mount(root, opts) {
     });
   }
 
+  function libraryModal() {
+    openModal((m) => {
+      m.title('CHIP LIBRARY');
+      m.body.innerHTML = '<input class="ls-in ls-search" aria-label="Find chip" placeholder="Search chips…"><div class="ls-library-grid"></div>';
+      const search = m.body.querySelector('input');
+      const grid = m.body.querySelector('.ls-library-grid');
+      const render = () => {
+        const q = search.value.trim().toLowerCase();
+        const items = [
+          ...Object.values(C.BUILTINS).map((t) => ({ name: t.name, put: t.key, desc: t.desc, type: t.key })),
+          ...lib.circuits.map((c) => ({ name: c.name, id: c.id, put: 'chip:' + c.id, desc: c.comps.length + ' chips · ' + c.wires.length + ' wires', type: 'chip' })),
+        ].filter((t) => t.name.toLowerCase().includes(q));
+        grid.innerHTML = items.length ? items.map((t, i) => `<div class="ls-library-card">
+          <div class="ls-library-preview" style="--chip-color:${chipColor(t.type, t.name)}">${esc(t.name)}</div>
+          <span class="dim">${esc(t.desc || '')}</span><div class="ls-library-card-actions">
+          ${t.id ? `<button class="ls-btn" data-open="${i}">OPEN</button>` : ''}
+          <button class="ls-btn" data-place="${i}">PLACE</button></div></div>`).join('') : '<p class="dim">No matching chips.</p>';
+        grid.querySelectorAll('[data-open]').forEach((b) => b.onclick = () => {
+          const t = items[+b.dataset.open];
+          openPath = t.id === mainId ? [mainId] : [mainId, t.id];
+          m.close(); enterCircuit(); fitView(); cv.focus();
+        });
+        grid.querySelectorAll('[data-place]').forEach((b) => b.onclick = () => {
+          const t = items[+b.dataset.place]; m.close();
+          placeFromPalette(t.put, (stage.clientWidth / 2 - cam.x) / cam.z - 40, (stage.clientHeight / 2 - cam.y) / cam.z - 25);
+          cv.focus();
+        });
+      };
+      search.addEventListener('input', render); render();
+      m.btn('NEW CHIP', { onClick: () => { m.close(); newChipModal(); } });
+      m.btn('CLOSE', { primary: true });
+      search.focus();
+    });
+  }
+
+  function preferencesModal() {
+    openModal((m) => {
+      m.title('PREFERENCES');
+      m.body.innerHTML = `<label class="ls-check"><input type="checkbox" data-pref="grid" ${showGrid ? 'checked' : ''}> Show grid</label>
+        <label class="ls-check"><input type="checkbox" data-pref="tools" ${showTools ? 'checked' : ''}> Show simulation &amp; zoom toolbar</label>
+        <p class="ls-p dim">Space: run / pause · Enter: step · Mouse wheel: zoom<br>Middle or right drag: pan · Ctrl+Z / Y: undo / redo</p>
+        <p class="ls-p dim">Your circuits autosave in this browser. Export a backup from MENU.</p>`;
+      m.body.querySelector('[data-pref="grid"]').onchange = (e) => { showGrid = e.target.checked; scheduleSave(); };
+      m.body.querySelector('[data-pref="tools"]').onchange = (e) => {
+        showTools = e.target.checked; el('.ls').classList.toggle('ls-show-tools', showTools); layout(); scheduleSave();
+      };
+      m.btn(running ? 'PAUSE SIMULATION' : 'RUN SIMULATION', { onClick: () => setRunning(!running) });
+      m.btn('DONE', { primary: true });
+    });
+  }
+
   function helpModal() {
     openModal((m) => {
       m.title('Controls');
       m.body.innerHTML = `
       <div class="ls-help">
-        <div><b>Place a chip</b><span>Drag it in from the left panel (or click the panel item)</span></div>
+        <div><b>Place a chip</b><span>Drag it from the bottom bar, click a chip to place it, or use LIBRARY</span></div>
         <div><b>Wire pins</b><span>Drag from an output pin (right) to an input pin (left) — or the other way round</span></div>
         <div><b>Toggle inputs</b><span>Click an IN switch; hold PUSH; clock ticks while running</span></div>
         <div><b>Move</b><span>Drag chips · drag empty space for a selection box · Space/middle/right-drag pans</span></div>
@@ -866,8 +955,8 @@ function mount(root, opts) {
       m.body.innerHTML = `
       <div class="ls-about">
         <p><b>Digital Logic Sim — web edition.</b> Design circuits from logic gates, save them as chips, nest chips inside chips, and watch signals flow — all in the browser, saved on this device.</p>
-        <p class="dim">Inspired by <b>Sebastian Lague’s</b> <i>Digital Logic Sim</i> (MIT licence) — <a href="https://github.com/SebLague/Digital-Logic-Sim" target="_blank" rel="noopener">github.com/SebLague/Digital-Logic-Sim</a> — and his video series <i>Exploring How Computers Work</i>. This is an independent re-implementation for the web: no Unity project files or assets were used, so it runs anywhere, including inside <b>proton</b> as an app and a built-in website.</p>
-        <p class="dim">The starter library (Half Adder, Full Adder, SR Latch, and the blinking Main demo) mirrors the classic teaching examples. Everything you make is stored in localStorage and can be exported as JSON from the ⋯ menu.</p>
+        <p class="dim">Inspired by <b>Sebastian Lague’s</b> <i>Digital Logic Sim</i> (MIT licence) — <a href="https://github.com/SebLague/Digital-Logic-Sim" target="_blank" rel="noopener">github.com/SebLague/Digital-Logic-Sim</a> — and his video series <i>Exploring How Computers Work</i>. This is an independent re-implementation for the web: the UI follows the original’s layout, theme and JetBrains Mono font; the simulation engine is a separate browser implementation that runs, including inside <b>proton</b> as an app and a built-in website.</p>
+        <p class="dim">The starter library (Half Adder, Full Adder, SR Latch, and the blinking Main demo) mirrors the classic teaching examples. Everything you make is stored in localStorage and can be exported as JSON from MENU.</p>
       </div>`;
       m.btn('Close', { primary: true });
     });
@@ -878,9 +967,9 @@ function mount(root, opts) {
       m.title('Welcome to Digital Logic Sim');
       m.body.innerHTML = `
       <div class="ls-about">
-        <p>A web edition of Sebastian Lague’s logic simulator, converted to run as a website <i>and</i> a proton app.</p>
-        <p>Try it: press <b>▶ Run</b> — the demo on <b>Main</b> blinks. Then open <b>Full Adder</b> from the left panel, step inside its chips with a double-click, and toggle the input switches.</p>
-        <p class="dim">Build chips from IN/OUT pins + gates and they appear in “Your chips”, ready to nest inside other circuits. Everything autosaves on this device.</p>
+        <p>A web edition of Sebastian Lague’s logic simulator, re-created for the browser with the original’s gray workspace, colored chips, and bottom chip bar.</p>
+        <p>Try it: press <b>▶ Run</b> — the demo on <b>Main</b> blinks. Then open <b>Full Adder</b> using <b>LIBRARY</b>, step inside its chips with a double-click, and toggle the input switches.</p>
+        <p class="dim">Build chips from IN/OUT pins + gates and they appear in the bottom bar and library, ready to nest inside other circuits. Everything autosaves on this device.</p>
       </div>`;
       m.btn('Start building', { primary: true, onClick: () => { seenWelcome = true; scheduleSave(); } });
     });
@@ -895,7 +984,7 @@ function mount(root, opts) {
     zout: () => zoomAt(stage.clientWidth / 2, stage.clientHeight / 2, 1 / 1.2),
     z100: () => { cam.z = 1; scheduleSave(); updateZoomLabel(); },
     fit: fitView,
-    menu: openMenu,
+    menu: openMenu, library: libraryModal, prefs: preferencesModal,
   };
   root.querySelectorAll('[data-a]').forEach((b) => {
     b.addEventListener('click', () => { const fn = actions[b.dataset.a]; if (fn) fn(); });
@@ -905,30 +994,47 @@ function mount(root, opts) {
     restartTimer();
   });
 
+  let menuDismiss = null;
+  function closeMenu() {
+    el('.ls-pop')?.remove();
+    el('.ls-menu-btn').setAttribute('aria-expanded', 'false');
+    if (menuDismiss) document.removeEventListener('pointerdown', menuDismiss, true);
+    menuDismiss = null;
+  }
   function openMenu() {
     const existing = root.querySelector('.ls-pop');
-    if (existing) { existing.remove(); return; }
+    if (existing) { closeMenu(); return; }
     const pop = document.createElement('div');
     pop.className = 'ls-pop';
+    pop.style.maxHeight = Math.max(80, root.clientHeight - 66) + 'px';
     const cur = current();
     pop.innerHTML = `
-      <button data-m="new"><b>New chip…</b><span>start a fresh circuit</span></button>
-      <button data-m="ren" ${cur.locked ? 'disabled' : ''}><b>Rename “${esc(cur.name)}”…</b><span>${cur.locked ? 'Main cannot be renamed' : 'rename the open chip'}</span></button>
-      <button data-m="del" ${cur.locked ? 'disabled' : ''}><b>Delete “${esc(cur.name)}”…</b><span>${cur.locked ? 'Main cannot be deleted' : 'remove this chip'}</span></button>
+      <button data-m="new"><b>NEW CHIP</b><span>Ctrl+N</span></button>
+      <button data-m="save"><b>SAVE CHIP</b><span>Ctrl+S</span></button>
+      <button data-m="library"><b>FIND CHIP / LIBRARY</b><span>Ctrl+L</span></button>
+      <button data-m="prefs"><b>PREFS</b><span>Ctrl+P</span></button>
       <hr>
-      <button data-m="export"><b>Export circuits…</b><span>download everything as JSON</span></button>
-      <button data-m="import"><b>Import circuits…</b><span>merge a JSON file</span></button>
+      <button data-m="ren" ${cur.locked ? 'disabled' : ''}><b>RENAME CHIP</b></button>
+      <button data-m="del" ${cur.locked ? 'disabled' : ''}><b>DELETE CHIP</b></button>
       <hr>
-      <button data-m="help"><b>Controls &amp; help</b><span>shortcuts and how-tos</span></button>
-      <button data-m="about"><b>About / credits</b><span>Sebastian Lague, MIT, this port</span></button>`;
-    root.querySelector('.ls-top').appendChild(pop);
-    const close = (e) => { if (!pop.contains(e.target)) { pop.remove(); document.removeEventListener('pointerdown', close, true); } };
-    document.addEventListener('pointerdown', close, true);
+      <button data-m="export"><b>EXPORT CIRCUITS</b></button>
+      <button data-m="import"><b>IMPORT CIRCUITS</b></button>
+      <hr>
+      <button data-m="help"><b>CONTROLS</b></button>
+      <button data-m="about"><b>ABOUT</b></button>`;
+    el('.ls-bottom').appendChild(pop);
+    el('.ls-menu-btn').setAttribute('aria-expanded', 'true');
+    menuDismiss = (e) => {
+      if (!pop.contains(e.target) && !e.target.closest('.ls-menu-btn')) closeMenu();
+    };
+    document.addEventListener('pointerdown', menuDismiss, true);
     const fns = {
       new: () => newChipModal(), ren: () => renameChipModal(current().id), del: () => deleteChipModal(current().id),
+      save: () => { saveNow(); toast('Chip saved on this device'); },
+      library: libraryModal, prefs: preferencesModal,
       export: exportModal, import: importModal, help: helpModal, about: aboutModal,
     };
-    pop.querySelectorAll('[data-m]').forEach((b) => b.addEventListener('click', () => { pop.remove(); const f = fns[b.dataset.m]; if (f && !b.disabled) f(); }));
+    pop.querySelectorAll('[data-m]').forEach((b) => b.addEventListener('click', () => { closeMenu(); const f = fns[b.dataset.m]; if (f && !b.disabled) f(); }));
   }
 
   /* ---------- run loop ---------- */
@@ -938,6 +1044,7 @@ function mount(root, opts) {
     clearInterval(runTimer);
     if (running) {
       runTimer = setInterval(() => {
+        if (!root.isConnected) { clearInterval(runTimer); return; }
         const n = Math.max(1, Math.round(tps() / 12));
         for (let i = 0; i < n; i++) doTick(true);
         refreshStatus();
@@ -946,10 +1053,13 @@ function mount(root, opts) {
   }
   function setRunning(v) {
     running = v;
-    const btn = root.querySelector('[data-a="run"]');
-    btn.classList.toggle('on', v);
-    btn.querySelector('.i-play').style.display = v ? 'none' : '';
-    btn.querySelector('.i-pause').style.display = v ? '' : 'none';
+    root.querySelectorAll('[data-a="run"]').forEach((btn) => {
+      btn.classList.toggle('on', v);
+      btn.setAttribute('aria-pressed', String(v));
+      const play = btn.querySelector('.i-play'), pause = btn.querySelector('.i-pause');
+      if (play) play.style.display = v ? 'none' : '';
+      if (pause) pause.style.display = v ? '' : 'none';
+    });
     restartTimer();
     refreshStatus();
   }
@@ -967,6 +1077,8 @@ function mount(root, opts) {
   function layout() {
     dpr = Math.max(1, Math.min(3, window.devicePixelRatio || 1));
     const w = stage.clientWidth, h = stage.clientHeight;
+    const pop = el('.ls-pop');
+    if (pop) pop.style.maxHeight = Math.max(80, root.clientHeight - 66) + 'px';
     cv.width = Math.max(1, Math.round(w * dpr));
     cv.height = Math.max(1, Math.round(h * dpr));
   }
@@ -1048,25 +1160,24 @@ function mount(root, opts) {
     const ft = C.typeOf(fc, lib), tt = C.typeOf(tc, lib);
     return { a: pinPos(fc, ft, 'out', w.f.p), b: pinPos(tc, tt, 'in', w.t.p) };
   }
+  function wirePoints(a, b) {
+    if (b.x > a.x) return [a, b];
+    const top = Math.min(a.y, b.y) - 52;
+    return [a, { x: a.x + 24, y: a.y }, { x: a.x + 24, y: top },
+      { x: b.x - 24, y: top }, { x: b.x - 24, y: b.y }, b];
+  }
+  function traceWire(g2, a, b) {
+    const points = wirePoints(a, b);
+    g2.beginPath(); g2.moveTo(a.x, a.y);
+    for (const p of points.slice(1)) g2.lineTo(p.x, p.y);
+  }
   function wireDist(w, wx, wy) {
     const ep = wireEndpoints(w);
     if (!ep) return 1e9;
-    let best = 1e9;
-    let prev = ep.a;
-    for (let i = 1; i <= 24; i++) {
-      const t = i / 24;
-      const p = bez(ep.a, ep.b, t);
-      best = Math.min(best, distSeg(prev, p, { x: wx, y: wy }));
-      prev = p;
-    }
+    const points = wirePoints(ep.a, ep.b);
+    let best = Infinity;
+    for (let i = 1; i < points.length; i++) best = Math.min(best, distSeg(points[i - 1], points[i], { x: wx, y: wy }));
     return best;
-  }
-  function bez(a, b, t) {
-    const d = Math.max(30, Math.min(170, Math.abs(b.x - a.x) * 0.55));
-    const mt = 1 - t;
-    const x = mt * mt * mt * a.x + 3 * mt * mt * t * (a.x + d) + 3 * mt * t * t * (b.x - d) + t * t * t * b.x;
-    const y = mt * mt * mt * a.y + 3 * mt * mt * t * a.y + 3 * mt * t * t * b.y + t * t * t * b.y;
-    return { x, y };
   }
   function distSeg(a, b, p) {
     const vx = b.x - a.x, vy = b.y - a.y;
@@ -1403,6 +1514,14 @@ function mount(root, opts) {
     if (!focusInside && !(freeFocus && mouse.inside)) return;
     const k = e.key;
     const mod = e.ctrlKey || e.metaKey;
+    if (k === 'Escape') {
+      closeMenu();
+    }
+    if (mod && ['n', 's', 'l', 'f', 'p'].includes(k.toLowerCase())) {
+      e.preventDefault();
+      ({ n: newChipModal, s: () => { saveNow(); toast('Chip saved on this device'); }, l: libraryModal, f: libraryModal, p: preferencesModal })[k.toLowerCase()]();
+      return;
+    }
     if (mod && !e.shiftKey && k.toLowerCase() === 'z') { e.preventDefault(); undo(); return; }
     if (mod && (k.toLowerCase() === 'y' || (e.shiftKey && k.toLowerCase() === 'z'))) { e.preventDefault(); redo(); return; }
     if (mod && k.toLowerCase() === 'c') { copySelection(); return; }
@@ -1453,7 +1572,7 @@ function mount(root, opts) {
     g2.fillRect(0, 0, w / dpr, h / dpr);
 
     g2.setTransform(dpr * cam.z, 0, 0, dpr * cam.z, dpr * cam.x, dpr * cam.y);
-    drawGrid(g2);
+    if (showGrid) drawGrid(g2);
 
     const circ = current();
     const ev = evByCircuit.get(circ.id);
@@ -1478,9 +1597,9 @@ function mount(root, opts) {
     // empty-circuit hint
     if (!circ.comps.length) {
       g2.fillStyle = COL.faint;
-      g2.font = '15px system-ui, sans-serif';
+      g2.font = '13px ' + FONT;
       g2.textAlign = 'center';
-      g2.fillText('Drag chips in from the left panel — add IN and OUT pins to make this a reusable chip.', (stage.clientWidth / 2 - cam.x) / cam.z, (stage.clientHeight / 2 - cam.y) / cam.z);
+      g2.fillText('Choose a chip from the bottom bar to start building.', (stage.clientWidth / 2 - cam.x) / cam.z, (stage.clientHeight / 2 - cam.y) / cam.z);
     }
   }
 
@@ -1490,15 +1609,12 @@ function mount(root, opts) {
     const y0 = Math.floor((-cam.y / cam.z) / step) * step;
     const x1 = x0 + stage.clientWidth / cam.z + step * 2;
     const y1 = y0 + stage.clientHeight / cam.z + step * 2;
-    g2.fillStyle = COL.grid;
-    const r = Math.max(0.8, 1.15 / cam.z);
-    for (let x = x0; x <= x1; x += step) {
-      for (let y = y0; y <= y1; y += step) {
-        g2.beginPath();
-        g2.arc(x, y, r, 0, 7);
-        g2.fill();
-      }
-    }
+    g2.strokeStyle = COL.grid;
+    g2.lineWidth = 0.7 / cam.z;
+    g2.beginPath();
+    for (let x = x0; x <= x1; x += step) { g2.moveTo(x, y0); g2.lineTo(x, y1); }
+    for (let y = y0; y <= y1; y += step) { g2.moveTo(x0, y); g2.lineTo(x1, y); }
+    g2.stroke();
   }
 
   function signalAt(ev, cid, p) {
@@ -1511,13 +1627,10 @@ function mount(root, opts) {
     if (!ep) return;
     const hi = signalAt(ev, wire.f.c, wire.f.p);
     const sel = selWires.has(wire.id);
-    const d = Math.max(30, Math.min(170, Math.abs(ep.b.x - ep.a.x) * 0.55));
-    g2.beginPath();
-    g2.moveTo(ep.a.x, ep.a.y);
-    g2.bezierCurveTo(ep.a.x + d, ep.a.y, ep.b.x - d, ep.b.y, ep.b.x, ep.b.y);
-    if (hi) { g2.shadowColor = 'rgba(57,224,108,.55)'; g2.shadowBlur = 7; }
+    traceWire(g2, ep.a, ep.b);
+
     g2.strokeStyle = sel ? '#ffffff' : hi ? COL.wireHigh : COL.wireLow;
-    g2.lineWidth = (hi ? 3.4 : 2.6) + (sel ? 1 : 0);
+    g2.lineWidth = 2.5 + (sel ? 1 : 0);
     g2.lineCap = 'round';
     g2.stroke();
     g2.shadowBlur = 0;
@@ -1527,30 +1640,13 @@ function mount(root, opts) {
     const from = d.from;
     const a = { x: from.x, y: from.y };
     const b = d.valid ? { x: d.valid.x, y: d.valid.y } : { x: d.cx, y: d.cy };
-    const dd = Math.max(30, Math.min(170, Math.abs(b.x - a.x) * 0.55));
-    g2.beginPath();
-    if (from.io === 'out') {
-      g2.moveTo(a.x, a.y);
-      g2.bezierCurveTo(a.x + dd, a.y, b.x - dd, b.y, b.x, b.y);
-    } else {
-      g2.moveTo(b.x, b.y);
-      g2.bezierCurveTo(b.x + dd, b.y, a.x - dd, a.y, a.x, a.y);
-    }
+    if (from.io === 'out') traceWire(g2, a, b);
+    else traceWire(g2, b, a);
     g2.strokeStyle = d.valid ? '#ffffff' : 'rgba(255,255,255,.4)';
     g2.lineWidth = 2.6;
     g2.setLineDash(d.valid ? [] : [7, 6]);
     g2.stroke();
     g2.setLineDash([]);
-  }
-
-  function rrect(g2, x, y, w, h, r) {
-    g2.beginPath();
-    g2.moveTo(x + r, y);
-    g2.arcTo(x + w, y, x + w, y + h, r);
-    g2.arcTo(x + w, y + h, x, y + h, r);
-    g2.arcTo(x, y + h, x, y, r);
-    g2.arcTo(x, y, x + w, y, r);
-    g2.closePath();
   }
 
   function drawComp(g2, comp, ev) {
@@ -1561,160 +1657,49 @@ function mount(root, opts) {
     const hov = hover && hover.kind === 'comp' && hover.comp.id === comp.id;
 
     g2.save();
-    // body
-    g2.shadowColor = 'rgba(0,0,0,.45)';
-    g2.shadowBlur = 10;
-    g2.shadowOffsetY = 3;
-    rrect(g2, comp.x, comp.y, g.w, g.h, 8);
-    g2.fillStyle = t.missing ? COL.bodyMissing : COL.body;
-    g2.fill();
-    g2.shadowColor = 'transparent';
-    g2.shadowBlur = 0;
-    g2.shadowOffsetY = 0;
-    g2.lineWidth = 1.4;
-    g2.strokeStyle = COL.edge;
-    g2.stroke();
+    const cx = comp.x + g.w / 2, cy = comp.y + g.h / 2;
+    const isIO = t.key === 'in' || t.key === 'out';
+    const color = t.missing ? COL.bodyMissing : chipColor(t.key, t.name);
     if (sel || hov) {
-      g2.lineWidth = sel ? 2.2 : 1.4;
-      g2.strokeStyle = sel ? COL.sel : 'rgba(255,255,255,.35)';
-      rrect(g2, comp.x - 1.6, comp.y - 1.6, g.w + 3.2, g.h + 3.2, 9);
-      g2.stroke();
+      g2.strokeStyle = sel ? COL.sel : '#b6b6b6';
+      g2.lineWidth = 1.5;
+      g2.strokeRect(comp.x - 4, comp.y - 4, g.w + 8, g.h + 8);
     }
-
-    const cx = comp.x + g.w / 2;
-
-    // face per type
-    switch (t.key) {
-      case 'in': case 'button': case 'clock': {
-        g2.fillStyle = COL.dim;
-        g2.font = '600 10px system-ui, sans-serif';
-        g2.textAlign = 'center';
-        const lbl = comp.label || t.name;
-        g2.fillText(clipText(g2, lbl, g.w - 12), cx, comp.y + 14);
-        if (t.key === 'in') {
-          const on = e ? e.outs[0] : 0;
-          const tw = 34, th = 16, tx = cx - tw / 2, ty = comp.y + g.h - th - 9;
-          rrect(g2, tx, ty, tw, th, th / 2);
-          g2.fillStyle = on ? COL.wireHigh : '#40454f';
-          if (on) { g2.shadowColor = 'rgba(57,224,108,.5)'; g2.shadowBlur = 8; }
-          g2.fill();
-          g2.shadowBlur = 0;
-          g2.beginPath();
-          g2.arc(tx + (on ? tw - th / 2 - 1.4 : th / 2 + 1.4), ty + th / 2, th / 2 - 2.6, 0, 7);
-          g2.fillStyle = on ? '#0c2415' : '#c9ced8';
-          g2.fill();
-        } else if (t.key === 'button') {
-          const on = e ? e.outs[0] : 0;
-          const s = 14, bx = cx - s, by = comp.y + 16 + (on ? 2 : 0);
-          rrect(g2, bx, by, s * 2, s * 2, 5);
-          g2.fillStyle = on ? COL.wireHigh : '#3a3f49';
-          g2.fill();
-          g2.lineWidth = 2;
-          g2.strokeStyle = '#14161b';
-          g2.stroke();
-        } else {
-          const on = e ? e.outs[0] : 0;
-          const bx = cx - 17, by = comp.y + g.h - 27, bw = 34, bh = 15;
-          g2.beginPath();
-          g2.moveTo(bx + 1, by + bh);
-          g2.lineTo(bx + 1, by + (on ? 1 : bh - 6));
-          g2.lineTo(bx + bw / 2 - 2, by + (on ? 1 : bh - 6));
-          g2.lineTo(bx + bw / 2 + 2, by + (on ? bh - 6 : 1));
-          g2.lineTo(bx + bw - 1, by + (on ? bh - 6 : 1));
-          g2.lineTo(bx + bw - 1, by + bh);
-          g2.lineWidth = 2;
-          g2.strokeStyle = on ? COL.wireHigh : COL.dim;
-          g2.stroke();
-        }
-        break;
+    if (isIO) {
+      const on = e ? (t.key === 'in' ? e.outs[0] : e.ins[0]) : 0;
+      const px = t.key === 'in' ? comp.x + g.w - 26 : comp.x + 26;
+      const pin = pinPos(comp, t, t.key === 'in' ? 'out' : 'in', 0);
+      g2.beginPath(); g2.moveTo(px, cy); g2.lineTo(pin.x, pin.y);
+      g2.strokeStyle = '#000'; g2.lineWidth = 3; g2.stroke();
+      g2.fillStyle = hov ? '#b3b3b3' : '#4f4f4f';
+      g2.fillRect(t.key === 'in' ? comp.x + 2 : comp.x + g.w - 11, cy - 12, 9, 24);
+      g2.beginPath(); g2.arc(px, cy, 16, 0, Math.PI * 2);
+      g2.fillStyle = on ? COL.wireHigh : COL.wireLow; g2.fill();
+      g2.strokeStyle = '#120909'; g2.lineWidth = 2; g2.stroke();
+      if (comp.label) {
+        g2.font = 'bold 11px ' + FONT; g2.textAlign = 'center';
+        g2.fillStyle = COL.text; g2.fillText(clipText(g2, comp.label, g.w + 25), cx, comp.y - 9);
       }
-      case 'out': {
-        const v = e ? e.ins[0] : 0;
-        if (comp.label) {
-          g2.fillStyle = COL.dim;
-          g2.font = '600 10px system-ui, sans-serif';
-          g2.textAlign = 'center';
-          g2.fillText(clipText(g2, comp.label, g.w - 10), cx, comp.y + 13);
-        }
-        const ry = comp.y + g.h / 2 + (comp.label ? 6 : 1);
-        if (v) { g2.shadowColor = 'rgba(57,224,108,.65)'; g2.shadowBlur = 12; }
-        g2.beginPath();
-        g2.arc(cx - 8, ry, 9.4, 0, 7);
-        g2.fillStyle = v ? COL.wireHigh : '#14161b';
-        g2.fill();
-        g2.shadowBlur = 0;
-        g2.lineWidth = 2;
-        g2.strokeStyle = v ? '#5df28c' : '#454a55';
-        g2.stroke();
-        if (v) {
-          g2.fillStyle = '#0c2415';
-          g2.font = '700 8px system-ui, sans-serif';
-          g2.textAlign = 'center';
-          g2.fillText('1', cx - 8, ry + 3);
-        }
-        break;
-      }
-      case 'seg7': {
-        g2.fillStyle = COL.text;
-        g2.font = '600 10px system-ui, sans-serif';
-        g2.textAlign = 'center';
-        g2.fillText('7-SEG', cx - 12, comp.y + 13);
+    } else {
+      g2.fillStyle = color; g2.fillRect(comp.x, comp.y, g.w, g.h);
+      g2.strokeStyle = 'rgba(0,0,0,.28)'; g2.lineWidth = 2;
+      g2.strokeRect(comp.x, comp.y, g.w, g.h);
+      g2.fillStyle = COL.text; g2.font = 'bold 12px ' + FONT; g2.textAlign = 'center';
+      if (t.key === 'seg7') {
         drawSeg7(g2, comp.x + g.w - 58, comp.y + 16, 44, g.h - 26, e ? e.ins : []);
-        break;
-      }
-      case 'dff': {
-        g2.fillStyle = COL.text;
-        g2.font = '650 11px system-ui, sans-serif';
-        g2.textAlign = 'center';
-        g2.fillText(t.name, cx, comp.y + 13);
-        // clock triangle
-        const cp = pinPos(comp, t, 'in', 1);
-        g2.beginPath();
-        g2.moveTo(cp.x + 3, cp.y - 5);
-        g2.lineTo(cp.x + 11, cp.y);
-        g2.lineTo(cp.x + 3, cp.y + 5);
-        g2.closePath();
-        g2.fillStyle = COL.dim;
-        g2.fill();
-        // state readout
-        const st = statesByCircuit.get(current().id);
-        const s = st ? C.stOf(st, comp) : {};
-        g2.fillStyle = s.q ? COL.wireHigh : COL.faint;
-        g2.font = '600 9px system-ui, sans-serif';
-        g2.fillText('Q = ' + (s.q ? 1 : 0), cx, comp.y + g.h - 7);
-        break;
-      }
-      default: {
-        g2.fillStyle = COL.text;
-        g2.font = '650 12.5px system-ui, sans-serif';
-        g2.textAlign = 'center';
-        const lbl = t.missing ? '(missing chip)' : t.name;
-        g2.fillText(clipText(g2, lbl, g.w - 14), cx, comp.y + g.h / 2 + 4);
-        if (t.key === 'chip') {
-          g2.fillStyle = 'rgba(255,255,255,.5)';
-          g2.fillRect(comp.x + 8, comp.y + 1.6, g.w - 16, 2.2);
-        }
+      } else if (t.key === 'clock') {
+        g2.fillText('CLOCK', cx, comp.y + 17);
+        g2.beginPath(); g2.moveTo(cx - 20, cy + 10); g2.lineTo(cx - 20, cy - 3);
+        g2.lineTo(cx, cy - 3); g2.lineTo(cx, cy + 10); g2.lineTo(cx + 20, cy + 10);
+        g2.strokeStyle = e && e.outs[0] ? COL.wireHigh : '#999'; g2.lineWidth = 2; g2.stroke();
+      } else if (t.key === 'button') {
+        g2.fillStyle = e && e.outs[0] ? '#ffffff' : '#777777';
+        g2.fillRect(cx - 14, cy - 14, 28, 28);
+      } else {
+        const name = t.missing ? '(missing chip)' : t.name;
+        g2.fillText(clipText(g2, name, g.w - 16), cx, cy + 4);
       }
     }
-
-    // pin name labels for multi-pin non-IO chips
-    if (t.key === 'dff' || t.key === 'chip' || t.key === 'seg7') {
-      g2.font = '500 8.6px system-ui, sans-serif';
-      for (let p = 0; p < t.ins.length; p++) {
-        const pp = pinPos(comp, t, 'in', p);
-        g2.fillStyle = COL.dim;
-        g2.textAlign = 'left';
-        if (!(comp.type === 'chip' && cam.z < 0.55)) g2.fillText(clipText(g2, t.ins[p], 40), pp.x + 7, pp.y + 3);
-      }
-      for (let p = 0; p < t.outs.length; p++) {
-        const pp = pinPos(comp, t, 'out', p);
-        g2.fillStyle = COL.dim;
-        g2.textAlign = 'right';
-        if (!(comp.type === 'chip' && cam.z < 0.55)) g2.fillText(clipText(g2, t.outs[p], 40), pp.x - 7, pp.y + 3);
-      }
-    }
-
-    // pins
     for (let p = 0; p < t.ins.length; p++) drawPin(g2, comp, t, 'in', p, e);
     for (let p = 0; p < t.outs.length; p++) drawPin(g2, comp, t, 'out', p, e);
     g2.restore();
@@ -1722,17 +1707,16 @@ function mount(root, opts) {
 
   function drawPin(g2, comp, t, io, p, e) {
     const pp = pinPos(comp, t, io, p);
-    const v = e ? (io === 'in' ? e.ins[p] : e.outs[p]) : 0;
     const hov = hover && hover.kind === 'pin' && hover.comp.id === comp.id && hover.io === io && hover.p === p;
-    if (v) { g2.shadowColor = 'rgba(57,224,108,.5)'; g2.shadowBlur = 6; }
-    g2.beginPath();
-    g2.arc(pp.x, pp.y, PIN_R + (hov ? 1.8 : 0), 0, 7);
-    g2.fillStyle = v ? COL.wireHigh : COL.pinLow;
-    g2.fill();
-    g2.shadowBlur = 0;
-    g2.lineWidth = hov ? 2.2 : 1.6;
-    g2.strokeStyle = hov ? '#ffffff' : v ? '#5df28c' : COL.pinEdge;
-    g2.stroke();
+    g2.beginPath(); g2.arc(pp.x, pp.y, PIN_R + (hov ? 1 : 0), 0, Math.PI * 2);
+    g2.fillStyle = hov ? '#ffffff' : '#000000'; g2.fill();
+    if (hov) {
+      const label = (io === 'in' ? t.ins : t.outs)[p];
+      g2.font = '11px ' + FONT;
+      const width = g2.measureText(label).width + 12;
+      g2.fillStyle = 'rgba(0,0,0,.7)'; g2.fillRect(pp.x - width / 2, pp.y - 29, width, 18);
+      g2.fillStyle = '#ffffff'; g2.textAlign = 'center'; g2.fillText(label, pp.x, pp.y - 16);
+    }
   }
 
   function drawSeg7(g2, x, y, w, h, ins) {
@@ -1749,12 +1733,12 @@ function mount(root, opts) {
     g2.lineCap = 'round';
     for (let i = 0; i < 7; i++) {
       const on = ins[i] ? 1 : 0;
-      if (on) { g2.shadowColor = 'rgba(255,80,66,.6)'; g2.shadowBlur = 8; }
+
       g2.beginPath();
       g2.moveTo(segs[i][0][0], segs[i][0][1]);
       g2.lineTo(segs[i][1][0], segs[i][1][1]);
       g2.lineWidth = Math.max(4, w * 0.13);
-      g2.strokeStyle = on ? '#ff5042' : '#2b2e37';
+      g2.strokeStyle = on ? '#ff5247' : '#1a1717';
       g2.stroke();
       g2.shadowBlur = 0;
     }
@@ -1784,6 +1768,7 @@ function mount(root, opts) {
 
   /* ---------- boot ---------- */
   loadAll();
+  el('.ls').classList.toggle('ls-show-tools', showTools);
   loadCam();
   layout();
   updateZoomLabel();
@@ -1798,6 +1783,9 @@ function mount(root, opts) {
     unmount() {
       alive = false;
       ro.disconnect();
+      closeMenu(); closeModal();
+      clearTimeout(hintTimer); clearTimeout(toastTimer);
+      palGhost?.remove();
       clearInterval(runTimer);
       clearTimeout(saveTimer);
       document.removeEventListener('keydown', onKey);

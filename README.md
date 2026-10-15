@@ -6,7 +6,8 @@ draggable/resizable windows, and 20+ apps — cloned and rebranded from
 and rebuilt to run as a **pure static website** (no server, no build step,
 no dependencies). It ships a **black-and-white theme: black backgrounds, white text, and
 white/grey accents** (no colour in the UI; only physical game pieces
-such as cards and checkers keep their colours).
+such as cards and checkers keep their colours). Logic Sim is an exception: it
+uses the original simulator’s gray workspace, colored chips and red signals.
 
 ## Run it
 
