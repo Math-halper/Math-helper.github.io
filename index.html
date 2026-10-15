@@ -147,6 +147,11 @@
      the data/ catalogs, loaded at boot by assets/html-loader.js) -->
 <script src="assets/store.js"></script>
 <script src="assets/icons.js"></script>
+<!-- virtual file system: assets/fs.js builds the / directory tree from
+     data/fs-manifest.js (every file of this site) + the account's home
+     folder; shared by the Files app and the Terminal -->
+<script src="data/fs-manifest.js"></script>
+<script src="assets/fs.js"></script>
 <script src="data/applications.js"></script>
 <script src="data/websites.js"></script>
 <script src="assets/config-loader.js"></script>

@@ -60,8 +60,10 @@ const MH = {
   },
 
   /* ---- seeded state for a brand-new account ---- */
-  defaultData(displayName) {
+  defaultData(displayName, username) {
     const today = MH.todayISO();
+    /* The account's file system home — mirrored by FS.home() in assets/fs.js. */
+    const home = '/home/' + String(username || 'user').toLowerCase();
     return {
       version: 1,
       settings: { wallpaper: 'mint', accent: '#ffffff', pinned: ['files', 'calculator', 'notes', 'browser', 'terminal'] },
@@ -75,12 +77,15 @@ const MH = {
         { id: MH.uid(), name: 'Nova (Helper Bot)', email: 'Nova@localhost', phone: '', notes: 'Built-in helper. It has no app of its own any more.' },
         { id: MH.uid(), name: displayName, email: '', phone: '', notes: 'Me' },
       ],
+      /* Real hierarchical file system (assets/fs.js). dirs are the folders
+       * under the account's home; files carry full paths. Everything outside
+       * /home/<user> is the read-only system tree. */
+      dirs: [home + '/Desktop', home + '/Documents', home + '/Pictures', home + '/Downloads'],
       files: [
-        { id: MH.uid(), name: 'Welcome.txt', folder: 'Documents', type: 'text', content: 'Welcome to proton!\n\nYour Files app is a virtual drive saved in this browser.\nCreate text files, organise them in folders, download or delete them.\n\nFiles never leave this device.', updated: Date.now() },
-        { id: MH.uid(), name: 'Ideas.txt', folder: 'Documents', type: 'text', content: 'Ideas:\n- Practise 20 minutes of maths a day\n- Beat the Sudoku hard mode\n- ', updated: Date.now() },
-        { id: MH.uid(), name: 'README.txt', folder: 'Home', type: 'text', content: 'proton — static clone of Mixt (proton-arcade/mlp @ arena/170861f7-mlp), rebranded.\nLicensed AGPL-3.0-only. See CREDITS.md in the project repo.', updated: Date.now() },
+        { path: home + '/Documents/Welcome.txt', content: 'Welcome to proton!\n\nYour Files app now browses a real file system rooted at / :\n- /  holds every single file of the proton system (read-only)\n- /home/<you>  is yours — create, edit and organise files freely\n\nTry the Terminal too:  ls /,  cd,  cat README.md,  tree ~', updated: Date.now() },
+        { path: home + '/Documents/Ideas.txt', content: 'Ideas:\n- Practise 20 minutes of maths a day\n- Beat the Sudoku hard mode\n- ', updated: Date.now() },
+        { path: home + '/README.txt', content: 'proton — static clone of Mixt (proton-arcade/mlp @ arena/170861f7-mlp), rebranded.\nLicensed AGPL-3.0-only. See CREDITS.md in the project repo.', updated: Date.now() },
       ],
-      fileFolders: ['Home', 'Documents', 'Pictures', 'Downloads'],
       sheets: { 'Budget': { 'B1': 'Item', 'C1': 'Cost', 'B2': 'Books', 'C2': '25', 'B3': 'Snacks', 'C3': '8', 'B4': 'Total', 'C4': '=SUM(C2:C3)' } },
       activeSheet: 'Budget',
       slides: [

@@ -153,6 +153,23 @@ table.data th{background:#eee}
 .file-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(104px,1fr));gap:8px;padding:14px}
 .file-item{border:1px solid transparent;border-radius:8px;background:transparent;padding:12px 4px 9px;display:flex;flex-direction:column;align-items:center;gap:6px;font-size:12px;text-align:center;word-break:break-word}
 .file-item:hover{background:#e8e8e8}.file-item.sel{background:var(--accent-soft);border-color:#9a9a9a}.file-item .ic{font-size:34px}
+.file-item .f-name{max-width:110px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+
+/* file manager: path bar, breadcrumbs and the / tree (Files app) */
+.pathbar{display:flex;align-items:center;gap:8px;padding:8px 12px;border-bottom:1px solid var(--line);background:#fbfbfa;flex-wrap:wrap}
+.pathbar .grow{flex:1;min-width:130px;padding:6px 9px;border:1px solid #b9bbb7;border-radius:5px;background:#fff;font-size:13px}
+.pathbar input[type=checkbox]{margin:0}
+.crumbs{display:flex;align-items:center;gap:3px;flex-wrap:wrap}
+.crumb{border:0;background:transparent;padding:3px 7px;border-radius:5px;font-size:13px;cursor:pointer;color:inherit}
+.crumb:hover{background:#e8e8e8}.crumb.cur{background:var(--accent-soft);font-weight:600}
+.f-trow{display:flex;align-items:center;gap:7px;padding:5px 10px;cursor:pointer;font-size:13px;width:100%;text-align:left}
+.f-trow:hover{background:#f4f4f2}.f-trow.sel{background:var(--accent-soft)}
+.f-trow .icn{width:15px;height:15px;flex:none}
+.f-tname{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.f-caret{width:10px;flex:none;font-size:8px;cursor:pointer;opacity:.75;line-height:1}
+.f-caret::before{content:'▶';display:inline-block;transform:scale(.85)}
+.f-caret.open::before{content:'▼'}
+.f-info{display:flex;align-items:center;gap:10px;padding:12px 14px;border-top:1px solid var(--line);background:#111;color:#fff;flex-wrap:wrap}
 
 /* calendar */
 .cal-grid{display:grid;grid-template-columns:repeat(7,1fr);border-top:1px solid var(--line);border-left:1px solid var(--line)}
@@ -296,6 +313,10 @@ table.data th,table.data td{border-color:#333333}
 .note-body:empty::before{color:#777777}
 .file-item{color:#ffffff}
 .file-item:hover{background:#1c1c1c}
+.pathbar{background:#0d0d0d;border-color:#333333}
+.pathbar .grow{background:#111111;border-color:#444444;color:#ffffff}
+.crumb:hover{background:#1c1c1c}
+.f-trow:hover{background:#1b1b1b}
 .cal-dow{background:#141414;color:#b5b5b5;border-color:#333333}
 .cal-day{background:#080808;color:#ffffff;border-color:#333333}
 .cal-day.other{background:#030303;color:#666666}
