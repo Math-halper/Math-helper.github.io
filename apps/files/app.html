@@ -14,66 +14,235 @@ proton menu. The script below is fetched and run by proton's HTML loader
      this one script block. Edit it, then reload proton. -->
 <script data-proton-app>
 /* proton app module: files — edit this file to change this app.
- * Loaded by index.html; calls registerApp() (see apps/README.md). */
+ * Loaded by index.html; calls registerApp() (see apps/README.md).
+ *
+ * A real file manager over the shared virtual file system (assets/fs.js):
+ * the whole machine is one tree rooted at "/", the site's own files are the
+ * read-only system layer (/apps, /assets, /data, /websites, …) and your
+ * account's files live under /home/<user>/. Breadcrumbs, an address bar,
+ * a / tree in the sidebar and full create/rename/delete/download. */
 'use strict';
 
-/* ============================ FILES ============================ */
 registerApp({
   /* Metadata (name, icon, cat, desc, w, h) lives in the app catalog:
    * data/applications.js — edit it there, not here. */
   render(body) {
-    let folder = 'Home', selected = null;
-    body.innerHTML = `${bar('Files', `<button class="btn sm" id="f-new">${iconSvg('plus')} Text file</button><button class="btn sm" id="f-folder">${iconSvg('plus')} Folder</button><label class="btn sm" style="margin:0">${iconSvg('upload')} Import .txt<input id="f-import" type="file" accept=".txt,.md,.csv" hidden></label><button class="btn sm" id="f-del">${iconSvg('trash')} Delete</button>`)}
-    <div class="split"><aside class="side" id="f-folders"></aside><div style="display:flex;flex-direction:column;min-height:0">
+    body.innerHTML = `${bar('Files', `<button class="btn sm" id="f-up">${iconSvg('chevron-left')} Up</button><button class="btn sm" id="f-new">${iconSvg('plus')} File</button><button class="btn sm" id="f-folder">${iconSvg('plus')} Folder</button><label class="btn sm" style="margin:0">${iconSvg('upload')} Import<input id="f-import" type="file" accept=".txt,.md,.csv,.log,.json,.js,.css,.html,.htm,.py,.yml,.yaml,.rtf,text/*" hidden></label><button class="btn sm" id="f-rename">Rename</button><button class="btn sm" id="f-del">${iconSvg('trash')} Delete</button><button class="btn sm" id="f-dl">${iconSvg('download')} Download</button>`)}
+    <div class="pathbar">
+      <span class="muted">Path</span>
+      <div class="crumbs" id="f-crumbs"></div>
+      <input id="f-path" class="grow" spellcheck="false" autocomplete="off" aria-label="Go to path">
+      <button class="btn sm" id="f-go">Go</button>
+      <label class="muted" style="display:flex;align-items:center;gap:5px;white-space:nowrap"><input type="checkbox" id="f-hidden" checked> hidden</label>
+    </div>
+    <div class="split"><aside class="side" id="f-tree"></aside><div style="display:flex;flex-direction:column;min-height:0">
       <div class="app-main" id="f-main"></div><div id="f-editor"></div></div></div>`;
     const main = body.querySelector('#f-main'), ed = body.querySelector('#f-editor');
-    function draw() {
-      body.querySelector('#f-folders').innerHTML = userData.fileFolders.map((f) =>
-        `<button class="rowitem ${f === folder ? 'sel' : ''}" data-f="${MH.esc(f)}">${iconSvg('folder')} ${MH.esc(f)} <span class="muted" style="margin-left:auto">${userData.files.filter((x) => x.folder === f).length}</span></button>`).join('') +
-        `<div class="pad muted" style="padding-top:8px">${MH.fmtBytes(JSON.stringify(userData.files).length)} of text stored<br>on this device.</div>`;
-      body.querySelectorAll('[data-f]').forEach((b) => b.onclick = () => { folder = b.dataset.f; selected = null; draw(); });
-      const items = userData.files.filter((x) => x.folder === folder);
-      main.innerHTML = items.length ? `<div class="file-grid">${items.map((f) => `
-        <button class="file-item ${f.id === selected ? 'sel' : ''}" data-id="${f.id}"><span class="ic">${iconSvg('file-text')}</span>${MH.esc(f.name)}<span class="muted">${MH.fmtBytes(f.content.length)}</span></button>`).join('')}</div>`
-        : `<div class="pad muted">This folder is empty. Create a text file to get started.</div>`;
-      main.querySelectorAll('.file-item').forEach((b) => {
-        b.onclick = () => { selected = b.dataset.id; draw(); };
-        b.ondblclick = () => { selected = b.dataset.id; draw(); edit(); };
+    const home = FS.home();
+    let cwd = home, selected = null, showHidden = true;
+    const expanded = new Set(['/', '/home', home]);
+
+    /* ---------- icons ---------- */
+    const iconFor = (e) => {
+      if (e.type === 'dir') return 'folder';
+      const x = FS.extname(e.name);
+      if (['txt', 'md', 'csv', 'log', 'rtf'].includes(x)) return 'file-text';
+      if (['html', 'css', 'js', 'json', 'py', 'yml', 'yaml', 'sh'].includes(x)) return 'file';
+      if (['png', 'jpg', 'jpeg', 'gif', 'webp', 'bmp', 'ico', 'svg'].includes(x)) return 'image';
+      if (['mp3', 'wav', 'ogg', 'flac'].includes(x)) return 'music';
+      if (['mp4', 'mov', 'webm', 'avi'].includes(x)) return 'film';
+      if (['ttf', 'otf', 'woff', 'woff2'].includes(x)) return 'palette';
+      return 'file';
+    };
+
+    /* ---------- sidebar tree of the whole / file system ---------- */
+    function treeHtml(dir, depth) {
+      let out = '';
+      for (const e of FS.list(dir)) {
+        if (e.type !== 'dir') continue;
+        const open = expanded.has(e.path);
+        out += `<div class="f-trow${e.path === cwd ? ' sel' : ''}" data-t="${MH.esc(e.path)}" style="padding-left:${8 + depth * 15}px" title="${MH.esc(e.path)}">
+          <span class="f-caret${open ? ' open' : ''}" data-caret="${MH.esc(e.path)}"></span>${iconSvg('folder')}<span class="f-tname">${MH.esc(e.name)}</span></div>`;
+        if (open) out += treeHtml(e.path, depth + 1);
+      }
+      return out;
+    }
+    function drawTree() {
+      const t = body.querySelector('#f-tree');
+      t.innerHTML = `<div class="f-trow${cwd === home ? ' sel' : ''}" data-t="${MH.esc(home)}">${iconSvg('home')}<span class="f-tname">Home</span></div>
+        <div class="f-trow${cwd === '/' ? ' sel' : ''}" data-t="/" style="padding-left:8px">${iconSvg('database')}<span class="f-tname">File system <span class="muted">(/)</span></span></div>
+        <div class="f-tree-body">${treeHtml('/', 1)}</div>
+        <div class="pad muted" style="padding:12px 14px">${FS.count().files} file(s) in your home folder · ${MH.fmtBytes(FS.count().bytes)} saved on this device.<br>Everything under <b>/</b> except <b>${MH.esc(home)}</b> is the system itself — read-only.</div>`;
+      t.querySelectorAll('.f-trow').forEach((r) => r.onclick = () => { go(r.dataset.t); });
+      t.querySelectorAll('.f-caret').forEach((c) => c.onclick = (ev) => {
+        ev.stopPropagation();
+        const p = c.dataset.caret;
+        expanded.has(p) ? expanded.delete(p) : expanded.add(p);
+        draw();
       });
-      const f = userData.files.find((x) => x.id === selected);
-      ed.innerHTML = f ? `<div style="border-top:1px solid var(--line);background:#111">
-          <div class="appbar"><strong style="margin-right:auto">${iconSvg('file-text')} ${MH.esc(f.name)}</strong>
-          <button class="btn sm" id="fe-rename">Rename</button><button class="btn sm" id="fe-dl">${iconSvg('download')} Download</button><button class="btn sm primary" id="fe-save">Save</button></div>
-          <textarea id="fe-text" rows="9" style="border:0;border-radius:0;resize:vertical">${MH.esc(f.content)}</textarea></div>` : '';
-      if (f) {
-        const ta = ed.querySelector('#fe-text');
-        ed.querySelector('#fe-save').onclick = () => { f.content = ta.value; f.updated = Date.now(); saveData(); draw(); MH.toast('File saved.'); };
-        ta.addEventListener('input', () => { f.content = ta.value; f.updated = Date.now(); saveData(); });
-        ed.querySelector('#fe-dl').onclick = () => MH.download(f.name, f.content);
-        ed.querySelector('#fe-rename').onclick = () => { const n = prompt('File name:', f.name); if (n?.trim()) { f.name = n.trim(); saveData(); draw(); } };
+    }
+
+    /* ---------- main pane ---------- */
+    function crumbHtml() {
+      const parts = cwd.split('/').filter(Boolean);
+      let out = `<button class="crumb" data-c="/">/</button>`, acc = '';
+      for (const part of parts) {
+        acc += '/' + part;
+        out += `<span class="muted">›</span><button class="crumb${acc === cwd ? ' cur' : ''}" data-c="${MH.esc(acc)}">${MH.esc(part)}</button>`;
+      }
+      return out;
+    }
+    function draw() {
+      body.querySelector('#f-crumbs').innerHTML = crumbHtml();
+      body.querySelectorAll('.crumb').forEach((b) => b.onclick = () => go(b.dataset.c));
+      body.querySelector('#f-path').value = cwd;
+      let entries = FS.list(cwd);
+      if (!showHidden) entries = entries.filter((e) => !e.name.startsWith('.'));
+      if (cwd === '/' && !showHidden) entries = entries.filter((e) => e.name !== '.github');
+      main.innerHTML = entries.length ? `<div class="file-grid">${entries.map((e) => `
+        <button class="file-item ${e.path === selected ? 'sel' : ''}" data-p="${MH.esc(e.path)}" title="${MH.esc(e.path)}">
+          <span class="ic">${iconSvg(iconFor(e))}</span><span class="f-name">${MH.esc(e.name)}</span>
+          <span class="muted">${e.type === 'dir' ? 'Folder' : MH.fmtBytes(e.size)}${e.readonly && e.path !== '/' ? ' · sys' : ''}</span></button>`).join('')}</div>`
+        : `<div class="pad muted">This folder is empty.${FS.isWritable(cwd) ? ' Create a file or folder to get started.' : ''}</div>`;
+      main.querySelectorAll('.file-item').forEach((b) => {
+        b.onclick = () => { selected = b.dataset.p; draw(); };
+        b.ondblclick = () => { selected = b.dataset.p; draw(); openSelected(); };
+      });
+      drawTree();
+      drawEditor();
+    }
+
+    /* ---------- editor / preview pane ---------- */
+    function drawEditor() {
+      const st = selected ? FS.stat(selected) : null;
+      if (!st) { ed.innerHTML = ''; return; }
+      if (st.type === 'dir') {
+        ed.innerHTML = `<div class="f-info">${iconSvg('folder')} <b>${MH.esc(st.name)}</b><span class="muted">Folder · ${FS.list(st.path).length} item(s) inside · ${MH.esc(st.path)}</span></div>`;
+        return;
+      }
+      const sys = st.readonly;
+      if (FS.isBinary(st.path)) {
+        ed.innerHTML = `<div class="f-info">${iconSvg('file')} <b>${MH.esc(st.name)}</b>
+          <span class="muted">${MH.fmtBytes(st.size)} · binary file${sys ? ' · system' : ''} · ${MH.esc(st.path)}</span>
+          <button class="btn sm" id="fe-dl">${iconSvg('download')} Download</button></div>`;
+        ed.querySelector('#fe-dl').onclick = async () => {
+          const blob = await FS.readBlob(st.path);
+          MH.download(st.name, blob, blob.type || 'application/octet-stream');
+        };
+        return;
+      }
+      ed.innerHTML = `<div style="border-top:1px solid var(--line);background:#111">
+        <div class="appbar"><strong style="margin-right:auto">${iconSvg('file-text')} ${MH.esc(st.name)}${sys ? ' <span class="muted">(read-only system file)</span>' : ''}</strong>
+        <button class="btn sm" id="fe-dl">${iconSvg('download')} Download</button>${sys ? '' : '<button class="btn sm primary" id="fe-save">Save</button>'}</div>
+        <textarea id="fe-text" rows="9" ${sys ? 'readonly' : ''} style="border:0;border-radius:0;resize:vertical"></textarea></div>`;
+      const ta = ed.querySelector('#fe-text');
+      /* system files are fetched on demand; user files live in memory */
+      if (st.user) ta.value = userData.files.find((f) => f.path === st.path)?.content ?? '';
+      else {
+        ta.value = 'Loading…';
+        FS.read(st.path).then((text) => { ta.value = text; }).catch((e) => { ta.value = 'Could not load: ' + e.message; });
+      }
+      ed.querySelector('#fe-dl').onclick = async () => {
+        const blob = await FS.readBlob(st.path);
+        MH.download(st.name, blob, blob.type || 'text/plain');
+      };
+      if (!sys) {
+        const save = () => { FS.write(st.path, ta.value); MH.toast('File saved.'); draw(); };
+        ed.querySelector('#fe-save').onclick = save;
+        ta.addEventListener('input', () => FS.write(st.path, ta.value));
       }
     }
-    function edit() { const f = userData.files.find((x) => x.id === selected); if (f) ed.querySelector('#fe-text')?.focus(); }
+
+    /* ---------- navigation + actions ---------- */
+    function go(path) {
+      try {
+        const p = FS.normalize(path, cwd);
+        const st = FS.stat(p);
+        if (!st) { MH.toast(`Not found: ${p}`); return; }
+        if (st.type === 'file') {
+          const parent = FS.dirname(p);
+          cwd = parent; selected = p;
+          for (let d = parent; d !== '/'; d = FS.dirname(d)) expanded.add(d);
+          expanded.add('/');
+          draw();
+          return;
+        }
+        cwd = p; selected = null;
+        for (let d = p; d !== '/'; d = FS.dirname(d)) expanded.add(d);
+        expanded.add('/');
+        draw();
+      } catch (e) { MH.toast(e.message); }
+    }
+    function openSelected() {
+      const st = selected && FS.stat(selected);
+      if (!st) return;
+      if (st.type === 'dir') go(st.path);
+      else { drawEditor(); ed.querySelector('#fe-text')?.focus(); }
+    }
+    function needWritable() {
+      if (!FS.isWritable(cwd)) {
+        MH.toast(`Read-only — ${cwd} is part of the system. Try ${home}.`);
+        return false;
+      }
+      return true;
+    }
+    body.querySelector('#f-up').onclick = () => { if (cwd !== '/') go(FS.dirname(cwd)); };
+    body.querySelector('#f-go').onclick = () => go(body.querySelector('#f-path').value);
+    body.querySelector('#f-path').addEventListener('keydown', (e) => { if (e.key === 'Enter') go(e.target.value); });
+    body.querySelector('#f-hidden').onchange = (e) => { showHidden = e.target.checked; draw(); };
     body.querySelector('#f-new').onclick = () => {
+      if (!needWritable()) return;
       const name = prompt('File name:', 'Untitled.txt'); if (!name?.trim()) return;
-      const f = { id: MH.uid(), name: name.trim(), folder, type: 'text', content: '', updated: Date.now() };
-      userData.files.push(f); selected = f.id; saveData(); draw(); edit();
+      const p = FS.join(cwd, name.trim());
+      if (FS.exists(p)) { MH.toast('A file with that name already exists.'); return; }
+      try { FS.write(p, ''); selected = p; draw(); ed.querySelector('#fe-text')?.focus(); }
+      catch (err) { MH.toast(err.message); }
     };
     body.querySelector('#f-folder').onclick = () => {
+      if (!needWritable()) return;
       const name = prompt('Folder name:'); if (!name?.trim()) return;
-      if (!userData.fileFolders.includes(name.trim())) userData.fileFolders.push(name.trim());
-      folder = name.trim(); saveData(); draw();
-    };
-    body.querySelector('#f-del').onclick = () => {
-      const f = userData.files.find((x) => x.id === selected);
-      if (!f) { MH.toast('Select a file first.'); return; }
-      if (confirmBox(`Delete ${f.name}?`)) { userData.files = userData.files.filter((x) => x.id !== f.id); selected = null; saveData(); draw(); }
+      try {
+        FS.mkdir(FS.join(cwd, name.trim()));
+        expanded.add(cwd); selected = FS.join(cwd, name.trim()); draw();
+      } catch (err) { MH.toast(err.message); }
     };
     body.querySelector('#f-import').onchange = async (e) => {
-      const file = e.target.files[0]; if (!file) return;
-      userData.files.push({ id: MH.uid(), name: file.name, folder, type: 'text', content: await file.text(), updated: Date.now() });
-      saveData(); draw(); MH.toast(`Imported ${file.name}`);
+      const file = e.target.files[0]; e.target.value = '';
+      if (!file) return;
+      if (!needWritable()) return;
+      try {
+        const p = FS.join(cwd, file.name);
+        FS.write(p, await file.text());
+        selected = p; draw(); MH.toast(`Imported ${file.name}`);
+      } catch (err) { MH.toast(err.message); }
     };
+    body.querySelector('#f-rename').onclick = () => {
+      const st = selected && FS.stat(selected);
+      if (!st) { MH.toast('Select a file or folder first.'); return; }
+      if (st.readonly) { MH.toast('System files cannot be renamed.'); return; }
+      const name = prompt(st.type === 'dir' ? 'Folder name:' : 'File name:', st.name);
+      if (!name?.trim() || name.trim() === st.name) return;
+      try { selected = FS.rename(st.path, FS.join(FS.dirname(st.path), name.trim())).path; draw(); }
+      catch (err) { MH.toast(err.message); }
+    };
+    body.querySelector('#f-del').onclick = () => {
+      const st = selected && FS.stat(selected);
+      if (!st) { MH.toast('Select a file or folder first.'); return; }
+      if (st.readonly) { MH.toast('System files cannot be deleted.'); return; }
+      const what = st.type === 'dir' ? `folder “${st.name}” and everything inside it` : `“${st.name}”`;
+      if (!confirmBox(`Delete ${what}?`)) return;
+      try { FS.rm(st.path, '/', true); selected = null; draw(); MH.toast('Deleted.'); }
+      catch (err) { MH.toast(err.message); }
+    };
+    body.querySelector('#f-dl').onclick = async () => {
+      const st = selected && FS.stat(selected);
+      if (!st || st.type === 'dir') { MH.toast('Select a file first.'); return; }
+      try {
+        const blob = await FS.readBlob(st.path);
+        MH.download(st.name, blob, blob.type || 'text/plain');
+      } catch (err) { MH.toast(err.message); }
+    };
+
     draw();
   },
 });

@@ -34,9 +34,9 @@ name=Files
 path=apps/files/app.html
 icon=folder
 cat=Productivity
-desc=Virtual drive: folders & text files saved per account
-w=880
-h=560
+desc=Real file system: browse / and every file, edit yours under /home
+w=920
+h=600
 
 [application]
 id=notes
@@ -164,7 +164,7 @@ name=Terminal
 path=apps/terminal/app.html
 icon=terminal
 cat=Learn
-desc=A friendly fake shell that can drive the desktop
+desc=Real shell over the / file system: ls, cd, cat, tree, grep and more
 w=820
 h=520
 

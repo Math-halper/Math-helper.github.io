@@ -14,49 +14,321 @@ proton menu. The script below is fetched and run by proton's HTML loader
      this one script block. Edit it, then reload proton. -->
 <script data-proton-app>
 /* proton app module: terminal — edit this file to change this app.
- * Loaded by index.html; calls registerApp() (see apps/README.md). */
+ * Loaded by index.html; calls registerApp() (see apps/README.md).
+ *
+ * A real shell over the shared virtual file system (assets/fs.js) — the same
+ * tree the Files app browses. It has a working directory, absolute and
+ * relative paths (~, ., ..), and the usual file commands (pwd, ls, cd, cat,
+ * mkdir, touch, rm, cp, mv, tree, find, grep, echo with > redirect). Tab
+ * completes commands and paths; ↑/↓ walks the history. System files under /
+ * are read-only; everything under your home directory is yours to change. */
 'use strict';
 
-/* ============================ TERMINAL ============================ */
 registerApp({
   /* Metadata (name, icon, cat, desc, w, h) lives in the app catalog:
    * data/applications.js — edit it there, not here. */
   render(body) {
     body.innerHTML = `<div class="term" id="t-out"></div>`;
     const out = body.querySelector('#t-out');
+    let cwd = FS.home();
+    const hist = []; let histIdx = -1;
+    const short = (p) => {
+      const home = FS.home();
+      return p === home ? '~' : p.startsWith(home + '/') ? '~' + p.slice(home.length) : p;
+    };
+    const promptText = () => `${currentUser.username}@proton:${short(cwd)}$ `;
     const print = (s = '') => { out.insertAdjacentHTML('beforeend', MH.esc(s) + '\n'); out.scrollTop = out.scrollHeight; };
-    print('proton terminal — type "help" and press Enter.');
-    print(`Signed in as ${currentUser.username} on this device. Everything here is a simulation: no real shell, no network.`);
     function prompt() {
-      out.insertAdjacentHTML('beforeend', `<span style="color:#ffffff">${MH.esc(currentUser.username)}@proton</span>:~$ <input id="t-in" autocomplete="off" spellcheck="false">\n`);
+      out.insertAdjacentHTML('beforeend', `<span style="color:#ffffff">${MH.esc(currentUser.username)}@proton</span>:<span style="color:#9fd3ff">${MH.esc(short(cwd))}</span>$ <input id="t-in" autocomplete="off" spellcheck="false">\n`);
       const inp = body.querySelector('#t-in'); inp.focus();
       out.onclick = () => inp.focus();
-      inp.addEventListener('keydown', (e) => { if (e.key === 'Enter') { const cmd = inp.value; inp.remove(); print(cmd); run(cmd.trim()); } });
+      histIdx = hist.length;
+      inp.addEventListener('keydown', async (e) => {
+        if (e.key === 'Enter') {
+          const cmd = inp.value; inp.remove();
+          print(promptText() + cmd);
+          if (cmd.trim()) { hist.push(cmd); }
+          await run(cmd.trim());
+          prompt();
+        } else if (e.key === 'Tab') {
+          e.preventDefault();
+          complete(inp);
+        } else if (e.key === 'ArrowUp') {
+          e.preventDefault();
+          if (histIdx > 0) { histIdx--; inp.value = hist[histIdx] ?? ''; }
+        } else if (e.key === 'ArrowDown') {
+          e.preventDefault();
+          if (histIdx < hist.length - 1) { histIdx++; inp.value = hist[histIdx] ?? ''; }
+          else { histIdx = hist.length; inp.value = ''; }
+        }
+      });
       out.scrollTop = out.scrollHeight;
     }
-    function run(raw) {
-      const [cmd, ...rest] = raw.split(/\s+/), arg = rest.join(' ');
-      const done = () => prompt();
-      if (!raw) return done();
-      switch (cmd.toLowerCase()) {
-        case 'help': print('Commands:\n  help                 this list\n  apps                 list every app\n  open <app-id>        open an app (e.g. open notes)\n  whoami / date / echo <text>\n  math <expression>    e.g. math 12*8+sqrt(81)\n  solve a b c          solve a·x+b=c  →  solve 2 3 11\n  wallpaper <name>     mint|ocean|sunset|grape|slate|rose\n  accent <hex>         e.g. accent #ffffff\n  notes                how many notes you have\n  clear                clear the terminal\n  about                about this OS'); break;
-        case 'apps': print(Object.values(APPS).map((a) => `  ${a.id.padEnd(14)} ${iconNameFrom(a.icon)} - ${a.name}`).join('\n')); break;
-        case 'open': { const a = APPS[arg.toLowerCase()]; a ? (print(`Opening ${a.name}…`), openApp(a.id)) : print(`No app called "${arg}". Try: apps`); break; }
-        case 'whoami': print(`${currentUser.username} — ${currentUser.displayName} (account created ${new Date(currentUser.createdAt).toLocaleString()}, stored only in this browser)`); break;
-        case 'date': print(new Date().toString()); break;
-        case 'echo': print(arg); break;
-        case 'math': try { print(`${arg} = ${fmtNum(evalMath(arg))}`); } catch (err) { print('Error: ' + err.message); } break;
-        case 'solve': { const [a, b, c] = rest.map(Number); print(a ? `x = ${fmtNum((c - b) / a)}` : 'a cannot be 0'); break; }
-        case 'wallpaper': if (['mint', 'ocean', 'sunset', 'grape', 'slate', 'rose'].includes(arg)) { userData.settings.wallpaper = arg; saveData(); document.querySelector('.wallpaper').className = 'wallpaper wp-' + arg; print('Wallpaper set to ' + arg); } else print('Unknown wallpaper.'); break;
-        case 'accent': if (ACCENTS[arg]) { userData.settings.accent = arg; saveData(); applyAccent(); print('Accent set.'); } else print('Try one of: ' + Object.keys(ACCENTS).join(' ')); break;
-        case 'notes': print(`You have ${userData.notes.length} note(s), ${userData.files.length} file(s), ${userData.events.length} event(s) — all saved on this device.`); break;
-        case 'about': print('proton — static clone/rebrand of Mixt (proton-arcade/mlp @ arena/170861f7-mlp), AGPL-3.0-only.'); break;
-        case 'clear': out.innerHTML = ''; break;
-        case 'sudo': print('Nice try - you already own this whole (browser) computer.'); break;
-        default: print(`Unknown command "${cmd}" — type "help".`);
+    /* Tab completion: first word completes commands, later words complete
+     * paths in the file system (absolute, relative or ~/). */
+    function complete(inp) {
+      const val = inp.value;
+      const wordM = val.match(/(\S*)$/);
+      const word = wordM ? wordM[1] : '';
+      const start = val.length - word.length;
+      const before = val.slice(0, start);
+      let options = [];
+      if (!before.trim()) {
+        options = COMMANDS.filter((c) => c.startsWith(word.toLowerCase()));
+        if (options.length === 1) inp.value = options[0] + ' ';
+        else if (options.length > 1) print(options.join('  '));
+        return;
       }
-      done();
+      /* path completion */
+      const slash = word.lastIndexOf('/');
+      const dirPart = slash >= 0 ? word.slice(0, slash + 1) : '';
+      const basePart = slash >= 0 ? word.slice(slash + 1) : word;
+      let dirPath;
+      try { dirPath = FS.normalize(dirPart || '.', cwd); } catch { return; }
+      let names = [];
+      try { names = FS.list(dirPath).map((e) => e.name + (e.type === 'dir' ? '/' : '')); } catch { return; }
+      options = names.filter((n) => n.toLowerCase().startsWith(basePart.toLowerCase()));
+      if (options.length === 1) {
+        inp.value = before + dirPart + options[0] + (options[0].endsWith('/') ? '' : ' ');
+      } else if (options.length > 1) {
+        print(options.join('  '));
+        /* extend to the longest common prefix */
+        let common = options[0];
+        for (const o of options) { while (!o.toLowerCase().startsWith(common.toLowerCase())) common = common.slice(0, -1); }
+        if (common.length > basePart.length) inp.value = before + dirPart + common;
+      }
     }
+
+    const COMMANDS = ['help', 'pwd', 'ls', 'cd', 'cat', 'echo', 'mkdir', 'touch', 'rm', 'cp', 'mv', 'tree', 'find', 'grep', 'open', 'apps', 'whoami', 'date', 'math', 'solve', 'wallpaper', 'accent', 'notes', 'history', 'clear', 'about', 'sudo'];
+
+    const fmtDate = (ms) => ms ? new Date(ms).toISOString().slice(0, 16).replace('T', ' ') : '2026-10-15 00:00';
+    const permStr = (e) => e.readonly
+      ? (e.type === 'dir' ? 'dr-xr-xr-x' : '-r--r--r--')
+      : (e.type === 'dir' ? 'drwxr-xr-x' : '-rw-r--r--');
+
+    async function run(raw) {
+      /* echo … > file  /  echo … >> file */
+      let redirect = null;
+      const redir = raw.match(/(.*?)\s*(>>?)\s*(\S+)\s*$/);
+      if (raw.startsWith('echo') && redir) {
+        raw = redir[1];
+        redirect = { append: redir[2] === '>>', path: redir[3] };
+      }
+      const tokens = raw.match(/(?:[^\s"]+|"[^"]*")+/g)?.map((t) => t.replace(/^"|"$/g, '')) || [];
+      const [cmd, ...rest] = tokens;
+      const arg = rest.join(' ');
+      if (!cmd) return;
+      try {
+        switch (cmd.toLowerCase()) {
+          case 'help':
+            print([
+              'File system:',
+              '  pwd                     print the working directory',
+              '  ls [-l] [-a] [path]     list a directory (-l long, -a hidden)',
+              '  cd [path]               change directory (~ for home, .. to go up)',
+              '  cat <file>              print a file (any file in /)',
+              '  echo <text> [> file]    print text, or write it to a file',
+              '  mkdir [-p] <dir>        create a directory',
+              '  touch <file>            create an empty file / update nothing',
+              '  rm [-r] <path>          delete a file (or -r a folder)',
+              '  cp <src> <dst>          copy a file or folder',
+              '  mv <src> <dst>          move / rename',
+              '  tree [path]             draw the directory tree',
+              '  find [path] [text]      list paths matching text',
+              '  grep <text> [path]      search file contents',
+              'Desktop:',
+              '  apps / open <app-id>    list apps / open one',
+              '  whoami / date / echo    the usual suspects',
+              '  math <expr> / solve a b c',
+              '  wallpaper <name> / accent <hex>',
+              '  notes / history / clear / about',
+              '',
+              'Tab completes commands and paths. ↑/↓ walks history.',
+              'The system (/) is read-only — your files live in ' + FS.home(),
+            ].join('\n'));
+            break;
+          case 'pwd': print(cwd); break;
+          case 'ls': {
+            const flags = rest.filter((r) => r.startsWith('-')).join('');
+            const target = rest.find((r) => !r.startsWith('-')) || '.';
+            const p = FS.normalize(target, cwd);
+            const st = FS.stat(p);
+            if (!st) throw new Error(`ls: ${target}: No such file or directory`);
+            if (st.type === 'file') { print(st.name); break; }
+            let entries = FS.list(p);
+            if (!flags.includes('a')) entries = entries.filter((e) => !e.name.startsWith('.'));
+            if (flags.includes('l')) {
+              print('total ' + entries.length);
+              for (const e of entries) {
+                print(`${permStr(e)}  ${String(e.size).padStart(8)}  ${fmtDate(e.updated)}  ${e.name}${e.type === 'dir' ? '/' : ''}`);
+              }
+            } else {
+              print(entries.map((e) => e.name + (e.type === 'dir' ? '/' : '')).join('  ') || '(empty)');
+            }
+            break;
+          }
+          case 'cd': {
+            const target = rest[0] ?? '~';
+            const p = FS.normalize(target, cwd);
+            const st = FS.stat(p);
+            if (!st) throw new Error(`cd: ${target}: No such file or directory`);
+            if (st.type !== 'dir') throw new Error(`cd: ${target}: Not a directory`);
+            cwd = p;
+            break;
+          }
+          case 'cat': {
+            if (!rest.length) throw new Error('cat: missing file operand');
+            for (const r of rest) {
+              const p = FS.normalize(r, cwd);
+              const st = FS.stat(p);
+              if (!st) throw new Error(`cat: ${r}: No such file or directory`);
+              if (st.type === 'dir') throw new Error(`cat: ${r}: Is a directory`);
+              if (FS.isBinary(p)) { print(`cat: ${r}: binary file (${MH.fmtBytes(st.size)})`); continue; }
+              print(await FS.read(p));
+            }
+            break;
+          }
+          case 'echo': {
+            let text = arg;
+            if (redirect) {
+              const p = FS.normalize(redirect.path, cwd);
+              const prev = redirect.append && FS.exists(p) ? await FS.read(p) : '';
+              FS.write(p, prev + text + '\n');
+            } else print(text);
+            break;
+          }
+          case 'mkdir': {
+            const flags = rest.filter((r) => r.startsWith('-')).join('');
+            const targets = rest.filter((r) => !r.startsWith('-'));
+            if (!targets.length) throw new Error('mkdir: missing operand');
+            for (const t of targets) FS.mkdir(FS.normalize(t, cwd), '/', flags.includes('p'));
+            break;
+          }
+          case 'touch': {
+            if (!rest[0]) throw new Error('touch: missing file operand');
+            const p = FS.normalize(rest[0], cwd);
+            if (!FS.exists(p)) FS.write(p, '');
+            else if (FS.stat(p).type === 'dir') throw new Error(`touch: ${rest[0]}: Is a directory`);
+            break;
+          }
+          case 'rm': {
+            const flags = rest.filter((r) => r.startsWith('-')).join('');
+            const targets = rest.filter((r) => !r.startsWith('-'));
+            if (!targets.length) throw new Error('rm: missing operand');
+            for (const t of targets) {
+              const p = FS.normalize(t, cwd);
+              const st = FS.stat(p);
+              if (!st) throw new Error(`rm: ${t}: No such file or directory`);
+              if (st.type === 'dir' && !flags.includes('r')) throw new Error(`rm: ${t}: Is a directory (use rm -r)`);
+              FS.rm(p, '/', true);
+            }
+            break;
+          }
+          case 'cp': case 'mv': {
+            if (rest.length < 2) throw new Error(`${cmd}: missing operand`);
+            const src = FS.normalize(rest[0], cwd);
+            let dst = FS.normalize(rest[1], cwd);
+            if (FS.stat(dst)?.type === 'dir') dst = FS.join(dst, FS.basename(src));
+            if (cmd === 'cp') await FS.copy(src, dst);
+            else FS.rename(src, dst);
+            break;
+          }
+          case 'tree': {
+            const p = FS.normalize(rest[0] ?? '.', cwd);
+            const st = FS.stat(p);
+            if (!st) throw new Error(`tree: ${rest[0]}: No such file or directory`);
+            print(short(p) === '~' ? p : p);
+            let count = 0;
+            const walk = (dir, prefix, depth) => {
+              if (depth > 8 || count > 200) return;
+              const entries = FS.list(dir).filter((e) => !e.name.startsWith('.'));
+              entries.forEach((e, i) => {
+                const last = i === entries.length - 1;
+                print(prefix + (last ? '└── ' : '├── ') + e.name + (e.type === 'dir' ? '/' : ''));
+                count++;
+                if (e.type === 'dir') walk(e.path, prefix + (last ? '    ' : '│   '), depth + 1);
+              });
+            };
+            if (st.type === 'dir') walk(p, '', 0);
+            break;
+          }
+          case 'find': {
+            /* find [path] [text] — one arg: a path to list, or text to match */
+            let base = '.', text = '';
+            if (rest.length >= 2) { base = rest[0]; text = rest[1]; }
+            else if (rest.length === 1) {
+              if (FS.exists(rest[0], cwd)) base = rest[0];
+              else text = rest[0];
+            }
+            const hits = FS.find(text, FS.normalize(base, cwd));
+            for (const e of hits.slice(0, 200)) print(e.path + (e.type === 'dir' ? '/' : ''));
+            if (!hits.length) print('(no matches)');
+            break;
+          }
+          case 'grep': {
+            if (!rest.length) throw new Error('grep: missing pattern');
+            const needle = rest[0].toLowerCase();
+            const base = FS.normalize(rest[1] ?? '.', cwd);
+            const targets = FS.find('', base).filter((e) => e.type === 'file').slice(0, 120);
+            let hits = 0;
+            for (const e of targets) {
+              if (FS.isBinary(e.path)) continue;
+              let text;
+              try { text = await FS.read(e.path); } catch { continue; }
+              text.split('\n').forEach((line, i) => {
+                if (line.toLowerCase().includes(needle)) {
+                  print(`${e.path}:${i + 1}: ${line.trim().slice(0, 160)}`);
+                  if (++hits >= 50) throw { stop: true };
+                }
+              });
+            }
+            if (!hits) print('(no matches)');
+            break;
+          }
+          case 'open': {
+            const a = APPS[arg.toLowerCase()];
+            a ? (print(`Opening ${a.name}…`), openApp(a.id)) : print(`No app called "${arg}". Try: apps`);
+            break;
+          }
+          case 'apps': print(Object.values(APPS).map((a) => `  ${a.id.padEnd(14)} ${iconNameFrom(a.icon)} - ${a.name}`).join('\n')); break;
+          case 'whoami': print(`${currentUser.username} — ${currentUser.displayName} (account created ${new Date(currentUser.createdAt).toLocaleString()}, stored only in this browser)`); break;
+          case 'date': print(new Date().toString()); break;
+          case 'math': print(`${arg} = ${fmtNum(evalMath(arg))}`); break;
+          case 'solve': {
+            const [a, b, c] = rest.map(Number);
+            print(a ? `x = ${fmtNum((c - b) / a)}` : 'a cannot be 0');
+            break;
+          }
+          case 'wallpaper':
+            if (['mint', 'ocean', 'sunset', 'grape', 'slate', 'rose'].includes(arg)) {
+              userData.settings.wallpaper = arg; saveData();
+              document.querySelector('.wallpaper').className = 'wallpaper wp-' + arg;
+              print('Wallpaper set to ' + arg);
+            } else print('Unknown wallpaper.');
+            break;
+          case 'accent':
+            if (ACCENTS[arg]) { userData.settings.accent = arg; saveData(); applyAccent(); print('Accent set.'); }
+            else print('Try one of: ' + Object.keys(ACCENTS).join(' '));
+            break;
+          case 'notes': {
+            const c = FS.count();
+            print(`You have ${userData.notes.length} note(s), ${c.files} file(s) in ${c.dirs} folder(s) under ${FS.home()}, ${userData.events.length} event(s) — all saved on this device.`);
+            break;
+          }
+          case 'history': print(hist.map((h, i) => `  ${String(i + 1).padStart(3)}  ${h}`).join('\n')); break;
+          case 'about': print('proton — static clone/rebrand of Mixt (proton-arcade/mlp @ arena/170861f7-mlp), AGPL-3.0-only.'); break;
+          case 'clear': out.innerHTML = ''; break;
+          case 'sudo': print('Nice try - you already own this whole (browser) computer.'); break;
+          default: print(`${cmd}: command not found — type "help".`);
+        }
+      } catch (e) {
+        if (e && e.stop) { /* grep output cap */ }
+        else print(e.message || String(e));
+      }
+    }
+    print('proton terminal — a real shell over the / file system.');
+    print('Type "help" for commands, "ls /" to see the whole machine.');
+    print(`Signed in as ${currentUser.username}. Your files live in ${FS.home()} — the rest of / is the read-only system.`);
     prompt();
   },
 });

@@ -26,8 +26,9 @@ instantly appears in the proton menu, App Center and Customize.
    code). Reload proton.
 
 Your app can use: `userData` (the account's saved data), `saveData()`,
-`openApp(id)`, `MH.toast(...)`, `MH.download(...)`, and all the CSS classes
-in `assets/styles.css` (`.btn`, `.card`, `.appbar`, …). Look at
+`openApp(id)`, `MH.toast(...)`, `MH.download(...)`, `FS` (the virtual file
+system — `FS.read`, `FS.write`, `FS.list`, …) and all the CSS classes in
+`assets/styles.css` (`.btn`, `.card`, `.appbar`, …). Look at
 `apps/hello-test/app.html` — the smallest complete example.
 
 ## Remove an app
@@ -126,10 +127,13 @@ the build's path, then add an `[application]` block with `cat=Games` to
 Shared code lives outside this folder: `data/applications.js` (the app
 catalog — name, location, icon and everything else for every app),
 `data/websites.js` (the same kind of catalog for the built-in websites),
-`assets/config-loader.js` (parses both catalogs), `assets/store.js`
-(accounts/storage), `assets/core.js` (desktop, windows, registries),
-`assets/icons.js` (the SVG icon set), `assets/styles.css`,
-`assets/html-loader.js` (fetches these HTML files at boot) and
-`assets/boot.js` (loaded last). Note: because the loader loads files
-over HTTP, proton must be served over HTTP(S) — GitHub Pages or
+`data/fs-manifest.js` (generated list of every file in this repository —
+the `/` tree of the virtual file system; refresh it with
+`python3 tools/gen-fs-manifest.py`), `assets/fs.js` (the file system API
+the Files app and Terminal share), `assets/config-loader.js` (parses both
+catalogs), `assets/store.js` (accounts/storage), `assets/core.js`
+(desktop, windows, registries), `assets/icons.js` (the SVG icon set),
+`assets/styles.css`, `assets/html-loader.js` (fetches these HTML files at
+boot) and `assets/boot.js` (loaded last). Note: because the loader loads
+files over HTTP, proton must be served over HTTP(S) — GitHub Pages or
 `python3 -m http.server` — not opened as a `file://` page.

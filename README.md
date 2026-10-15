@@ -38,8 +38,12 @@ Deployed on GitHub Pages it works as-is from the repo root.
   [`websites/README.md`](websites/README.md).
 - **Core only:** `data/applications.js` (the app catalog — add/remove apps
   here), `data/websites.js` (the website catalog — add/remove built-in
-  sites here), `assets/config-loader.js` (parses both catalogs),
-  `assets/store.js` (accounts/storage), `assets/icons.js`
+  sites here), `data/fs-manifest.js` (generated: every file in this
+  repository — the `/` tree of the virtual file system; refresh with
+  `python3 tools/gen-fs-manifest.py`), `assets/config-loader.js` (parses
+  both catalogs), `assets/store.js` (accounts/storage), `assets/fs.js`
+  (the virtual file system shared by the Files app and the Terminal),
+  `assets/icons.js`
   (the SVG icon set - every app/site/button icon is a named vector icon,
   no emoji icons), `assets/core.js` (desktop/window manager/registries),
   `assets/html-loader.js` (fetches the app/site HTML files at boot),
@@ -78,9 +82,12 @@ export a backup from **Settings → Backup** first.
 - **Calculator** *(new for this rebrand)* — calculator, linear &
   quadratic solver with steps, percentage/Pythagoras, formula cards,
   function graph plotter
-- **Productivity** — Files (virtual drive), Notes (rich text), Calendar,
-  Spreadsheet (formulas incl. `SUM`/`AVERAGE` ranges), Presentation with
-  present mode, Contacts, PDF Viewer, Terminal
+- **Productivity** — Files (a real file system: browse `/` and every file of
+  the system read-only, edit yours under `/home/<user>/`), Notes (rich text),
+  Calendar, Spreadsheet (formulas incl. `SUM`/`AVERAGE` ranges), Presentation
+  with present mode, Contacts, PDF Viewer, Terminal (a real shell over the
+  same file system — `ls`, `cd`, `cat`, `tree`, `grep`, `>` redirects, tab
+  completion)
 - **Create** — Whiteboard (pen/shapes/text, PNG export), Logic Sim (digital
   logic circuit designer/simulator — a web edition of Sebastian Lague's
   Digital Logic Sim; also a built-in website at `proton://logic-sim`, both

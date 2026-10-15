@@ -476,7 +476,7 @@ function renderSetup(backToLogin) {
     };
     MH.saveAccounts(accounts);
     currentUser = accounts[key];
-    userData = MH.defaultData(currentUser.displayName);
+    userData = MH.defaultData(currentUser.displayName, currentUser.usernameLower || currentUser.username);
     MH.saveJSON(MH.userKey(key), userData);
     MH.$('auth').hidden = true;
     enterDesktop();
@@ -506,7 +506,7 @@ function renderLogin() {
       return;
     }
     currentUser = acc;
-    userData = MH.loadJSON(MH.userKey(key), MH.defaultData(acc.displayName));
+    userData = MH.loadJSON(MH.userKey(key), MH.defaultData(acc.displayName, acc.usernameLower || acc.username));
     enterDesktop();
   };
 }
