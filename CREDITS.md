@@ -44,3 +44,18 @@ source files remain theirs.
 
 Not affiliated with Linux Mint, Cinnamon, Puter Technologies, or the Mixt
 authors.
+
+## Digital Logic Sim — web edition (`websites/logic-sim/`, `apps/logic-sim/`)
+
+Added later: a circuit design & simulation module inspired by **Sebastian
+Lague's Digital Logic Sim** (<https://github.com/SebLague/Digital-Logic-Sim>,
+MIT licence) and his video series *Exploring How Computers Work*. This is an
+**independent re-implementation for the web** — no Unity project files, code
+or assets from the original were copied; the simulator engine and editor UI
+were written from scratch so the same module runs both as a built-in website
+(`proton://logic-sim`) and as the **Logic Sim** desktop app. S. Lague's
+project covers much more (GPU-accelerated big-circuit editing, busses,
+displays); this port focuses on the core experience: gates, input/output
+pins, clocks, D flip-flops, seven-segment displays, saving circuits as chips
+and nesting chips inside chips. Simulation core is covered by
+`tests/logic-core.test.mjs`.

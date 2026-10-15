@@ -45,3 +45,4 @@ Delete its `<link rel="proton-site">` line from `index.html` (and optionally the
 | `maths-resources/` | Maths Resources (`proton://maths-resources`) |
 | `test-page/` | Test Page (`proton://test-page`) |
 | `proton-daily/` | proton Daily, sample test newspaper (`proton://proton-daily`) |
+| `logic-sim/` | Digital Logic Sim — web edition (`proton://logic-sim`); also the source of the Logic Sim app |

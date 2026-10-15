@@ -48,6 +48,7 @@ in `assets/styles.css` (`.btn`, `.card`, `.appbar`, …). Look at
 | `spreadsheet/` | Spreadsheet (`spreadsheet`) |
 | `presentation/` | Presentation (`presentation`) |
 | `whiteboard/` | Whiteboard (`whiteboard`) |
+| `logic-sim/` | Logic Sim (`logic-sim`) — windowed host of `websites/logic-sim/` |
 | `terminal/` | Terminal (`terminal`) |
 | `browser/` | Browser (`browser`) |
 | `media/` | Media (`media`) |
