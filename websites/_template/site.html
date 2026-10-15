@@ -1,19 +1,25 @@
 <!DOCTYPE html>
-<!-- TEMPLATE — copy this whole _template folder, rename it, edit the
-     metadata block and the page below, then add ONE line to index.html
-     with the other website links:
-       <link rel="proton-site" href="websites/my-site/site.html">
-     It will appear automatically on the Browser home page and in the
-     Browser's "Built-in websites" menu, at proton://my-site.
-     This _template file itself is never loaded. -->
+<!-- TEMPLATE — copy this whole _template folder, rename it, edit the page
+     below, then add ONE [website] block to data/websites.js (copy the
+     template in that file's header comment):
+
+       [website]
+       id=my-site
+       name=My Site
+       path=websites/my-site/site.html
+       icon=globe
+       desc=What this site is
+
+     Websites use the SAME catalog system as apps (data/applications.js):
+     the catalog is the single source of truth for the site's id, name,
+     icon and description. It will appear automatically on the Browser
+     home page and in the Browser's "Built-in websites" menu, at
+     proton://my-site. This _template file itself is never loaded. -->
 <html lang="en">
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>My Site - proton website</title>
-<script type="application/json" data-proton-site>
-{"id":"my-site","name":"My Site","icon":"globe","desc":"What this site is"}
-</script>
 <link rel="stylesheet" href="../../assets/styles.css">
 <style>html,body{height:auto;min-height:100%;overflow:auto;background:#050505;color:#fff}body{margin:0}</style>
 </head>
@@ -25,7 +31,7 @@
   stylesheet, and add a script at the bottom for interactivity.</p>
   <p>From a script you can reach the desktop (same browser tab) with
   <span class="kbd">window.parent.__protonSiteCtx</span> — for example
-  <span class="kbd">.openApp('math')</span>, <span class="kbd">.showSite('guide')</span>
+  <span class="kbd">.openApp('calculator')</span>, <span class="kbd">.showSite('guide')</span>
   or <span class="kbd">.showHome()</span>.</p>
   <button class="btn primary" id="my-site-btn">Say hello</button>
 </div>

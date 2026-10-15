@@ -32,9 +32,13 @@ Deployed on GitHub Pages it works as-is from the repo root.
   [`apps/README.md`](apps/README.md).
 - **Built-in websites:** one folder + HTML page each —
   `websites/<name>/site.html` (6 sites, incl. test sites), loaded by the
-  Browser at `proton://<name>`. Guide: [`websites/README.md`](websites/README.md).
+  Browser at `proton://<name>`. Websites use the **same catalog system as
+  the apps**: every site's name, location, icon and description is listed
+  in `data/websites.js`, one `[website]` block per site. Guide:
+  [`websites/README.md`](websites/README.md).
 - **Core only:** `data/applications.js` (the app catalog — add/remove apps
-  here), `assets/config-loader.js` (parses the catalog),
+  here), `data/websites.js` (the website catalog — add/remove built-in
+  sites here), `assets/config-loader.js` (parses both catalogs),
   `assets/store.js` (accounts/storage), `assets/icons.js`
   (the SVG icon set - every app/site/button icon is a named vector icon,
   no emoji icons), `assets/core.js` (desktop/window manager/registries),

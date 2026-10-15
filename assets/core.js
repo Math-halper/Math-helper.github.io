@@ -3,8 +3,8 @@
  * assets/html-loader.js); the list of apps and all their metadata (name,
  * icon, category, description, window size) live in the catalog
  * data/applications.js, parsed by assets/config-loader.js. Built-in
- * websites are standalone pages in websites/<name>/site.html, framed by
- * the Browser app.
+ * websites use the same catalog system (data/websites.js): each one is a
+ * standalone page in websites/<name>/site.html, framed by the Browser app.
  * Window chrome/panel styling follows Mixt's Mint-Y theme.
  */
 'use strict';
@@ -38,6 +38,11 @@ function normalizeUserData() {
   userData.websites ||= [];
   userData.hiddenApps ||= [];
   userData.settings.pinned ||= [];
+  /* Legacy app ids saved by older versions (e.g. the Calculator used to be
+   * id "math") — remap them so old pins keep working. */
+  const LEGACY_APP_IDS = { math: 'calculator', 'pdf-viewer': 'pdf' };
+  userData.settings.pinned = userData.settings.pinned.map((id) => LEGACY_APP_IDS[id] || id);
+  userData.hiddenApps = userData.hiddenApps.map((id) => LEGACY_APP_IDS[id] || id);
   /* --- modular customisation state --- */
   userData.moduleOverrides ||= {};   // appId -> {name, icon, cat, desc, order}
   userData.customThemes ||= [];      // {id, name, accent, wallpaper}
@@ -160,8 +165,9 @@ function openWebsite(site) {
 
 /* ---------------- built-in websites registry ----------------
  * Each built-in website is a standalone HTML page in
- * websites/<name>/site.html, described by a <script data-proton-site>
- * metadata block. assets/html-loader.js registers them here as
+ * websites/<name>/site.html, listed in the website catalog
+ * data/websites.js (same system as the app catalog).
+ * assets/html-loader.js registers each catalog entry here as
  * { id, name, icon, desc, page } and the Browser app loads `page`
  * in a frame at proton://<id>. */
 const SITES = {};

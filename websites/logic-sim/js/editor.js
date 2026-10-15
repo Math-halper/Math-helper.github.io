@@ -328,8 +328,10 @@ function mount(root, opts) {
     cv.width = Math.max(1, Math.round(w * dpr));
     cv.height = Math.max(1, Math.round(h * dpr));
   }
-  const ro = new ResizeObserver(() => { layout(); });
-  ro.observe(stage);
+  /* ResizeObserver is in every modern browser; the window resize listener
+   * below is the fallback anywhere it is missing. */
+  const ro = typeof ResizeObserver !== 'undefined' ? new ResizeObserver(() => { layout(); }) : null;
+  if (ro) ro.observe(stage);
   window.addEventListener('resize', layout);
 
 
