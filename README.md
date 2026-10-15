@@ -22,12 +22,12 @@ Deployed on GitHub Pages it works as-is from the repo root.
 
 ## Project layout (everything is a module)
 
-- **Apps:** one folder + HTML file each — `apps/<name>/app.html` (24 apps,
+- **Apps:** one folder + HTML file each — `apps/<name>/app.html` (25 apps,
   incl. test apps). Add one by copying `apps/_template/` and adding a
   `<link rel="proton-app">` line to `index.html`; remove one by deleting
   that line. Full guide: [`apps/README.md`](apps/README.md).
 - **Built-in websites:** one folder + HTML page each —
-  `websites/<name>/site.html` (5 sites, incl. test sites), loaded by the
+  `websites/<name>/site.html` (6 sites, incl. test sites), loaded by the
   Browser at `proton://<name>`. Guide: [`websites/README.md`](websites/README.md).
 - **Core only:** `assets/store.js` (accounts/storage), `assets/icons.js`
   (the SVG icon set - every app/site/button icon is a named vector icon,
@@ -70,7 +70,10 @@ export a backup from **Settings → Backup** first.
 - **Productivity** — Files (virtual drive), Notes (rich text), Calendar,
   Spreadsheet (formulas incl. `SUM`/`AVERAGE` ranges), Presentation with
   present mode, Contacts, PDF Viewer, Terminal
-- **Create** — Whiteboard (pen/shapes/text, PNG export)
+- **Create** — Whiteboard (pen/shapes/text, PNG export), Logic Sim (digital
+  logic circuit designer/simulator — a web edition of Sebastian Lague's
+  Digital Logic Sim; also a built-in website at `proton://logic-sim`, both
+  sharing `websites/logic-sim/`)
 - **Games** — Chess (vs computer or 2-player), Checkers, Sudoku
   (easy/medium/hard, hints), Klondike solitaire, Backgammon practice board
 - **Media** — Media player (MP4/MP3 from your computer)

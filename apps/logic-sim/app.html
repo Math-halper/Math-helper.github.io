@@ -1,0 +1,71 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Logic Sim - proton app</title>
+</head>
+<body>
+<p>This file is a proton app. It is not meant to be opened on its own:
+open <a href="../../index.html">proton</a> and launch <b>Logic Sim</b> from the
+proton menu. The script below is fetched and run by proton's HTML loader
+(assets/html-loader.js) at boot.</p>
+<!-- proton app module: logic-sim — the app shares the exact same code as the
+     built-in website (websites/logic-sim/): it loads that page's stylesheet +
+     script and mounts the editor into this window. Edit the website files to
+     change the app. -->
+<script data-proton-app>
+'use strict';
+registerApp({
+  id: 'logic-sim', name: 'Logic Sim', icon: 'zap', cat: 'Create',
+  desc: 'Design & simulate digital logic circuits — a web edition of Digital Logic Sim',
+  w: 1080, h: 680,
+
+  render(body, ctx) {
+    body.style.overflow = 'hidden';
+    const host = document.createElement('div');
+    host.style.cssText = 'flex:1;min-height:0;display:flex;flex-direction:column;position:relative';
+    host.innerHTML = '<div style="margin:auto;color:#9a9a9a;font:13px system-ui">Loading Logic Sim…</div>';
+    body.appendChild(host);
+
+    const BASE = 'websites/logic-sim';
+    function ensureCss() {
+      if (!document.getElementById('logic-sim-css')) {
+        const l = document.createElement('link');
+        l.id = 'logic-sim-css';
+        l.rel = 'stylesheet';
+        l.href = BASE + '/logic-sim.css';
+        document.head.appendChild(l);
+      }
+    }
+    function ensureJs() {
+      return new Promise((resolve, reject) => {
+        if (window.LogicSim) return resolve();
+        const s = document.createElement('script');
+        s.src = BASE + '/logic-sim.js';
+        s.onload = () => resolve();
+        s.onerror = () => reject(new Error('Could not load ' + s.src));
+        document.head.appendChild(s);
+      });
+    }
+
+    let handle = null;
+    ensureCss();
+    ensureJs()
+      .then(() => {
+        if (!host.isConnected) return;
+        host.innerHTML = '';
+        handle = window.LogicSim.mount(host, { source: 'app' });
+        /* .win-body is already flex-column; host fills it. ResizeObserver inside
+         * the editor tracks window resizes; also nudge on proton's win-resize. */
+        ctx.winEl.addEventListener('win-resize', () => handle && handle.resize());
+      })
+      .catch((err) => {
+        host.innerHTML = '<div style="margin:auto;color:#9a9a9a;font:13px system-ui">Logic Sim could not start: ' +
+          String(err.message || err).replace(/[<>]/g, '') + '</div>';
+      });
+  },
+});
+</script>
+</body>
+</html>
