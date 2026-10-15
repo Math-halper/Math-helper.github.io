@@ -248,6 +248,226 @@ desc=Practice board: dice, moves, hits & bearing off
 w=940
 h=640
 
+# ---------------------------------------------------------------------------
+# Streamed arcade games.
+#
+# These twenty apps are the one place proton runs something that is not in this
+# repository. Each apps/<id>/app.html is a thin module that asks the shared host
+# (assets/game-host.js) to frame that title's build live from Proton Arcade,
+# https://proton-arcade.github.io — nothing is downloaded, proxied, cached or
+# stored here, and no game bytes are ever committed to this repo.
+#
+# They are remote because the builds are enormous: each is a single
+# self-contained .html file with its whole payload inlined, five of them run
+# 20-56 MB, and the set totals roughly half a gigabyte. Vendoring them would put
+# that weight in every clone, every Pages deploy and every version in git
+# history forever — and GitHub rejects single files over 100 MB outright.
+#
+# Adding one: drop an apps/<id>/app.html that calls PROTON_ARCADE.open() with
+# the build's path, and add a block here. Provenance for every title, and what
+# streaming does and does not mean for them, is in CREDITS.md.
+# ---------------------------------------------------------------------------
+
+[application]
+id=ampler-launcher
+name=Ampler Launcher
+path=apps/ampler-launcher/app.html
+icon=grid3
+cat=Games
+desc=Browser Minecraft launcher — pick a version and play
+w=1280
+h=800
+
+[application]
+id=fnaf-1
+name=Five Nights at Freddy's
+path=apps/fnaf-1/app.html
+icon=moon
+cat=Games
+desc=Survive five nights on the cameras at Freddy Fazbear's Pizza
+w=1180
+h=740
+
+[application]
+id=fnaf-2
+name=Five Nights at Freddy's 2
+path=apps/fnaf-2/app.html
+icon=monitor
+cat=Games
+desc=Night shift again — more animatronics, and no doors
+w=1180
+h=740
+
+[application]
+id=fnaf-3
+name=Five Nights at Freddy's 3
+path=apps/fnaf-3/app.html
+icon=video
+cat=Games
+desc=Thirty years later, at Fazbear's Fright horror attraction
+w=1180
+h=740
+
+[application]
+id=fnaf-4
+name=Five Nights at Freddy's 4
+path=apps/fnaf-4/app.html
+icon=lock
+cat=Games
+desc=The last chapter — hold your room until 6 AM
+w=1180
+h=740
+
+[application]
+id=fnaf-sister-location
+name=Five Nights at Freddy's: Sister Location
+path=apps/fnaf-sister-location/app.html
+icon=key
+cat=Games
+desc=Late-night technician at Circus Baby's Pizza World
+w=1180
+h=740
+
+[application]
+id=spacebar-clicker
+name=Spacebar Clicker
+path=apps/spacebar-clicker/app.html
+icon=chart
+cat=Games
+desc=Hit the spacebar, buy upgrades, let it click itself
+w=900
+h=660
+
+[application]
+id=baldis-basics
+name=Baldi's Basics
+path=apps/baldis-basics/app.html
+icon=book
+cat=Games
+desc=Placeholder — Proton Arcade has no build for it yet
+w=1000
+h=700
+
+[application]
+id=kart-bros
+name=Kart Bros
+path=apps/kart-bros/app.html
+icon=compass
+cat=Games
+desc=Kart racing — drift the tight corners to take first
+w=1180
+h=740
+
+[application]
+id=retro-bowl
+name=Retro Bowl
+path=apps/retro-bowl/app.html
+icon=trophy
+cat=Games
+desc=Retro football management: passes, plays and roster
+w=1100
+h=720
+
+[application]
+id=pac-man
+name=Pac-Man
+path=apps/pac-man/app.html
+icon=atom
+cat=Games
+desc=Eat every dot, dodge Blinky, Pinky, Inky and Clyde
+w=900
+h=720
+
+[application]
+id=football-bros
+name=Football Bros
+path=apps/football-bros/app.html
+icon=shield
+cat=Games
+desc=Physics football — grab, run and dive for the end zone
+w=1180
+h=740
+
+[application]
+id=geometry-dash-lite
+name=Geometry Dash Lite
+path=apps/geometry-dash-lite/app.html
+icon=music
+cat=Games
+desc=Rhythm platformer — jump and fly your way to the beat
+w=1180
+h=740
+
+[application]
+id=backrooms
+name=Backrooms
+path=apps/backrooms/app.html
+icon=search
+cat=Games
+desc=Wander the endless yellow rooms and find a way out
+w=1200
+h=760
+
+[application]
+id=flappy-bird
+name=Flappy Bird
+path=apps/flappy-bird/app.html
+icon=star
+cat=Games
+desc=One button: flap through an endless run of pipes
+w=820
+h=700
+
+[application]
+id=drift-boss
+name=Drift Boss
+path=apps/drift-boss/app.html
+icon=pin
+cat=Games
+desc=One-button drifting — keep the car on the road
+w=1000
+h=720
+
+[application]
+id=bloxorz
+name=Bloxorz
+path=apps/bloxorz/app.html
+icon=landmark
+cat=Games
+desc=Roll the block into the goal hole without falling off
+w=1000
+h=720
+
+[application]
+id=minesweeper
+name=Minesweeper
+path=apps/minesweeper/app.html
+icon=sigma
+cat=Games
+desc=Clear the field — the numbers say where the mines are
+w=820
+h=680
+
+[application]
+id=google-dino
+name=Google Dino
+path=apps/google-dino/app.html
+icon=clock
+cat=Games
+desc=The offline dinosaur: run, jump and duck, endlessly
+w=900
+h=640
+
+[application]
+id=granny
+name=Granny
+path=apps/granny/app.html
+icon=home
+cat=Games
+desc=Escape the house before Granny finds you
+w=1200
+h=760
+
 [application]
 id=hello-test
 name=Hello Test

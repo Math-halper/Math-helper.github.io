@@ -67,6 +67,65 @@ in `assets/styles.css` (`.btn`, `.card`, `.appbar`, …). Look at
 | `speed-test/` | Speed Test (`speed-test`) |
 | `storage-test/` | Storage Test (`storage-test`) |
 
+### The streamed arcade games
+
+Twenty more apps sit in the **Games** category and work differently from
+everything above: they are not proton code, and their content is not in this
+repository.
+
+| Folder | App (id) |
+| --- | --- |
+| `ampler-launcher/` | Ampler Launcher (`ampler-launcher`) |
+| `fnaf-1/` … `fnaf-4/` | Five Nights at Freddy's 1-4 (`fnaf-1` … `fnaf-4`) |
+| `fnaf-sister-location/` | Five Nights at Freddy's: Sister Location (`fnaf-sister-location`) |
+| `granny/` | Granny (`granny`) |
+| `baldis-basics/` | Baldi's Basics (`baldis-basics`) — placeholder upstream |
+| `backrooms/` | Backrooms (`backrooms`) |
+| `bloxorz/` | Bloxorz (`bloxorz`) |
+| `drift-boss/` | Drift Boss (`drift-boss`) |
+| `flappy-bird/` | Flappy Bird (`flappy-bird`) |
+| `football-bros/` | Football Bros (`football-bros`) |
+| `geometry-dash-lite/` | Geometry Dash Lite (`geometry-dash-lite`) |
+| `google-dino/` | Google Dino (`google-dino`) |
+| `kart-bros/` | Kart Bros (`kart-bros`) |
+| `minesweeper/` | Minesweeper (`minesweeper`) |
+| `pac-man/` | Pac-Man (`pac-man`) |
+| `retro-bowl/` | Retro Bowl (`retro-bowl`) |
+| `spacebar-clicker/` | Spacebar Clicker (`spacebar-clicker`) |
+
+Each of those folders holds **only** its `app.html`, which does one thing:
+
+```js
+registerApp({
+  render(body, ctx) {
+    PROTON_ARCADE.open(body, ctx, {
+      src: 'website/games/Granny/index.html',   // path on proton-arcade.github.io
+      size: '56 MB',                            // shown while it downloads
+    });
+  },
+});
+```
+
+`PROTON_ARCADE` is the shared host in
+[`assets/game-host.js`](../assets/game-host.js), loaded by `index.html`. It
+frames that build **live from <https://proton-arcade.github.io>** and builds the
+window every game shares: a toolbar with the source address, Reload, Fullscreen
+and Open in new tab; a loading panel with an elapsed counter (these builds are
+big); and a footnote saying where the bytes come from. The game's name is read
+back from the catalog via the window proton opened, so the module still carries
+no metadata.
+
+They stream because the builds total roughly half a gigabyte and must never be
+committed here — `tests/app-catalog.test.mjs` fails if any game folder contains
+anything but its module, or if any file over 1 MB appears under `apps/`.
+Provenance, the licensing position and what was deliberately left out are in
+[`CREDITS.md`](../CREDITS.md); the host window is covered by
+`tests/arcade-host.test.mjs`.
+
+**To add one:** create `apps/<id>/app.html` calling `PROTON_ARCADE.open()` with
+the build's path, then add an `[application]` block with `cat=Games` to
+`data/applications.js`. There is nothing to download and no build step.
+
 Shared code lives outside this folder: `data/applications.js` (the app
 catalog — name, location, icon and everything else for every app),
 `assets/config-loader.js` (parses the catalog), `assets/store.js`

@@ -10,7 +10,7 @@
  * Run:  node tests/app-catalog.test.mjs   (part 2 requires `npm i --no-save jsdom`)
  */
 import { createRequire } from 'module';
-import { readFileSync, existsSync } from 'fs';
+import { readFileSync, existsSync, statSync } from 'fs';
 import { readdir } from 'fs/promises';
 import { createServer } from 'http';
 import { join, extname, normalize } from 'path';
@@ -31,12 +31,20 @@ const apps = window.PROTON_APPLICATIONS || [];
 
 console.log('• catalog');
 ok((window.PROTON_CATALOG_WARNINGS || []).length === 0, 'no catalog warnings: ' + JSON.stringify(window.PROTON_CATALOG_WARNINGS));
-ok(apps.length === 25, '25 enabled apps (got ' + apps.length + ')');
+ok(apps.length === 45, '45 enabled apps (got ' + apps.length + ')');
 
-const EXPECTED_ORDER = ['files', 'notes', 'calendar', 'contacts', 'appcenter', 'customize',
+/* The 25 apps proton shipped with, then the 20 streamed arcade games (kept
+ * together, after the built-in board/card games and before the test apps). */
+const CORE_ORDER = ['files', 'notes', 'calendar', 'contacts', 'appcenter', 'customize',
   'settings', 'about', 'math', 'spreadsheet', 'presentation', 'whiteboard', 'logic-sim',
   'terminal', 'browser', 'media', 'pdf', 'sudoku', 'chess', 'checkers', 'klondike',
-  'backgammon', 'hello-test', 'speed-test', 'storage-test'];
+  'backgammon'];
+const ARCADE_ORDER = ['ampler-launcher', 'fnaf-1', 'fnaf-2', 'fnaf-3', 'fnaf-4',
+  'fnaf-sister-location', 'spacebar-clicker', 'baldis-basics', 'kart-bros', 'retro-bowl',
+  'pac-man', 'football-bros', 'geometry-dash-lite', 'backrooms', 'flappy-bird',
+  'drift-boss', 'bloxorz', 'minesweeper', 'google-dino', 'granny'];
+const TEST_ORDER = ['hello-test', 'speed-test', 'storage-test'];
+const EXPECTED_ORDER = [...CORE_ORDER, ...ARCADE_ORDER, ...TEST_ORDER];
 ok(apps.map((a) => a.id).join(',') === EXPECTED_ORDER.join(','),
   'menu order matches the original index.html link order');
 
@@ -48,6 +56,51 @@ for (const a of apps) {
   ok(new RegExp(`['"]${a.icon}['"]`).test(iconsSrc), 'icon exists: ' + a.icon + ' (' + a.id + ')');
   ok(a.name && a.cat && a.w > 0 && a.h > 0, 'name/cat/size present: ' + a.id);
 }
+
+/* ---- streamed arcade games ----------------------------------------------
+ * The twenty arcade titles run builds that live on proton-arcade.github.io and
+ * are framed live (see assets/game-host.js and CREDITS.md). Two invariants are
+ * worth pinning down: their catalog metadata is complete, and their bytes are
+ * genuinely NOT vendored here — the whole reason they stream is that the set is
+ * roughly half a gigabyte of self-contained .html builds. */
+console.log('• streamed arcade games');
+const arcade = apps.filter((a) => ARCADE_ORDER.includes(a.id));
+ok(arcade.length === ARCADE_ORDER.length,
+  `all ${ARCADE_ORDER.length} arcade games are catalogued (got ${arcade.length})`);
+ok(arcade.every((a) => a.cat === 'Games'), 'every arcade game sits in the Games category');
+ok(arcade.every((a) => a.icon !== 'grid'), 'every arcade game has an icon of its own');
+
+const hostSrc = readFileSync(join(ROOT, 'assets/game-host.js'), 'utf8');
+ok(hostSrc.includes("const ORIGIN = 'https://proton-arcade.github.io'"),
+  'the game host streams from Proton Arcade');
+ok(readFileSync(join(ROOT, 'index.html'), 'utf8').includes('assets/game-host.js'),
+  'index.html loads the shared game host before boot');
+
+for (const a of arcade) {
+  const dir = join(ROOT, 'apps', a.id);
+  const files = (await readdir(dir)).sort();
+  ok(files.join(',') === 'app.html',
+    `apps/${a.id}/ holds only its module, no vendored build (${files.join(', ')})`);
+  const mod = readFileSync(join(dir, 'app.html'), 'utf8');
+  ok(mod.includes('PROTON_ARCADE.open('), `apps/${a.id} uses the shared host`);
+  const src = /src:\s*'([^']+)'/.exec(mod);
+  ok(!!src && /^website\/games\/.+\/index\.html$/.test(src[1]),
+    `apps/${a.id} names a remote build (${src ? src[1] : 'no src'})`);
+  ok(!/data:[a-z+]+\/[a-z0-9.+-]+;base64/i.test(mod), `apps/${a.id} inlines no payload`);
+}
+
+/* Nothing anywhere under apps/ may be a build: every app, streamed or not, is
+ * one small module plus at most its own hand-written assets. */
+const fat = [];
+const walk = async (d) => {
+  for (const e of await readdir(d, { withFileTypes: true })) {
+    const p = join(d, e.name);
+    if (e.isDirectory()) await walk(p);
+    else if (statSync(p).size > 1024 * 1024) fat.push(p.slice(ROOT.length) + ` (${statSync(p).size} B)`);
+  }
+};
+await walk(join(ROOT, 'apps'));
+ok(fat.length === 0, 'no file over 1 MB is committed under apps/: ' + fat.join(', '));
 
 /* enabled=false hides without deleting */
 window.PROTON_APPLICATIONS_TEXT = '[application]\nid=ghost\nname=Ghost\npath=apps/ghost/app.html\nenabled=false';

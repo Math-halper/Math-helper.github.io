@@ -154,6 +154,9 @@
 <script src="data/applications.js"></script>
 <script src="assets/config-loader.js"></script>
 <script src="assets/core.js"></script>
+<!-- shared host for the streamed arcade games (apps/<game>/app.html); needs
+     core.js for bar()/iconSvg()/MH and must be up before those modules run -->
+<script src="assets/game-host.js"></script>
 <script src="assets/html-loader.js"></script>
 <!-- boot: must load last -->
 <script src="assets/boot.js"></script>

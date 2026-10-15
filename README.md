@@ -23,9 +23,10 @@ Deployed on GitHub Pages it works as-is from the repo root.
 
 ## Project layout (everything is a module)
 
-- **Apps:** one folder + HTML file each — `apps/<name>/app.html` (25 apps,
-  incl. test apps). Every app's name, location, icon, category, description
-  and window size is listed in **one catalog file** — `data/applications.js`.
+- **Apps:** one folder + HTML file each — `apps/<name>/app.html` (45 apps:
+  proton's own, 20 streamed arcade games, and the test apps). Every app's
+  name, location, icon, category, description and window size is listed in
+  **one catalog file** — `data/applications.js`.
   Add one by copying `apps/_template/` and adding an `[application]` block
   there; remove one by deleting that block. Full guide:
   [`apps/README.md`](apps/README.md).
@@ -38,6 +39,7 @@ Deployed on GitHub Pages it works as-is from the repo root.
   (the SVG icon set - every app/site/button icon is a named vector icon,
   no emoji icons), `assets/core.js` (desktop/window manager/registries),
   `assets/html-loader.js` (fetches the app/site HTML files at boot),
+  `assets/game-host.js` (the window shared by the streamed arcade games),
   `assets/styles.css`, `assets/boot.js`.
 
 ## Math Helper cover page
@@ -79,12 +81,23 @@ export a backup from **Settings → Backup** first.
   logic circuit designer/simulator — a web edition of Sebastian Lague's
   Digital Logic Sim; also a built-in website at `proton://logic-sim`, both
   sharing `websites/logic-sim/`)
-- **Games** — Chess (vs computer or 2-player), Checkers, Sudoku
-  (easy/medium/hard, hints), Klondike solitaire, Backgammon practice board
+- **Games** — proton's own: Chess (vs computer or 2-player), Checkers, Sudoku
+  (easy/medium/hard, hints), Klondike solitaire, Backgammon practice board.
+  Plus **20 streamed arcade titles**: Ampler Launcher (browser Minecraft), the
+  five Five Nights at Freddy's games, Granny, Baldi's Basics, Backrooms,
+  Geometry Dash Lite, Bloxorz, Kart Bros, Football Bros, Retro Bowl, Drift
+  Boss, Pac-Man, Flappy Bird, Minesweeper, Google Dino and Spacebar Clicker.
+  Those are the one thing proton runs that is **not in this repository** — each
+  is framed live from <https://proton-arcade.github.io>, because the builds are
+  single self-contained files totalling roughly half a gigabyte. Every game
+  window shows the address it streams from and how big a first load is, and
+  offers **Open in new tab**. Provenance and the licensing position:
+  [`CREDITS.md`](CREDITS.md#streamed-arcade-games).
 - **Media** — Media player (MP4/MP3 from your computer)
-- **Everything is the static website — no adding websites.** All apps are
-  built into this static site; there is no way to add a website or create an
-  app from a web address in the UI. The Browser can still visit an address
+- **Everything is the static website — no adding websites.** Apps are built
+  into this static site, the only exception being the 20 arcade titles above,
+  which stream from another origin and store nothing here; there is no way to
+  add a website or create an app from a web address in the UI. The Browser can still visit an address
   typed into its bar without saving it, and anything already saved on an
   account (custom apps, websites) stays openable and removable in App Center
   and the Browser. Built-in apps can be **removed** from the
@@ -103,7 +116,10 @@ export a backup from **Settings → Backup** first.
   built-in Browser with Guide & World History pages
 
 Everything autosaves per account: notes, files, events, contacts,
-slides, whiteboards and game progress.
+slides, whiteboards and game progress. The streamed arcade games are the
+exception — a framed build saves under **its own origin** on
+`proton-arcade.github.io`, so its progress belongs to that site's browser
+storage, not to a proton account, and never reaches proton.
 
 ## Credits & licence
 
@@ -113,3 +129,12 @@ cloud sync) is documented in [`CREDITS.md`](CREDITS.md). Licensed
 **AGPL-3.0-only** ([`LICENSE.txt`](LICENSE.txt)), same as upstream
 (Mixt / Puter-derived, © Puter Technologies Inc.). Not affiliated with
 Linux Mint, Cinnamon, Puter, or the Mixt authors.
+
+That licence covers **proton's own code** — the desktop, the apps, and the
+game host plus catalog entries for the arcade titles. It does **not** cover
+those games: no build is stored or redistributed here, this repository grants
+no rights in them, and most are commercial works belonging to their own
+authors that Proton Arcade publishes without any licence. Read
+[CREDITS.md](CREDITS.md#streamed-arcade-games)
+before redistributing or mirroring this site. Not affiliated with Proton
+Arcade, or with any game's author.

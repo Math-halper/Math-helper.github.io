@@ -63,3 +63,67 @@ displays); this port focuses on the core experience: gates, input/output
 pins, clocks, D flip-flops, seven-segment displays, saving circuits as chips
 and nesting chips inside chips. Simulation core is covered by
 `tests/logic-core.test.mjs`.
+
+## Streamed arcade games
+
+Added later: twenty arcade titles in the **Games** menu category. These are the
+one thing proton runs that is **not in this repository**. Each
+`apps/<id>/app.html` is a thin module that asks the shared host
+(`assets/game-host.js`) to frame that title's build **live from Proton Arcade**:
+
+- Source: <https://github.com/proton-arcade/proton-arcade.github.io/tree/main/website/games>
+- Served from: <https://proton-arcade.github.io/website/games/…>
+
+**Why they stream instead of being committed.** Those builds are single
+self-contained `.html` files with their whole payload inlined as base64 — five
+of them are 20-56 MB, and the set totals roughly **half a gigabyte**. Vendoring
+them would put that weight in every clone, every GitHub Pages deploy and every
+version in git history permanently (GitHub warns above 50 MB per file and
+rejects files over 100 MB), and they would need `.gitattributes` `-text -diff`
+rules because a line-ending normalisation silently corrupts an inlined payload.
+A streamed game costs this repository one small module instead, and no game
+bytes are ever committed. `tests/app-catalog.test.mjs` enforces that: every game
+app folder must contain its module and nothing else, and nothing over 1 MB may
+exist anywhere under `apps/`.
+
+**What this means at runtime.** The player's browser downloads the build
+straight from `proton-arcade.github.io`. proton never sees that traffic, never
+proxies, caches or stores it, and the game never sees proton's accounts or
+localStorage (the frame is sandboxed to its own origin). Every game window says
+so in its toolbar and footnote, shows how large a first load is, and carries an
+**Open in new tab** escape hatch for builds that refuse to be framed. If Proton
+Arcade is unreachable or removes a title, that game stops working here — nothing
+else in proton is affected.
+
+**Licence — read this before redistributing.** proton itself is AGPL-3.0-only,
+but that licence covers *proton's* code: the host, the modules and the catalog
+entries. **It does not cover the games, and this repository grants no rights in
+them.** No game build is stored or redistributed here; only their public
+addresses are referenced. Most of these titles are commercial works whose
+copyright belongs to their own authors, and the Proton Arcade repository
+publishes them **without any licence at all**. Whether any given title may be
+hosted publicly is a question for whoever hosts it — this project takes no
+position on that and does not make these builds available itself. If you fork
+proton, the safest reading is that the twenty game apps are links to a
+third-party site, and that removing their catalog blocks from
+`data/applications.js` removes them cleanly.
+
+| App id | Title | Provenance as published by Proton Arcade |
+| --- | --- | --- |
+| `ampler-launcher` | Ampler Launcher | Vendored there from <https://github.com/proton-arcade/AmplerLauncher>; a browser Minecraft (Eaglercraft-style) launcher — the launcher is small, each version it offers then streams separately |
+| `fnaf-1` … `fnaf-4`, `fnaf-sister-location` | Five Nights at Freddy's 1-4, Sister Location | Commercial horror titles by Scott Cawthon |
+| `granny` | Granny | Commercial horror title by DVloper. Present as a build upstream but missing from Proton Arcade's own catalog; metadata here was written for it |
+| `baldis-basics` | Baldi's Basics | Commercial title by mystman12. **Placeholder** — upstream ships a page saying the build is not included yet |
+| `geometry-dash-lite` | Geometry Dash Lite | Commercial title by RobTop Games |
+| `backrooms`, `bloxorz`, `drift-boss`, `kart-bros`, `football-bros`, `retro-bowl`, `pac-man`, `flappy-bird`, `minesweeper`, `google-dino` | — | Upstream groups these as its "Offline games pack" ports of well-known browser/arcade titles; Pac-Man (Namco), Geometry Dash, Retro Bowl and the others remain their authors' works |
+| `spacebar-clicker` | Spacebar Clicker | A working idle clicker, credited on its own page to **CrociDB** |
+
+**Not included**, deliberately: upstream's `Pong/` (its `index.html` references a
+`style.css` and `script.js` that do not exist in that repository, so it cannot
+run) and `gam temp/` (an archived handoff text file, not a game). Upstream's
+catalog also lists a `Cookie-clicker` whose folder does not exist, so there is
+nothing to point at.
+
+Covered by `tests/arcade-host.test.mjs` (the window the host builds, its sandbox
+and feature policy, and that every interpolated string is escaped) and by the
+streamed-games section of `tests/app-catalog.test.mjs`.
