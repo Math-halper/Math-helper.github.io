@@ -59,16 +59,6 @@ w=920
 h=580
 
 [application]
-id=contacts
-name=Contacts
-path=apps/contacts/app.html
-icon=users
-cat=Productivity
-desc=Address book saved on this device
-w=820
-h=520
-
-[application]
 id=appcenter
 name=App Center
 path=apps/app-center/app.html
@@ -109,7 +99,7 @@ w=720
 h=540
 
 [application]
-id=math
+id=calculator
 name=Calculator
 path=apps/calculator/app.html
 icon=calculator
@@ -183,7 +173,7 @@ id=media
 name=Media
 path=apps/media/app.html
 icon=film
-cat=Chat & Media
+cat=Media
 desc=Play MP4 video & MP3 audio from this computer
 w=900
 h=580
@@ -248,25 +238,25 @@ desc=Practice board: dice, moves, hits & bearing off
 w=940
 h=640
 
-# ---------------------------------------------------------------------------
-# Streamed arcade games.
-#
-# These nineteen apps are the one place proton runs something that is not in this
-# repository. Each apps/<id>/app.html is a thin module that asks the shared host
-# (assets/game-host.js) to frame that title's build live from Proton Arcade,
-# https://proton-arcade.github.io — nothing is downloaded, proxied, cached or
-# stored here, and no game bytes are ever committed to this repo.
-#
-# They are remote because the builds are enormous: each is a single
-# self-contained .html file with its whole payload inlined, five of them run
-# 20-56 MB, and the set totals roughly half a gigabyte. Vendoring them would put
-# that weight in every clone, every Pages deploy and every version in git
-# history forever — and GitHub rejects single files over 100 MB outright.
-#
-# Adding one: drop an apps/<id>/app.html that calls PROTON_ARCADE.open() with
-# the build's path, and add a block here. Provenance for every title, and what
-# streaming does and does not mean for them, is in CREDITS.md.
-# ---------------------------------------------------------------------------
+/*
+Streamed arcade games.
+
+These nineteen apps are the one place proton runs something that is not in this
+repository. Each apps/<id>/app.html is a thin module that asks the shared host
+(assets/game-host.js) to frame that title's build live from Proton Arcade,
+https://proton-arcade.github.io — nothing is downloaded, proxied, cached or
+stored here, and no game bytes are ever committed to this repo.
+
+They are remote because the builds are enormous: each is a single
+self-contained .html file with its whole payload inlined, five of them run
+20-56 MB, and the set totals roughly half a gigabyte. Vendoring them would put
+that weight in every clone, every Pages deploy and every version in git
+history forever — and GitHub rejects single files over 100 MB outright.
+
+Adding one: drop an apps/<id>/app.html that calls PROTON_ARCADE.open() with
+the build's path, and add a block here. Provenance for every title, and what
+streaming does and does not mean for them, is in CREDITS.md.
+*/
 
 [application]
 id=ampler-launcher
@@ -280,7 +270,7 @@ h=800
 
 [application]
 id=fnaf-1
-name=Five Nights at Freddy's
+name=FNAF
 path=apps/fnaf-1/app.html
 icon=moon
 cat=Games
@@ -290,7 +280,7 @@ h=740
 
 [application]
 id=fnaf-2
-name=Five Nights at Freddy's 2
+name=FNAF 2
 path=apps/fnaf-2/app.html
 icon=monitor
 cat=Games
@@ -300,7 +290,7 @@ h=740
 
 [application]
 id=fnaf-3
-name=Five Nights at Freddy's 3
+name=FNAF 3
 path=apps/fnaf-3/app.html
 icon=video
 cat=Games
@@ -310,7 +300,7 @@ h=740
 
 [application]
 id=fnaf-4
-name=Five Nights at Freddy's 4
+name=FNAF 4
 path=apps/fnaf-4/app.html
 icon=lock
 cat=Games
@@ -320,7 +310,7 @@ h=740
 
 [application]
 id=fnaf-sister-location
-name=Five Nights at Freddy's: Sister Location
+name=FNAF: Sister Location
 path=apps/fnaf-sister-location/app.html
 icon=key
 cat=Games
@@ -457,35 +447,5 @@ cat=Games
 desc=Escape the house before Granny finds you
 w=1200
 h=760
-
-[application]
-id=hello-test
-name=Hello Test
-path=apps/hello-test/app.html
-icon=smile
-cat=Test
-desc=TEST APP: click counter that saves — the template for new apps
-w=560
-h=430
-
-[application]
-id=speed-test
-name=Speed Test
-path=apps/speed-test/app.html
-icon=zap
-cat=Test
-desc=TEST APP: reaction timer & device benchmark, best scores saved
-w=620
-h=500
-
-[application]
-id=storage-test
-name=Storage Test
-path=apps/storage-test/app.html
-icon=database
-cat=Test
-desc=TEST APP: verify saving works & see this account’s storage use
-w=620
-h=480
 
 `;
