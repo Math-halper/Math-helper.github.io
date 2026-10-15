@@ -47,6 +47,11 @@ const $$ = (q) => [...root.querySelectorAll(q)];
 
 ok(!!$('.ls'), 'editor shell rendered');
 ok(!!$('.ls-cv'), 'canvas present');
+ok(!!$('.ls-bottom .ls-pal-scroll'), 'palette lives in the bottom chip bar');
+ok(!$('.ls-body .ls-pal'), 'no sidebar takes space from the workspace');
+ok(!!$('.ls-menu-btn') && $('.ls-menu-btn').textContent === 'MENU', 'original-style MENU button');
+ok(!$('.ls').classList.contains('ls-show-tools'), 'extra browser toolbar is hidden by default');
+ok(!$('.ls-paused').hidden, 'paused banner shown initially');
 ok($$('.ls-chip').length >= 12, 'palette lists built-ins (' + $$('.ls-chip').length + ' items)');
 ok($$('.ls-crumb').length === 1 && $('.ls-crumb').textContent === 'Main', 'breadcrumb starts at Main');
 
@@ -65,11 +70,13 @@ const stepBtn = root.querySelector('[data-a="step"]');
 for (let i = 0; i < 4; i++) stepBtn.click();
 ok(root.querySelector('.ls-status').textContent.includes('tick 4'), 'step button advances ticks');
 
-const runBtn = root.querySelector('[data-a="run"]');
+const runBtn = root.querySelector('.ls-run');
 runBtn.click();
 ok(runBtn.classList.contains('on'), 'run button toggles running state');
+ok($('.ls-paused').hidden, 'running hides the paused banner');
 runBtn.click();
 ok(!runBtn.classList.contains('on'), 'run button pauses again');
+ok(!$('.ls-paused').hidden, 'pausing restores the banner');
 
 /* ---- placing a chip via palette click --------------------------------- */
 const before = $$('.ls-chip').length;
@@ -126,6 +133,56 @@ root.querySelector('[data-m="about"]').click();
 ok(root.querySelector('.ls-ov').textContent.includes('Sebastian Lague'), 'about modal credits the original author');
 root.querySelector('.ls-ov .ls-btn.primary').click();
 
+/* ---- original-style menu, library and preferences ----------------------- */
+$('.ls-menu-btn').click();
+ok($('.ls-menu-btn').getAttribute('aria-expanded') === 'true', 'menu reports expanded state');
+ok(!!$('.ls-bottom .ls-pop'), 'menu is anchored to the bottom bar');
+$('.ls-menu-btn').click();
+ok(!$('.ls-pop') && $('.ls-menu-btn').getAttribute('aria-expanded') === 'false', 'menu toggle closes cleanly');
+
+$('.ls-menu-btn').click();
+$('[data-m="prefs"]').click();
+ok(!$('.ls-pop') && !!$('.ls-ov'), 'preferences replaces the menu');
+const gridInput = $('[data-pref="grid"]');
+const toolsInput = $('[data-pref="tools"]');
+ok(!gridInput.checked && !toolsInput.checked, 'grid and extra toolbar are opt-in');
+gridInput.click(); toolsInput.click();
+ok($('.ls').classList.contains('ls-show-tools'), 'toolbar preference applies immediately');
+$('.ls-ov .ls-btn.primary').click();
+await sleep(450);
+ok(readStore().prefs.showGrid && readStore().prefs.showTools, 'appearance preferences persisted alongside circuits');
+
+$('[data-a="library"]').click();
+ok(!!$('.ls-library-grid'), 'library opens');
+const search = $('.ls-search');
+search.value = 'Full Adder';
+search.dispatchEvent(new window.Event('input', { bubbles: true }));
+ok($$('.ls-library-card').length === 2, 'library search finds original and imported Full Adder');
+$('.ls-library-card [data-open]').click();
+ok(!$('.ls-ov') && $('.ls-crumb.here').textContent === 'Full Adder', 'OPEN navigates into a saved circuit');
+ok($('.ls').classList.contains('ls-nested') && !!$('.ls-back'), 'nested chip shows breadcrumb and Back button');
+$('.ls-back').click();
+ok($('.ls-crumb.here').textContent === 'Main' && !$('.ls').classList.contains('ls-nested'), 'Back returns to Main');
+
+$('[data-a="library"]').click();
+$('.ls-search').value = 'not a chip';
+$('.ls-search').dispatchEvent(new window.Event('input', { bubbles: true }));
+ok($('.ls-library-grid').textContent.includes('No matching chips'), 'empty library search is handled');
+$('.ls-ov .ls-btn.primary').click();
+
+/* Keyboard placement is available without dragging. */
+const countBeforeKey = readStore().circuits.find((c) => c.locked).comps.length;
+$('.ls-chip[data-put="and"]').dispatchEvent(new window.KeyboardEvent('keydown', { key: 'Enter', bubbles: true }));
+await sleep(450);
+ok(readStore().circuits.find((c) => c.locked).comps.length === countBeforeKey + 1, 'keyboard activation places a chip');
+
 if (handle && handle.unmount) handle.unmount();
+handle = window.LogicSim.mount(root, { source: 'smoke-test' });
+ok($('.ls').classList.contains('ls-show-tools'), 'toolbar preference restored on remount');
+ok(!$('.ls-ov'), 'welcome remains dismissed after remount');
+$('.ls-menu-btn').click(); $('[data-m="prefs"]').click();
+ok($('[data-pref="grid"]').checked, 'grid preference restored on remount');
+handle.unmount();
+ok(!$('.ls-ov'), 'unmount dismisses open dialogs');
 console.log(`\n${passed} passed, ${failed} failed`);
 process.exit(failed ? 1 : 0);

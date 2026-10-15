@@ -21,7 +21,7 @@ file-by-file — the engine and editor were rewritten in vanilla JS/Canvas.
 | --- | --- |
 | `site.html` | Standalone page + `data-proton-site` metadata. Just mounts the editor. |
 | `logic-sim.js` | `Core` (pure simulation: gates, wires, ticks, nested chips) + `mount(el)` editor UI. Also `module.exports` for Node tests. |
-| `logic-sim.css` | Editor styles (proton black/white chrome; only wires/LEDs carry colour). |
+| `logic-sim.css` | Original-style UI: gray workspace, bottom chip bar, flat colored chips, red signals. |
 
 ## Features
 
@@ -47,3 +47,43 @@ node tests/logic-core.test.mjs     # from the repository root
 Covers gate truth tables, half/full adders (nested chips), SR-latch feedback,
 D-flip-flop edge behaviour, a free-running toggle divider, structural rules
 and export/import round-trips.
+
+## Original-style interface
+
+The editor follows Sebastian Lague's current Digital Logic Sim interface:
+full-width `#424245` workspace, optional square grid, bottom chip strip,
+blue MENU button, upward-opening white menu, flat rectangular colored chips,
+circular input/output indicators, red high signals and black pins. The original
+JetBrains Mono NL regular/bold fonts are served locally, with no CDN requests.
+The desktop app and built-in website use the same styles and renderer.
+
+- **MENU**: new/save chip, find/library, preferences, import/export, controls and credits.
+- **LIBRARY**: search all chips, open an existing circuit, or place a chip.
+- **PREFS**: show the grid or optional simulation/zoom toolbar; preferences persist.
+- **Space** runs/pauses; **Enter** advances a tick; the mouse wheel zooms.
+- Scroll over the bottom bar to reveal more chips. Drag a chip onto the canvas,
+  click it to place at the centre, or focus it and press Enter/Space.
+- **Ctrl+N/S/L/F/P**: new, save, library/search, preferences. Browser shortcuts
+  are intercepted only while the editor has focus.
+
+This is a visual re-creation, **not an exact port of Unity or full feature parity**.
+Existing circuit libraries remain compatible. The simulation core is unchanged;
+unbent wires render as straight segments and feedback wires route around chips.
+
+### Reference and licences
+
+Layout, theme values and drawing conventions were referenced from
+`SebLague/Digital-Logic-Sim` at commit
+`7aeb66ddff44f916ff7fafb043ab4476ef4409fe` (notably `DrawSettings.cs`,
+`BottomBarUI.cs`, `SimPausedUI.cs`, and `DevSceneDrawer.cs`). The upstream MIT
+notice is retained in `UPSTREAM-LICENSE.txt`. JetBrains Mono NL font files
+come from that project's font resources; their SIL Open Font License is
+in `fonts/OFL.txt`. Other gate/chip colors extend the original NAND palette
+for the web edition's built-ins.
+
+UI smoke tests (requires an optional local test dependency, not a runtime dependency):
+
+```bash
+npm install --no-save --package-lock=false jsdom
+node tests/editor-smoke.test.mjs
+```
