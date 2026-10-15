@@ -19,7 +19,8 @@ proton menu. The script below is fetched and run by proton's HTML loader
 
 /* ============================ ABOUT ============================ */
 registerApp({
-  id: 'about', name: 'About', icon: 'info', cat: 'System', desc: 'What this is, credits and how saving works', w: 720, h: 540,
+  /* Metadata (name, icon, cat, desc, w, h) lives in the app catalog:
+   * data/applications.js — edit it there, not here. */
   render(body) {
     body.innerHTML = `${bar('About proton')}<div class="app-main pad">
       <div style="display:flex;gap:14px;align-items:center"><div class="auth-logo">${iconSvg('atom')}</div><div><h2 style="margin:0">proton</h2><span class="muted">A complete desktop computer in your browser — no server edition</span></div></div>

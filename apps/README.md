@@ -1,12 +1,15 @@
 # proton apps — one app per folder
 
 Every app is a **single HTML file in its own folder**: `apps/<app-name>/app.html`.
-There is no build step. `index.html` lists each file with a
-`<link rel="proton-app">` tag, and at boot proton's HTML loader
-(`assets/html-loader.js`) fetches each one and runs the
-`<script data-proton-app>` block inside it. That block calls
-`registerApp({...})` (defined in `assets/core.js`) and the app instantly
-appears in the proton menu, App Center and Customize.
+There is no build step. The list of apps — name, location (path), icon,
+category, description and window size — lives in **one catalog file**:
+[`data/applications.js`](../data/applications.js), one `[application]` block
+per app. At boot proton's config loader (`assets/config-loader.js`) parses
+that catalog and the HTML loader (`assets/html-loader.js`) fetches each
+app's file and runs the `<script data-proton-app>` block inside it. That
+block calls `registerApp({...})` (defined in `assets/core.js`) with the app's
+`render` code; the catalog metadata is merged in automatically and the app
+instantly appears in the proton menu, App Center and Customize.
 
 > Note for users: inside proton itself you **cannot** add websites or
 > web-address apps — everything is part of this static website. "Add your own
@@ -15,10 +18,12 @@ appears in the proton menu, App Center and Customize.
 ## Add your own app (developer workflow)
 
 1. Copy the `apps/_template/` folder and rename it, e.g. `apps/my-app/`.
-2. Edit `apps/my-app/app.html` (name, `icon:` as a name from `assets/icons.js`
-   such as `folder`, `globe` or `star`, category, and the `render` function).
-3. Add one line to `index.html` with the other app links:
-   `<link rel="proton-app" href="apps/my-app/app.html">`
+2. Add ONE `[application]` block to `data/applications.js` (copy the template
+   in that file's header): `id`, `name`, `path=apps/my-app/app.html`, `icon`
+   (a name from `assets/icons.js` such as `folder`, `globe` or `star`),
+   `cat`, `desc`, `w`, `h`. Block order = menu order.
+3. Edit `apps/my-app/app.html` and write the `render` function (the app's
+   code). Reload proton.
 
 Your app can use: `userData` (the account's saved data), `saveData()`,
 `openApp(id)`, `MH.toast(...)`, `MH.download(...)`, and all the CSS classes
@@ -29,8 +34,8 @@ in `assets/styles.css` (`.btn`, `.card`, `.appbar`, …). Look at
 
 - **Temporarily:** proton menu → Customize (or App Center) → *Remove*.
   This hides it per account and it can be added back any time.
-- **Permanently:** delete its `<link rel="proton-app">` line from `index.html`
-  (and optionally delete the folder).
+- **Permanently:** delete its `[application]` block from
+  `data/applications.js` (and optionally delete the folder).
 
 ## The apps
 
@@ -62,9 +67,12 @@ in `assets/styles.css` (`.btn`, `.card`, `.appbar`, …). Look at
 | `speed-test/` | Speed Test (`speed-test`) |
 | `storage-test/` | Storage Test (`storage-test`) |
 
-Shared code lives outside this folder: `assets/store.js` (accounts/storage),
-`assets/core.js` (desktop, windows, registries), `assets/icons.js` (the SVG
-icon set), `assets/styles.css`, `assets/html-loader.js` (fetches these HTML
-files at boot) and `assets/boot.js` (loaded last). Note: because the loader loads files
+Shared code lives outside this folder: `data/applications.js` (the app
+catalog — name, location, icon and everything else for every app),
+`assets/config-loader.js` (parses the catalog), `assets/store.js`
+(accounts/storage), `assets/core.js` (desktop, windows, registries),
+`assets/icons.js` (the SVG icon set), `assets/styles.css`,
+`assets/html-loader.js` (fetches these HTML files at boot) and
+`assets/boot.js` (loaded last). Note: because the loader loads files
 over HTTP, proton must be served over HTTP(S) — GitHub Pages or
 `python3 -m http.server` — not opened as a `file://` page.

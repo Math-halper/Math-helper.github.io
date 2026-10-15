@@ -19,7 +19,8 @@ proton menu. The script below is fetched and run by proton's HTML loader
 
 /* ============================ APP CENTER ============================ */
 registerApp({
-  id: 'appcenter', name: 'App Center', icon: 'grid', cat: 'System', desc: 'Manage the built-in apps and any saved apps or websites on this account', w: 980, h: 640,
+  /* Metadata (name, icon, cat, desc, w, h) lives in the app catalog:
+   * data/applications.js — edit it there, not here. */
   render(body) {
     normalizeUserData();
     body.innerHTML = `${bar('App Center', `<input type="search" id="ac-q" placeholder="Search apps & websites">`)}

@@ -1,14 +1,31 @@
 /* proton — auth screens, desktop, panel, start menu and window manager.
  * Every app lives in its own apps/<name>/app.html module (loaded via
- * assets/html-loader.js); built-in websites are standalone pages in
- * websites/<name>/site.html, framed by the Browser app.
+ * assets/html-loader.js); the list of apps and all their metadata (name,
+ * icon, category, description, window size) live in the catalog
+ * data/applications.js, parsed by assets/config-loader.js. Built-in
+ * websites are standalone pages in websites/<name>/site.html, framed by
+ * the Browser app.
  * Window chrome/panel styling follows Mixt's Mint-Y theme.
  */
 'use strict';
 
 /* ---------------- app registry + window manager ---------------- */
 const APPS = {};
-function registerApp(def) { APPS[def.id] = def; }
+/* registerApp() is called by each app.html with just its render() code.
+ * When the HTML loader runs that script it parks the catalog entry for the
+ * app in window.__protonPendingApp, and the catalog entry — name, icon,
+ * cat, desc, w, h — wins, so data/applications.js is the single place to
+ * rename an app, change its icon/category or resize its window. */
+function registerApp(def) {
+  const catalog = window.__protonPendingApp;
+  if (catalog) {
+    def = { ...def, ...catalog };
+    delete def.block;
+    delete def.path;
+    delete def.enabled;
+  }
+  APPS[def.id] = def;
+}
 
 
 /* ---------- user-added apps & websites (Mixt-style add/remove) ---------- */

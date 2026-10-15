@@ -56,7 +56,8 @@ const SudokuLogic = (() => {
 })();
 
 registerApp({
-  id: 'sudoku', name: 'Sudoku', icon: 'hash', cat: 'Games', desc: 'Generated puzzles, 3 difficulties, progress saved', w: 620, h: 660,
+  /* Metadata (name, icon, cat, desc, w, h) lives in the app catalog:
+   * data/applications.js — edit it there, not here. */
   render(body) {
     let g = userData.games.sudoku;
     if (!g) { const { puzzle, solution } = SudokuLogic.generate('medium'); g = userData.games.sudoku = { puzzle, solution, grid: puzzle.map((r) => r.slice()), diff: 'medium' }; saveData(); }
