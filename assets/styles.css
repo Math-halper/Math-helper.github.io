@@ -451,3 +451,23 @@ select option{background:#ffffff;color:#000000}
   .cover-footer{flex-direction:column;margin-left:16px;margin-right:16px;padding-left:0;padding-right:0}
   .cover-search button{padding:10px 14px}
 }
+
+/* streamed arcade games — the host window assets/game-host.js builds around a
+   frame from proton-arcade.github.io. The stage is deliberately flat black in
+   every theme: the framed builds bring their own artwork, and a white letterbox
+   around a dark game is far more distracting than the dark one. */
+.arcade-main{display:flex;flex-direction:column;overflow:hidden}
+.arcade-src{max-width:300px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-size:12px}
+.arcade-stage{position:relative;flex:1;min-height:0;background:#000000}
+.arcade-frame{position:absolute;inset:0;width:100%;height:100%;border:0;display:block;background:#000000}
+.arcade-stage:fullscreen{background:#000000}
+.arcade-loading{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:9px;padding:24px;text-align:center;background:#050505;color:#ffffff;transition:opacity .25s ease}
+.arcade-loading span{font-size:12.5px;max-width:420px;line-height:1.5}
+.arcade-loading b{font-size:15px}
+.arcade-loading.gone{opacity:0;pointer-events:none}
+.arcade-loading.slow .arcade-spinner{animation-duration:3s}
+.arcade-spinner{width:26px;height:26px;border:2.5px solid #333333;border-top-color:#ffffff;border-radius:50%;animation:arcade-spin .8s linear infinite}
+.arcade-loading.gone .arcade-spinner{animation-play-state:paused}
+@keyframes arcade-spin{to{transform:rotate(360deg)}}
+.arcade-foot{flex:none;margin:0;padding:7px 14px;font-size:12px;line-height:1.55;border-top:1px solid #333333}
+.arcade-foot a{color:inherit}
