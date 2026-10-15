@@ -1,6 +1,6 @@
 /* Test for the streamed arcade game host (assets/game-host.js).
  *
- * The twenty arcade games in the Games category do not live in this repository:
+ * The nineteen arcade games in the Games category do not live in this repository:
  * each apps/<id>/app.html asks PROTON_ARCADE.open() to frame that title's build
  * live from proton-arcade.github.io. app-catalog.test.mjs pins down the catalog
  * side (every game is listed, and no build bytes are committed). This file
@@ -59,11 +59,11 @@ try {
     await sleep(250);
     try {
       ready = window.eval("typeof PROTON_ARCADE !== 'undefined' && typeof APPS !== 'undefined'"
-        + " && Object.keys(APPS).length >= 45");
+        + " && Object.keys(APPS).length >= 44");
       if (ready) break;
     } catch { /* not booted yet */ }
   }
-  ok(ready, 'index.html booted with the game host and all 45 apps registered');
+  ok(ready, 'index.html booted with the game host and all 44 apps registered');
   ok(window.eval("PROTON_ARCADE.ORIGIN") === 'https://proton-arcade.github.io',
     'host streams from Proton Arcade');
 

@@ -66,7 +66,7 @@ and nesting chips inside chips. Simulation core is covered by
 
 ## Streamed arcade games
 
-Added later: twenty arcade titles in the **Games** menu category. These are the
+Added later: nineteen arcade titles in the **Games** menu category. These are the
 one thing proton runs that is **not in this repository**. Each
 `apps/<id>/app.html` is a thin module that asks the shared host
 (`assets/game-host.js`) to frame that title's build **live from Proton Arcade**:
@@ -104,7 +104,7 @@ copyright belongs to their own authors, and the Proton Arcade repository
 publishes them **without any licence at all**. Whether any given title may be
 hosted publicly is a question for whoever hosts it — this project takes no
 position on that and does not make these builds available itself. If you fork
-proton, the safest reading is that the twenty game apps are links to a
+proton, the safest reading is that the nineteen game apps are links to a
 third-party site, and that removing their catalog blocks from
 `data/applications.js` removes them cleanly.
 
@@ -115,14 +115,15 @@ third-party site, and that removing their catalog blocks from
 | `granny` | Granny | Commercial horror title by DVloper. Present as a build upstream but missing from Proton Arcade's own catalog; metadata here was written for it |
 | `baldis-basics` | Baldi's Basics | Commercial title by mystman12. **Placeholder** — upstream ships a page saying the build is not included yet |
 | `geometry-dash-lite` | Geometry Dash Lite | Commercial title by RobTop Games |
-| `backrooms`, `bloxorz`, `drift-boss`, `kart-bros`, `football-bros`, `retro-bowl`, `pac-man`, `flappy-bird`, `minesweeper`, `google-dino` | — | Upstream groups these as its "Offline games pack" ports of well-known browser/arcade titles; Pac-Man (Namco), Geometry Dash, Retro Bowl and the others remain their authors' works |
+| `backrooms`, `bloxorz`, `drift-boss`, `kart-bros`, `football-bros`, `retro-bowl`, `pac-man`, `flappy-bird`, `minesweeper` | — | Upstream groups these as its "Offline games pack" ports of well-known browser/arcade titles; Pac-Man (Namco), Geometry Dash, Retro Bowl and the others remain their authors' works |
 | `spacebar-clicker` | Spacebar Clicker | A working idle clicker, credited on its own page to **CrociDB** |
 
 **Not included**, deliberately: upstream's `Pong/` (its `index.html` references a
 `style.css` and `script.js` that do not exist in that repository, so it cannot
 run) and `gam temp/` (an archived handoff text file, not a game). Upstream's
 catalog also lists a `Cookie-clicker` whose folder does not exist, so there is
-nothing to point at.
+nothing to point at. `Google-dino` was wired up here first and then removed on
+request, so it is no longer linked either.
 
 Covered by `tests/arcade-host.test.mjs` (the window the host builds, its sandbox
 and feature policy, and that every interpolated string is escaped) and by the

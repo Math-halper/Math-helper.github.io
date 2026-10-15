@@ -31,9 +31,9 @@ const apps = window.PROTON_APPLICATIONS || [];
 
 console.log('• catalog');
 ok((window.PROTON_CATALOG_WARNINGS || []).length === 0, 'no catalog warnings: ' + JSON.stringify(window.PROTON_CATALOG_WARNINGS));
-ok(apps.length === 45, '45 enabled apps (got ' + apps.length + ')');
+ok(apps.length === 44, '44 enabled apps (got ' + apps.length + ')');
 
-/* The 25 apps proton shipped with, then the 20 streamed arcade games (kept
+/* The 25 apps proton shipped with, then the 19 streamed arcade games (kept
  * together, after the built-in board/card games and before the test apps). */
 const CORE_ORDER = ['files', 'notes', 'calendar', 'contacts', 'appcenter', 'customize',
   'settings', 'about', 'math', 'spreadsheet', 'presentation', 'whiteboard', 'logic-sim',
@@ -42,7 +42,7 @@ const CORE_ORDER = ['files', 'notes', 'calendar', 'contacts', 'appcenter', 'cust
 const ARCADE_ORDER = ['ampler-launcher', 'fnaf-1', 'fnaf-2', 'fnaf-3', 'fnaf-4',
   'fnaf-sister-location', 'spacebar-clicker', 'baldis-basics', 'kart-bros', 'retro-bowl',
   'pac-man', 'football-bros', 'geometry-dash-lite', 'backrooms', 'flappy-bird',
-  'drift-boss', 'bloxorz', 'minesweeper', 'google-dino', 'granny'];
+  'drift-boss', 'bloxorz', 'minesweeper', 'granny'];
 const TEST_ORDER = ['hello-test', 'speed-test', 'storage-test'];
 const EXPECTED_ORDER = [...CORE_ORDER, ...ARCADE_ORDER, ...TEST_ORDER];
 ok(apps.map((a) => a.id).join(',') === EXPECTED_ORDER.join(','),
@@ -58,7 +58,7 @@ for (const a of apps) {
 }
 
 /* ---- streamed arcade games ----------------------------------------------
- * The twenty arcade titles run builds that live on proton-arcade.github.io and
+ * The nineteen arcade titles run builds that live on proton-arcade.github.io and
  * are framed live (see assets/game-host.js and CREDITS.md). Two invariants are
  * worth pinning down: their catalog metadata is complete, and their bytes are
  * genuinely NOT vendored here — the whole reason they stream is that the set is

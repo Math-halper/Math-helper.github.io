@@ -23,8 +23,8 @@ Deployed on GitHub Pages it works as-is from the repo root.
 
 ## Project layout (everything is a module)
 
-- **Apps:** one folder + HTML file each — `apps/<name>/app.html` (45 apps:
-  proton's own, 20 streamed arcade games, and the test apps). Every app's
+- **Apps:** one folder + HTML file each — `apps/<name>/app.html` (44 apps:
+  proton's own, 19 streamed arcade games, and the test apps). Every app's
   name, location, icon, category, description and window size is listed in
   **one catalog file** — `data/applications.js`.
   Add one by copying `apps/_template/` and adding an `[application]` block
@@ -83,10 +83,10 @@ export a backup from **Settings → Backup** first.
   sharing `websites/logic-sim/`)
 - **Games** — proton's own: Chess (vs computer or 2-player), Checkers, Sudoku
   (easy/medium/hard, hints), Klondike solitaire, Backgammon practice board.
-  Plus **20 streamed arcade titles**: Ampler Launcher (browser Minecraft), the
+  Plus **19 streamed arcade titles**: Ampler Launcher (browser Minecraft), the
   five Five Nights at Freddy's games, Granny, Baldi's Basics, Backrooms,
   Geometry Dash Lite, Bloxorz, Kart Bros, Football Bros, Retro Bowl, Drift
-  Boss, Pac-Man, Flappy Bird, Minesweeper, Google Dino and Spacebar Clicker.
+  Boss, Pac-Man, Flappy Bird, Minesweeper and Spacebar Clicker.
   Those are the one thing proton runs that is **not in this repository** — each
   is framed live from <https://proton-arcade.github.io>, because the builds are
   single self-contained files totalling roughly half a gigabyte. Every game
@@ -95,7 +95,7 @@ export a backup from **Settings → Backup** first.
   [`CREDITS.md`](CREDITS.md#streamed-arcade-games).
 - **Media** — Media player (MP4/MP3 from your computer)
 - **Everything is the static website — no adding websites.** Apps are built
-  into this static site, the only exception being the 20 arcade titles above,
+  into this static site, the only exception being the 19 arcade titles above,
   which stream from another origin and store nothing here; there is no way to
   add a website or create an app from a web address in the UI. The Browser can still visit an address
   typed into its bar without saving it, and anything already saved on an

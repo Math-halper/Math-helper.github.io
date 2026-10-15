@@ -1,6 +1,6 @@
 /* proton — streamed arcade game host.
  *
- * The twenty arcade titles in the Games category are NOT stored in this
+ * The nineteen arcade titles in the Games category are NOT stored in this
  * repository. Each one is framed live from Proton Arcade,
  * https://proton-arcade.github.io, which publishes the same builds this
  * desktop's games library was taken from (see CREDITS.md for the provenance of

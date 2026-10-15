@@ -251,7 +251,7 @@ h=640
 # ---------------------------------------------------------------------------
 # Streamed arcade games.
 #
-# These twenty apps are the one place proton runs something that is not in this
+# These nineteen apps are the one place proton runs something that is not in this
 # repository. Each apps/<id>/app.html is a thin module that asks the shared host
 # (assets/game-host.js) to frame that title's build live from Proton Arcade,
 # https://proton-arcade.github.io — nothing is downloaded, proxied, cached or
@@ -447,16 +447,6 @@ cat=Games
 desc=Clear the field — the numbers say where the mines are
 w=820
 h=680
-
-[application]
-id=google-dino
-name=Google Dino
-path=apps/google-dino/app.html
-icon=clock
-cat=Games
-desc=The offline dinosaur: run, jump and duck, endlessly
-w=900
-h=640
 
 [application]
 id=granny

@@ -69,7 +69,7 @@ in `assets/styles.css` (`.btn`, `.card`, `.appbar`, …). Look at
 
 ### The streamed arcade games
 
-Twenty more apps sit in the **Games** category and work differently from
+Nineteen more apps sit in the **Games** category and work differently from
 everything above: they are not proton code, and their content is not in this
 repository.
 
@@ -86,7 +86,6 @@ repository.
 | `flappy-bird/` | Flappy Bird (`flappy-bird`) |
 | `football-bros/` | Football Bros (`football-bros`) |
 | `geometry-dash-lite/` | Geometry Dash Lite (`geometry-dash-lite`) |
-| `google-dino/` | Google Dino (`google-dino`) |
 | `kart-bros/` | Kart Bros (`kart-bros`) |
 | `minesweeper/` | Minesweeper (`minesweeper`) |
 | `pac-man/` | Pac-Man (`pac-man`) |
