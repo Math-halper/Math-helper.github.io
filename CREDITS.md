@@ -61,8 +61,7 @@ are from upstream's resources and are licensed under SIL OFL 1.1 (see
 project covers much more (GPU-accelerated big-circuit editing, busses,
 displays); this port focuses on the core experience: gates, input/output
 pins, clocks, D flip-flops, seven-segment displays, saving circuits as chips
-and nesting chips inside chips. Simulation core is covered by
-`tests/logic-core.test.mjs`.
+and nesting chips inside chips.
 
 ## Streamed arcade games
 
@@ -82,9 +81,8 @@ version in git history permanently (GitHub warns above 50 MB per file and
 rejects files over 100 MB), and they would need `.gitattributes` `-text -diff`
 rules because a line-ending normalisation silently corrupts an inlined payload.
 A streamed game costs this repository one small module instead, and no game
-bytes are ever committed. `tests/app-catalog.test.mjs` enforces that: every game
-app folder must contain its module and nothing else, and nothing over 1 MB may
-exist anywhere under `apps/`.
+bytes are ever committed: every game app folder contains its module and
+nothing else, and nothing over 1 MB belongs anywhere under `apps/`.
 
 **What this means at runtime.** The player's browser downloads the build
 straight from `proton-arcade.github.io`. proton never sees that traffic, never
@@ -124,7 +122,3 @@ run) and `gam temp/` (an archived handoff text file, not a game). Upstream's
 catalog also lists a `Cookie-clicker` whose folder does not exist, so there is
 nothing to point at. `Google-dino` was wired up here first and then removed on
 request, so it is no longer linked either.
-
-Covered by `tests/arcade-host.test.mjs` (the window the host builds, its sandbox
-and feature policy, and that every interpolated string is escaped) and by the
-streamed-games section of `tests/app-catalog.test.mjs`.

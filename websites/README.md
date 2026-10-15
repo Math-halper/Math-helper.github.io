@@ -2,11 +2,17 @@
 
 Every built-in website is a **single HTML file in its own folder**:
 `websites/<site-name>/site.html`. Each file is a real, standalone HTML page:
-a `<script type="application/json" data-proton-site>` metadata block in the
-`<head>` (id, name, icon, desc), normal HTML markup in the body, and a plain
-`<script>` at the bottom for interactivity. proton's HTML loader
-(`assets/html-loader.js`) reads the metadata at boot, and the Browser loads
-the page itself in a frame. The site automatically appears:
+normal HTML markup in the body and a plain `<script>` at the bottom for
+interactivity.
+
+Websites use the **same catalog system as the apps**. The list of sites —
+name, location (path), icon and description — lives in **one catalog file**:
+[`data/websites.js`](../data/websites.js), one `[website]` block per site
+(exactly like the `[application]` blocks in `data/applications.js`). At boot
+proton's config loader (`assets/config-loader.js`) parses that catalog and
+the HTML loader (`assets/html-loader.js`) registers every entry; the Browser
+loads the page itself in a frame when it is visited. The site automatically
+appears:
 
 - on the **Browser home page** (`proton://home`),
 - in the Browser's **“Built-in websites…”** menu,
@@ -22,19 +28,24 @@ typing an address in the Browser visits it without saving it.)
 
 1. Copy the `websites/_template/` folder and rename it, e.g. `websites/my-site/`.
 2. Edit `websites/my-site/site.html`.
-3. Add one line to `index.html` with the other website links:
-   `<link rel="proton-site" href="websites/my-site/site.html">`
+3. Add ONE `[website]` block to `data/websites.js` (copy the template in
+   that file's header): `id`, `name`, `path=websites/my-site/site.html`,
+   `icon` (a name from `assets/icons.js` such as `globe`, `book` or
+   `flask`) and `desc`. Block order = home page order.
 
 Write the page as ordinary HTML. From its `<script>`, the desktop is
 reachable (same browser tab) as `window.parent.__protonSiteCtx`:
-`.openApp('math')` opens an app, `.showSite('guide')` visits another
+`.openApp('calculator')` opens an app, `.showSite('guide')` visits another
 built-in site, `.showHome()` returns to Browser home, and
 `.loadExternal(url)` embeds a real web page. Pages share proton's look via
 `<link rel="stylesheet" href="../../assets/styles.css">`.
 
 ## Remove a site
 
-Delete its `<link rel="proton-site">` line from `index.html` (and optionally the folder).
+- **Temporarily:** set `enabled=false` in its `[website]` block in
+  `data/websites.js`.
+- **Permanently:** delete its block from `data/websites.js` (and
+  optionally the folder).
 
 ## The sites
 

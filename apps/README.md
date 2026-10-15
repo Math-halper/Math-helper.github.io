@@ -49,7 +49,7 @@ in `assets/styles.css` (`.btn`, `.card`, `.appbar`, …). Look at
 | `customize/` | Customize (`customize`) |
 | `settings/` | Settings (`settings`) |
 | `about/` | About (`about`) |
-| `calculator/` | Calculator (`math`) |
+| `calculator/` | Calculator (`calculator`) |
 | `spreadsheet/` | Spreadsheet (`spreadsheet`) |
 | `presentation/` | Presentation (`presentation`) |
 | `whiteboard/` | Whiteboard (`whiteboard`) |
@@ -115,11 +115,9 @@ back from the catalog via the window proton opened, so the module still carries
 no metadata.
 
 They stream because the builds total roughly half a gigabyte and must never be
-committed here — `tests/app-catalog.test.mjs` fails if any game folder contains
-anything but its module, or if any file over 1 MB appears under `apps/`.
-Provenance, the licensing position and what was deliberately left out are in
-[`CREDITS.md`](../CREDITS.md); the host window is covered by
-`tests/arcade-host.test.mjs`.
+committed here — keep every game folder to just its `app.html` module, and
+never add large files under `apps/`. Provenance, the licensing position and
+what was deliberately left out are in [`CREDITS.md`](../CREDITS.md).
 
 **To add one:** create `apps/<id>/app.html` calling `PROTON_ARCADE.open()` with
 the build's path, then add an `[application]` block with `cat=Games` to
@@ -127,7 +125,8 @@ the build's path, then add an `[application]` block with `cat=Games` to
 
 Shared code lives outside this folder: `data/applications.js` (the app
 catalog — name, location, icon and everything else for every app),
-`assets/config-loader.js` (parses the catalog), `assets/store.js`
+`data/websites.js` (the same kind of catalog for the built-in websites),
+`assets/config-loader.js` (parses both catalogs), `assets/store.js`
 (accounts/storage), `assets/core.js` (desktop, windows, registries),
 `assets/icons.js` (the SVG icon set), `assets/styles.css`,
 `assets/html-loader.js` (fetches these HTML files at boot) and

@@ -18,10 +18,11 @@ proton menu. The script below is fetched and run by proton's HTML loader
  *
  * The Browser renders BUILT-IN WEBSITES from the SITES registry. Every
  * built-in site is a real HTML page in its own folder:
- * websites/<name>/site.html. Add a site there + one <link> line in
- * index.html and it shows up here automatically. The user's own saved
- * websites live in userData and are managed by apps/app-center
- * and on the Browser home page below.
+ * websites/<name>/site.html, listed in the website catalog
+ * data/websites.js (same system as the app catalog). Add a site folder
+ * + one [website] block there and it shows up here automatically. The
+ * user's own saved websites live in userData and are managed by
+ * apps/app-center and on the Browser home page below.
  */
 'use strict';
 

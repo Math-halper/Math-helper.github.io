@@ -59,6 +59,16 @@ w=920
 h=580
 
 [application]
+id=contacts
+name=Contacts
+path=apps/contacts/app.html
+icon=users
+cat=Productivity
+desc=Address book saved per account
+w=880
+h=560
+
+[application]
 id=appcenter
 name=App Center
 path=apps/app-center/app.html
@@ -237,6 +247,36 @@ cat=Games
 desc=Practice board: dice, moves, hits & bearing off
 w=940
 h=640
+
+[application]
+id=hello-test
+name=Hello Test
+path=apps/hello-test/app.html
+icon=smile
+cat=Test
+desc=TEST APP: the smallest possible proton app — copy it to make your own
+w=560
+h=480
+
+[application]
+id=speed-test
+name=Speed Test
+path=apps/speed-test/app.html
+icon=zap
+cat=Test
+desc=TEST APP: reaction timer & a tiny local device benchmark
+w=760
+h=560
+
+[application]
+id=storage-test
+name=Storage Test
+path=apps/storage-test/app.html
+icon=database
+cat=Test
+desc=TEST APP: check saving works & see how much space this account uses
+w=820
+h=580
 
 /*
 Streamed arcade games.

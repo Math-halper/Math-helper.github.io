@@ -21,7 +21,7 @@ folders.
 
 | File | What it is |
 | --- | --- |
-| `site.html` | Standalone page + `data-proton-site` metadata. Loads the JS parts in order, then mounts the editor. |
+| `site.html` | Standalone page (listed in the website catalog, `data/websites.js`). Loads the JS parts in order, then mounts the editor. |
 | `js/theme.js` | Palette, typography, chip colours, `esc()` (upstream `Graphics/DrawSettings.cs`). |
 | `js/core.js` | Simulation core: gates, wires, ticks, nested chips, examples, (de)serialisation (upstream `Simulation/`, `Description/`, `Game/Project/`). |
 | `js/ui.js` | Toolbar, bottom chip bar, breadcrumbs, status line, modals, MENU (upstream `Graphics/UI/Menus/*`). |
@@ -45,16 +45,6 @@ folders.
 - Autosave on-device, JSON export/import of the whole library.
 - First-run library: Half Adder, Full Adder (built from two Half Adder
   chips), SR Latch, and a blinking toggle-flip-flop demo on Main.
-
-## Tests
-
-```bash
-node tests/logic-core.test.mjs     # from the repository root
-```
-
-Covers gate truth tables, half/full adders (nested chips), SR-latch feedback,
-D-flip-flop edge behaviour, a free-running toggle divider, structural rules
-and export/import round-trips.
 
 ## Original-style interface
 
@@ -89,9 +79,3 @@ come from that project's font resources; their SIL Open Font License is
 in `fonts/OFL.txt`. Other gate/chip colors extend the original NAND palette
 for the web edition's built-ins.
 
-UI smoke tests (requires an optional local test dependency, not a runtime dependency):
-
-```bash
-npm install --no-save --package-lock=false jsdom
-node tests/editor-smoke.test.mjs
-```

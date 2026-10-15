@@ -263,7 +263,7 @@ registerApp({
     body.querySelector('#cust-reset').onclick = () => {
       if (!confirmBox('Reset ALL customisations to proton defaults? Your notes, files, custom apps, websites and other content stay untouched.')) return;
       userData.moduleOverrides = {}; userData.hiddenApps = [];
-      userData.settings.pinned = ['files', 'math', 'notes', 'browser', 'terminal'];
+      userData.settings.pinned = ['files', 'calculator', 'notes', 'browser', 'terminal'];
       userData.customThemes = []; userData.customWallpapers = [];
       userData.settings.activeThemeId = 'proton-dark';
       userData.settings.accent = '#ffffff'; userData.settings.wallpaper = 'mint';
