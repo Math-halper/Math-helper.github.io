@@ -19,7 +19,8 @@ proton menu. The script below is fetched and run by proton's HTML loader
 'use strict';
 
 registerApp({
-  id: 'hello-test', name: 'Hello Test', icon: 'smile', cat: 'Test', desc: 'TEST APP: click counter that saves — the template for new apps', w: 560, h: 430,
+  /* Metadata (name, icon, cat, desc, w, h) lives in the app catalog:
+   * data/applications.js — edit it there, not here. */
   render(body) {
     userData.games.helloTest ||= { clicks: 0, last: '' };
     const state = userData.games.helloTest;

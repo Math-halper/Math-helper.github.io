@@ -28,10 +28,22 @@ const ctxStub = new Proxy({}, {
 window.HTMLCanvasElement.prototype.getContext = () => ctxStub;
 window.PointerEvent = window.MouseEvent;
 
-/* ---- boot the module -------------------------------------------------- */
-const src = readFileSync(new URL('../websites/logic-sim/logic-sim.js', import.meta.url), 'utf8');
-window.eval(src);
+/* ---- boot the module (multi-file: theme → core → ui → interaction → renderer → editor → entry) ---- */
+const PARTS = [
+  'js/theme.js', 'js/core.js', 'js/ui.js', 'js/interaction.js',
+  'js/renderer.js', 'js/editor.js', 'logic-sim.js',
+];
+for (const part of PARTS) {
+  const src = readFileSync(new URL('../websites/logic-sim/' + part, import.meta.url), 'utf8');
+  try {
+    window.eval(src);
+    ok(true, 'loaded ' + part);
+  } catch (e) {
+    ok(false, 'loading ' + part + ' threw: ' + e.message);
+  }
+}
 ok(!!window.LogicSim, 'LogicSim global registered');
+ok(!!window.LogicSim && !!window.LogicSim.mount && !!window.LogicSim.Core, 'public API { Core, mount } assembled');
 
 const root = window.document.getElementById('root');
 let handle = null;

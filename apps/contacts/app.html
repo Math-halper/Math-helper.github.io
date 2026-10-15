@@ -19,7 +19,8 @@ proton menu. The script below is fetched and run by proton's HTML loader
 
 /* ============================ CONTACTS ============================ */
 registerApp({
-  id: 'contacts', name: 'Contacts', icon: 'users', cat: 'Productivity', desc: 'Address book saved on this device', w: 820, h: 520,
+  /* Metadata (name, icon, cat, desc, w, h) lives in the app catalog:
+   * data/applications.js — edit it there, not here. */
   render(body) {
     let sel = null;
     body.innerHTML = `${bar('Contacts', `<input type="search" id="ct-q" placeholder="Search contacts"><button class="btn sm primary" id="ct-new">+ New</button>`)}

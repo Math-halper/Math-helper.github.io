@@ -56,7 +56,7 @@ colours and drawing conventions, referenced from upstream commit
 `7aeb66ddff44f916ff7fafb043ab4476ef4409fe`. Its MIT notice is retained in
 `websites/logic-sim/UPSTREAM-LICENSE.txt`. The bundled JetBrains Mono NL fonts
 are from upstream's resources and are licensed under SIL OFL 1.1 (see
-`websites/logic-sim/fonts/OFL.txt`). The same module runs as a built-in website
+`websites/logic-sim/fonts/OFL.txt`). The same modules run as a built-in website
 (`proton://logic-sim`) and as the **Logic Sim** desktop app. S. Lague's
 project covers much more (GPU-accelerated big-circuit editing, busses,
 displays); this port focuses on the core experience: gates, input/output

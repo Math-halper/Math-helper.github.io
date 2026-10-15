@@ -18,7 +18,8 @@ proton menu. The script below is fetched and run by proton's HTML loader
 'use strict';
 
 registerApp({
-  id: 'storage-test', name: 'Storage Test', icon: 'database', cat: 'Test', desc: 'TEST APP: verify saving works & see this account’s storage use', w: 620, h: 480,
+  /* Metadata (name, icon, cat, desc, w, h) lives in the app catalog:
+   * data/applications.js — edit it there, not here. */
   render(body) {
     body.innerHTML = `${bar('Storage Test')}<div class="app-main pad">
       <div class="stat-grid">

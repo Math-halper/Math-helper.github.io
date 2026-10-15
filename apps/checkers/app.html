@@ -19,7 +19,8 @@ proton menu. The script below is fetched and run by proton's HTML loader
 
 /* ============================ CHECKERS ============================ */
 registerApp({
-  id: 'checkers', name: 'Checkers', icon: 'disc', cat: 'Games', desc: 'Red vs Black — jump to capture, reach the end to king', w: 620, h: 680,
+  /* Metadata (name, icon, cat, desc, w, h) lives in the app catalog:
+   * data/applications.js — edit it there, not here. */
   render(body) {
     let b, turn, sel = null;
     function fresh() {

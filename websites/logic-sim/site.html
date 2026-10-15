@@ -19,6 +19,15 @@
 <body>
 <div id="ls-root"></div>
 <noscript><div>Digital Logic Sim needs JavaScript to run.</div></noscript>
+<!-- one JS file per concern (translated from upstream Unity C#), in load order:
+     theme → simulation core → UI chrome → interaction → renderer → editor kernel
+     → entry point (assembles window.LogicSim) -->
+<script src="js/theme.js"></script>
+<script src="js/core.js"></script>
+<script src="js/ui.js"></script>
+<script src="js/interaction.js"></script>
+<script src="js/renderer.js"></script>
+<script src="js/editor.js"></script>
 <script src="logic-sim.js"></script>
 <script>
   window.LogicSim.mount(document.getElementById('ls-root'), { source: 'site' });

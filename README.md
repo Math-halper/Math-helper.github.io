@@ -24,13 +24,17 @@ Deployed on GitHub Pages it works as-is from the repo root.
 ## Project layout (everything is a module)
 
 - **Apps:** one folder + HTML file each — `apps/<name>/app.html` (25 apps,
-  incl. test apps). Add one by copying `apps/_template/` and adding a
-  `<link rel="proton-app">` line to `index.html`; remove one by deleting
-  that line. Full guide: [`apps/README.md`](apps/README.md).
+  incl. test apps). Every app's name, location, icon, category, description
+  and window size is listed in **one catalog file** — `data/applications.js`.
+  Add one by copying `apps/_template/` and adding an `[application]` block
+  there; remove one by deleting that block. Full guide:
+  [`apps/README.md`](apps/README.md).
 - **Built-in websites:** one folder + HTML page each —
   `websites/<name>/site.html` (6 sites, incl. test sites), loaded by the
   Browser at `proton://<name>`. Guide: [`websites/README.md`](websites/README.md).
-- **Core only:** `assets/store.js` (accounts/storage), `assets/icons.js`
+- **Core only:** `data/applications.js` (the app catalog — add/remove apps
+  here), `assets/config-loader.js` (parses the catalog),
+  `assets/store.js` (accounts/storage), `assets/icons.js`
   (the SVG icon set - every app/site/button icon is a named vector icon,
   no emoji icons), `assets/core.js` (desktop/window manager/registries),
   `assets/html-loader.js` (fetches the app/site HTML files at boot),

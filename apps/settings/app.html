@@ -19,7 +19,8 @@ proton menu. The script below is fetched and run by proton's HTML loader
 
 /* ============================ SETTINGS ============================ */
 registerApp({
-  id: 'settings', name: 'Settings', icon: 'settings', cat: 'System', desc: 'Account, wallpaper, backups and this device', w: 880, h: 600,
+  /* Metadata (name, icon, cat, desc, w, h) lives in the app catalog:
+   * data/applications.js — edit it there, not here. */
   render(body) {
     const used = JSON.stringify(userData).length;
     body.innerHTML = `${bar('Settings')}<div class="app-main pad">
