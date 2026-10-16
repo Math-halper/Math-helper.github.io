@@ -1,0 +1,47 @@
+<!DOCTYPE html>
+<!-- TEMPLATE — copy this whole _template folder, rename it, edit the page
+     below, then add ONE [website] block to data/websites.js (copy the
+     template in that file's header comment):
+
+       [website]
+       id=my-site
+       name=My Site
+       path=websites/my-site/site.html
+       icon=globe
+       desc=What this site is
+
+     Websites use the SAME catalog system as apps (data/applications.js):
+     the catalog is the single source of truth for the site's id, name,
+     icon and description. It will appear automatically on the Browser
+     home page and in the Browser's "Built-in websites" menu, at
+     proton://my-site. This _template file itself is never loaded.
+
+     Re-run `python3 tools/gen-fs-manifest.py` afterwards so the new page
+     appears in the virtual file system, then `npm test`. -->
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>My Site - proton website</title>
+<link rel="stylesheet" href="../../assets/styles.css">
+<style>html,body{height:auto;min-height:100%;overflow:auto;background:#050505;color:#fff}body{margin:0}</style>
+</head>
+<body>
+<div class="pad">
+  <h2>My Site</h2>
+  <p>Edit <span class="kbd">websites/my-site/site.html</span> to change me. This is a
+  real HTML page: write markup here, style it inline or with the shared
+  stylesheet, and add a script at the bottom for interactivity.</p>
+  <p>From a script you can reach the desktop (same browser tab) with
+  <span class="kbd">window.parent.__protonSiteCtx</span> — for example
+  <span class="kbd">.openApp('settings')</span>, <span class="kbd">.showSite('test-page')</span>,
+  <span class="kbd">.showHome()</span> or <span class="kbd">.loadExternal(url)</span>.
+  Guard for it: the page can also be opened directly, outside the Browser.
+  See <span class="kbd">websites/test-page/site.html</span> for a worked example.</p>
+  <button class="btn primary" id="my-site-btn">Say hello</button>
+</div>
+<script>
+document.getElementById('my-site-btn').onclick = () => alert('Hello from my site!');
+</script>
+</body>
+</html>

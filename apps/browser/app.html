@@ -21,9 +21,9 @@ proton menu. The script below is fetched and run by proton's HTML loader
  * websites/<name>/site.html, listed in the website catalog
  * data/websites.js (same system as the app catalog). Add a site folder
  * + one [website] block there and it shows up here automatically. That
- * catalog is EMPTY in this build — every built-in website was removed with
- * the non-system apps — so the home page just offers the address bar, HTML
- * files from the virtual file system and the account's saved websites.
+ * catalog holds one entry in this build (Test Page) — the other built-in
+ * websites were removed with the non-system apps — and the home page copes
+ * with an empty one by saying so.
  * The user's own saved websites live in userData and are managed by
  * apps/app-center and on the Browser home page below.
  */
@@ -54,7 +54,7 @@ registerApp({
       <p class="muted">This static site has no server, so the Browser only shows what this repository ships. Real websites can be opened from the address bar too, though many refuse to be embedded.</p>
       <h3>${iconSvg('book')} Built-in websites</h3>${siteList.length ? `<div class="grid-cards">
       ${siteList.map((s) => `<div class="card"><div class="card-ic" style="font-size:24px">${iconFor(s.icon, 'globe')}</div><h3 style="margin:5px 0 3px">${MH.esc(s.name)}</h3><p class="muted">${MH.esc(s.desc || '')}</p><button class="btn primary" data-site="${s.id}">Visit</button></div>`).join('')}
-      </div>` : '<p class="muted">This proton build ships no built-in websites — the catalog <span class="kbd">data/websites.js</span> is empty. Add a page under <span class="kbd">websites/&lt;name&gt;/site.html</span> plus one <span class="kbd">[website]</span> block there and it appears here.</p>'}
+      </div>` : '<p class="muted">No built-in websites are catalogued right now. Add a page under <span class="kbd">websites/&lt;name&gt;/site.html</span> plus one <span class="kbd">[website]</span> block in <span class="kbd">data/websites.js</span> and it appears here.</p>'}
       <h3 style="margin-top:20px">${iconSvg('globe')} Your websites</h3><div class="grid-cards" id="b-sites"></div>
       <p class="muted" style="margin-top:14px">Adding websites is disabled. Type any address in the bar above to visit it without saving it, or open an HTML file from the virtual file system with <span class="kbd">file:///path/to/page.html</span>.</p></div>`;
       main.querySelectorAll('[data-site]').forEach((b) => b.onclick = () => showSite(b.dataset.site));

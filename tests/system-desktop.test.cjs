@@ -1,9 +1,11 @@
 /* proton ships its System apps only (App Center, Customize, Settings, About
  * and the Browser): every other app, the streamed arcade games, the copied
- * game builds and the built-in websites were removed. These tests keep that
- * trimmed build honest — the catalog parses, every catalogued module is a
- * real proton app, the generated file-system manifest still matches the
- * repository, and the desktop boots and opens each app. */
+ * game builds and the built-in websites were removed; the one site that
+ * ships is Test Page, the built-in smoke test for the Browser. These tests
+ * keep that trimmed build honest — the catalogs parse, every catalogued
+ * module and site page is real, the generated file-system manifest still
+ * matches the repository, the desktop boots and opens each app, and the test
+ * site's own checks pass. */
 const { test } = require('node:test');
 const assert = require('node:assert/strict');
 const fs = require('node:fs');
@@ -20,6 +22,11 @@ const SHELL = ['assets/store.js', 'assets/icons.js', 'data/fs-manifest.js', 'ass
   'assets/fs-archive.js', 'data/applications.js', 'data/websites.js', 'assets/config-loader.js',
   'assets/core.js', 'assets/desktop-icons.js', 'assets/html-loader.js'];
 
+/* Per-check states, for a readable failure message. */
+function CHECK_STATES(w) {
+  return [...w.document.querySelectorAll('.tp-check')].map((el) => `${el.id.replace('tp-check-', '')}=${el.dataset.state}`);
+}
+
 function catalog() {
   const ctx = vm.createContext({ window: {}, console, MH: { esc: (s) => String(s).replaceAll('&', '&amp;').replaceAll('<', '&lt;') } });
   for (const p of ['assets/icons.js', 'data/applications.js', 'data/websites.js', 'assets/config-loader.js']) {
@@ -34,14 +41,21 @@ function catalog() {
   };
 }
 
-test('the catalog is exactly the five System apps, and the website catalog is empty', () => {
+test('the catalog is the five System apps plus the one built-in test site', () => {
   const { apps, sites, warnings, icons, render } = catalog();
   assert.deepEqual(Array.from(warnings), [], 'catalog parses without warnings');
   /* Array.from everywhere: the catalogs come from a vm context, so their
    * arrays are not reference-equal to this realm's. */
   assert.deepEqual(Array.from(apps, (a) => a.id), SYSTEM_APPS);
   assert.deepEqual(Array.from(apps, (a) => a.cat), SYSTEM_APPS.map(() => 'System'));
-  assert.deepEqual(Array.from(sites), []);
+  assert.deepEqual(Array.from(sites, (s) => s.id), ['test-page']);
+  const page = { ...sites[0] };
+  assert.equal(page.name, 'Test Page');
+  assert.equal(page.path, 'websites/test-page/site.html');
+  assert.equal(page.icon, 'flask');
+  assert.ok(page.desc.includes('TEST SITE'), 'the test site should say what it is');
+  assert.ok(icons[page.icon], `test site uses unknown icon "${page.icon}"`);
+  assert.ok(fs.existsSync(path.join(ROOT, page.path)), `Missing site page: ${page.path}`);
   for (const app of apps) {
     assert.ok(app.name && app.path && app.desc, `${app.id} is missing metadata`);
     assert.ok(app.w >= 300 && app.h >= 200, `${app.id} has no usable window size`);
@@ -51,9 +65,13 @@ test('the catalog is exactly the five System apps, and the website catalog is em
     assert.ok(!svg.includes('<image'), `${app.id} icon embeds a raster image`);
   }
   /* Nothing left in the repository should reference the removed layers. */
-  for (const gone of ['assets/game-icons.js', 'assets/game-host.js', 'games', 'websites']) {
+  for (const gone of ['assets/game-icons.js', 'assets/game-host.js', 'games']) {
     assert.equal(fs.existsSync(path.join(ROOT, gone)), false, `${gone} should be gone`);
   }
+  /* websites/ is back, but only with the catalogued site and the template. */
+  const siteFolders = fs.readdirSync(path.join(ROOT, 'websites'), { withFileTypes: true })
+    .filter((e) => e.isDirectory()).map((e) => e.name).sort();
+  assert.deepEqual(siteFolders, ['_template', 'test-page']);
   const index = source('index.html');
   assert.ok(!index.includes('game-icons.js') && !index.includes('game-host.js'));
 });
@@ -80,15 +98,18 @@ test('the system manifest still matches the repository exactly', () => {
   const entries = ctx.window.PROTON_FS_MANIFEST;
   assert.ok(entries.length > 20, 'manifest looks empty');
   const paths = new Set(entries.map((e) => e.p));
-  for (const { path: p } of catalog().apps) assert.ok(paths.has(p), `Missing from the VFS: ${p}`);
+  const { apps, sites } = catalog();
+  for (const p of [...Array.from(apps, (a) => a.path), ...Array.from(sites, (s) => s.path)]) {
+    assert.ok(paths.has(p), `Missing from the VFS: ${p}`);
+  }
   for (const p of ['index.html', 'assets/core.js', 'assets/fs.js', 'data/applications.js', 'data/websites.js']) {
     assert.ok(paths.has(p), `Missing from the VFS: ${p}`);
   }
   for (const e of entries) {
     const full = path.join(ROOT, e.p);
     assert.ok(fs.existsSync(full), `Stale VFS entry: ${e.p}`);
-    assert.ok(!e.p.startsWith('games/') && !e.p.startsWith('websites/') && !e.p.startsWith('tests/'),
-      `Removed tree still listed: ${e.p}`);
+    assert.ok(!e.p.startsWith('games/') && !e.p.startsWith('tests/'),
+      `Removed or dev-only tree still listed: ${e.p}`);
     if (e.p !== 'data/fs-manifest.js') {
       assert.equal(e.s, fs.statSync(full).size, `Wrong VFS size: ${e.p}`);
     }
@@ -153,12 +174,19 @@ test('the desktop boots, lists the System apps and opens every one of them', asy
       w.closeWin(id, true);
     }
 
-    // The Browser copes with an empty built-in-website catalog.
+    // The Browser registers the catalogued site and offers it on its home page.
     w.openApp('browser');
     const browserBody = wins.get('browser').body;
-    assert.match(browserBody.textContent, /ships no built-in websites/);
-    assert.equal(browserBody.querySelector('#b-sites-menu'), null);
-    assert.equal(Object.keys(w.eval('SITES')).length, 0);
+    const SITES = w.eval('SITES');
+    assert.deepEqual(Object.keys(SITES), ['test-page']);
+    assert.ok(new URL(SITES['test-page'].page).pathname.endsWith('/websites/test-page/site.html'));
+    assert.deepEqual([...browserBody.querySelectorAll('#b-sites-menu option')].map((o) => o.value),
+      ['', 'test-page']);
+    assert.deepEqual([...browserBody.querySelectorAll('[data-site]')].map((b) => b.dataset.site), ['test-page']);
+    // Visiting it frames the page at proton://test-page.
+    browserBody.querySelector('[data-site="test-page"]').click();
+    assert.equal(browserBody.querySelector('#b-url').value, 'proton://test-page');
+    assert.ok(browserBody.querySelector('iframe.site-frame').src.endsWith('/websites/test-page/site.html'));
     w.closeWin('browser', true);
 
     // A file shortcut from an older account is reported, not fatal.
@@ -190,4 +218,104 @@ test('Customize still resets to defaults that exist', async () => {
     assert.deepEqual(Array.from(w.eval('userData.settings.pinned')), ['settings', 'appcenter', 'browser']);
     assert.deepEqual(Array.from(w.eval('userData.desktopIcons'), (s) => s.target), ['settings', 'browser']);
   } finally { w.close(); }
+});
+
+/* The built-in test site is the smoke test for the Browser, so it has to
+ * pass its own checks. Loaded here as a top-level page (no Browser around
+ * it), with the page's script run only once the environment is ready: jsdom
+ * has no canvas, no HTTP and no storage for a file: URL, so those are stubbed
+ * and the two desktop-bridge checks must skip themselves rather than fail. */
+test('the Test Page site passes its own checks', async () => {
+  const virtualConsole = new VirtualConsole();
+  virtualConsole.on('jsdomError', (err) => {
+    if (!/getContext|not implemented/i.test(err.message)) throw err;
+  });
+  /* runScripts: 'dangerously' so the injected script below is executed, but
+   * no `resources`: the linked stylesheet is not fetched (it is injected by
+   * hand instead) and the page's own script is run once the stubs are in. */
+  const dom = await JSDOM.fromFile(path.join(ROOT, 'websites/test-page/site.html'), {
+    runScripts: 'dangerously', pretendToBeVisual: true, virtualConsole,
+  });
+  const { window: w } = dom;
+  try {
+    w.HTMLCanvasElement.prototype.getContext = function () {
+      const data = new Uint8ClampedArray(4);
+      return {
+        canvas: this, fillStyle: '', strokeStyle: '', lineWidth: 0, font: '',
+        fillRect() { data.set([255, 255, 255, 255]); },
+        clearRect() {}, beginPath() {}, moveTo() {}, lineTo() {}, stroke() {}, fillText() {},
+        getImageData: () => ({ data }),
+      };
+    };
+    w.fetch = async () => ({ ok: true });
+    /* jsdom gives a file: URL an opaque origin, where touching localStorage
+     * throws — stub a per-window one so the storage check is meaningful. */
+    const store = new Map();
+    try {
+      Object.defineProperty(w, 'localStorage', {
+        configurable: true,
+        value: {
+          getItem: (k) => (store.has(String(k)) ? store.get(String(k)) : null),
+          setItem: (k, v) => { store.set(String(k), String(v)); },
+          removeItem: (k) => { store.delete(String(k)); },
+          clear: () => store.clear(),
+          key: (i) => [...store.keys()][i] ?? null,
+          get length() { return store.size; },
+        },
+      });
+    } catch { /* a real origin already has one */ }
+    /* The page links ../../assets/styles.css, which jsdom does not fetch for
+     * a file: URL — inject the real sheet so the "stylesheet applied" check
+     * is checking proton's CSS, not nothing. */
+    const style = w.document.createElement('style');
+    style.textContent = source('assets/styles.css');
+    w.document.head.appendChild(style);
+
+    const script = w.document.createElement('script');
+    script.textContent = source('websites/test-page/site.html').match(/<script>([\s\S]*?)<\/script>/)[1];
+    w.document.body.appendChild(script);
+
+    const summary = () => w.document.querySelector('#tp-summary').textContent;
+    /* The page flags an in-flight run on the check list's container, so this
+     * waits for a run to finish instead of guessing from the summary text. */
+    const settled = async () => {
+      for (let i = 0; i < 200 && w.document.querySelector('.card[data-running="true"]'); i++) {
+        await new Promise((resolve) => setTimeout(resolve, 25));
+      }
+      await new Promise((resolve) => setTimeout(resolve, 10));
+    };
+    await settled();
+    const state = (id) => w.document.querySelector(`#tp-check-${id}`).dataset.state;
+    assert.equal(summary(), 'All 7 checks passed (2 skipped — open this page in the Browser to run them).',
+      CHECK_STATES(w).join(' '));
+    assert.equal(state('ctx'), 'skip');
+    assert.equal(state('catalog'), 'skip');
+    assert.equal(w.document.querySelectorAll('.tp-check[data-state="fail"]').length, 0);
+
+    // Outside the Browser the desktop bridge stays disabled and says why.
+    assert.equal(w.document.querySelector('#tp-home').disabled, true);
+    assert.equal(w.document.querySelector('#tp-appbtns').children.length, 0);
+    assert.match(w.document.querySelector('#tp-ctx').textContent, /Opened outside the Browser/);
+
+    // The manual controls work.
+    w.document.querySelector('#tp-inc').click();
+    w.document.querySelector('#tp-inc').click();
+    assert.equal(w.document.querySelector('#tp-count').textContent, '2');
+    w.document.querySelector('#tp-reset').click();
+    assert.equal(w.document.querySelector('#tp-count').textContent, '0');
+    assert.match(w.document.querySelector('#tp-clock').textContent, /\d{1,2}:\d{2}:\d{2}/);
+    w.document.querySelector('#tp-input').value = 'hello proton';
+    w.document.querySelector('#tp-form').dispatchEvent(new w.Event('submit', { bubbles: true, cancelable: true }));
+    assert.equal(w.document.querySelector('#tp-out').textContent, 'You typed: hello proton');
+    w.document.querySelector('#tp-note').value = 'remembered';
+    w.document.querySelector('#tp-note-save').click();
+    assert.match(w.document.querySelector('#tp-note-out').textContent, /Saved: remembered/);
+    assert.equal(w.localStorage.getItem('proton:test-page:note'), 'remembered');
+
+    // Re-running the checks still passes.
+    w.document.querySelector('#tp-rerun').click();
+    await settled();
+    assert.match(summary(), /^All 7 checks passed/);
+    w.stop(); // the page's 1 s clock interval must not outlive the test
+  } finally { dom.window.close(); }
 });

@@ -20,9 +20,10 @@ This build ships **its System apps only**. The 19 other bundled apps (Files,
 Text Editor, Notes, Calendar, Contacts, Calculator, Spreadsheet, Presentation,
 Whiteboard, Logic Sim, Terminal, Media, PDF Viewer, Image Viewer and the five
 board games) and all 92 streamed arcade games were removed, along with
-`assets/game-host.js`, `assets/game-icons.js`, the copied game builds under
-`games/` and every built-in website under `websites/`. `data/websites.js` is
-still parsed, but it is empty.
+`assets/game-host.js`, `assets/game-icons.js` and the copied game builds under
+`games/`. Every built-in website went too except **Test Page** — the one entry
+left in `data/websites.js` (see
+[`websites/README.md`](../websites/README.md)).
 
 ## Add your own app (developer workflow)
 
@@ -95,7 +96,8 @@ honours any viewer an app added back registers through `FS.appFor()`.
 
 Shared code lives outside this folder: `data/applications.js` (the app
 catalog — name, location, icon and everything else for every app),
-`data/websites.js` (the same kind of catalog for built-in websites; empty),
+`data/websites.js` (the same kind of catalog for built-in websites — Test Page
+is the only one left; guide: `websites/README.md`),
 `data/fs-manifest.js` (generated list of every deployed file in this
 repository — the `/` tree of the virtual file system; refresh it with
 `python3 tools/gen-fs-manifest.py`), `assets/fs.js` (the file system API),

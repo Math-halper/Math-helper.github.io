@@ -10,10 +10,10 @@ text, and white/grey accents** (no colour in the UI).
 This build ships **its System apps only**. Every other bundled app (Files,
 Text Editor, Notes, Calendar, Contacts, Calculator, Spreadsheet, Presentation,
 Whiteboard, Logic Sim, Terminal, Media, PDF Viewer, Image Viewer and the five
-board games), all **92 streamed arcade games** and all **6 built-in websites**
-have been removed, together with the code only they used
-(`assets/game-host.js`, `assets/game-icons.js`, the copied game builds under
-`games/` and the `websites/` tree). Five apps remain:
+board games), all **92 streamed arcade games** and five of the **6 built-in
+websites** have been removed, together with the code only they used
+(`assets/game-host.js`, `assets/game-icons.js` and the copied game builds under
+`games/`). Five apps remain:
 
 | App (id) | What it does |
 | --- | --- |
@@ -21,11 +21,17 @@ have been removed, together with the code only they used
 | **Customize** (`customize`) | Rename/re-icon/re-categorise apps, themes, wallpapers, desktop parts |
 | **Settings** (`settings`) | Account, wallpaper & accent, password, backup, other accounts |
 | **About** (`about`) | What this is, credits, licence |
-| **Browser** (`browser`) | Visit any address; the built-in-website catalog is empty |
+| **Browser** (`browser`) | Visit any address, open HTML files from the virtual file system, and the one built-in site |
 
-Apps are catalog entries, so any of the removed ones can be added back: one
-folder under `apps/` plus one `[application]` block in `data/applications.js`
-(see [`apps/README.md`](apps/README.md)).
+One built-in website ships with them: **Test Page** (`proton://test-page`), the
+smoke test for a build — it runs automated checks (scripts, shared stylesheet,
+timers, canvas, `fetch`, storage, the desktop bridge) and has buttons that talk
+back to proton.
+
+Apps and sites are catalog entries, so any of the removed ones can be added
+back: one folder under `apps/` (or `websites/`) plus one `[application]`
+(or `[website]`) block in `data/applications.js` (or `data/websites.js`) — see
+[`apps/README.md`](apps/README.md) and [`websites/README.md`](websites/README.md).
 
 ## Run it
 
@@ -50,10 +56,11 @@ runtime dependencies or build step. Optional regression tests use jsdom:
   `apps/_template/` and adding an `[application]` block there; remove one by
   deleting that block. Full guide: [`apps/README.md`](apps/README.md).
 - **Built-in websites:** the same catalog system — `data/websites.js`, one
-  `[website]` block per site, each page a `websites/<name>/site.html`. **That
-  catalog is empty in this build** and the `websites/` tree is gone; the
-  Browser still visits any address typed into its bar and still opens HTML
-  files from the virtual file system.
+  `[website]` block per site, each page a `websites/<name>/site.html`. One site
+  ships: **Test Page** (`websites/test-page/`), plus `websites/_template/` as
+  the starting point for a new one. The Browser also visits any address typed
+  into its bar and opens HTML files from the virtual file system. Guide:
+  [`websites/README.md`](websites/README.md).
 - **Core:** `data/applications.js` (the app catalog), `data/websites.js` (the
   website catalog), `data/fs-manifest.js` (generated: every deployed file in
   this repository — the `/` tree of the virtual file system; refresh with
@@ -65,9 +72,11 @@ runtime dependencies or build step. Optional regression tests use jsdom:
   `assets/desktop-icons.js` (shortcut layout, drag/drop and menus),
   `assets/html-loader.js` (loads the app modules at boot, or a `streamed=true`
   app's module on first launch), `assets/styles.css`, `assets/boot.js`.
-- **Tests:** `tests/system-desktop.test.cjs` — the catalog is exactly the five
-  System apps, every catalogued module is a real proton app, the generated
-  manifest matches the repository, and a jsdom desktop boots and opens each app.
+- **Tests:** `tests/system-desktop.test.cjs` — the catalogs are exactly the
+  five System apps and the one test site, every catalogued module is a real
+  proton app, the generated manifest matches the repository, a jsdom desktop
+  boots and opens each app and the test site in the Browser, and Test Page
+  passes its own checks.
 
 ## Math Helper cover page
 
