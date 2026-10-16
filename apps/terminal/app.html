@@ -137,7 +137,7 @@ registerApp({
               '  find [path] [text]      list paths matching text',
               '  grep <text> [path]      search file contents',
               'Desktop:',
-              '  apps / open <app-id>    list apps / open one',
+              '  apps / open <id|path>   list apps / open an app or file in its viewer',
               '  whoami / date / echo    the usual suspects',
               '  math <expr> / solve a b c',
               '  wallpaper <name> / accent <hex>',
@@ -201,7 +201,11 @@ registerApp({
             const flags = rest.filter((r) => r.startsWith('-')).join('');
             const targets = rest.filter((r) => !r.startsWith('-'));
             if (!targets.length) throw new Error('mkdir: missing operand');
-            for (const t of targets) FS.mkdir(FS.normalize(t, cwd), '/', flags.includes('p'));
+            for (const t of targets) {
+              const p = FS.normalize(t, cwd);
+              if (flags.includes('p') && FS.isDir(p)) continue;
+              FS.mkdir(p, '/', flags.includes('p'));
+            }
             break;
           }
           case 'touch': {
@@ -287,7 +291,11 @@ registerApp({
           }
           case 'open': {
             const a = APPS[arg.toLowerCase()];
-            a ? (print(`Opening ${a.name}…`), openApp(a.id)) : print(`No app called "${arg}". Try: apps`);
+            if (a) { print(`Opening ${a.name}…`); openApp(a.id); }
+            else if (arg && FS.exists(arg, cwd)) {
+              const p = FS.normalize(arg, cwd);
+              print(`Opening ${p}…`); openFSItem(p);
+            } else print(`No app or file called "${arg}". Try: apps`);
             break;
           }
           case 'apps': print(Object.values(APPS).map((a) => `  ${a.id.padEnd(14)} ${iconNameFrom(a.icon)} - ${a.name}`).join('\n')); break;

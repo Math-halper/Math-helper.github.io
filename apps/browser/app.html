@@ -29,17 +29,21 @@ proton menu. The script below is fetched and run by proton's HTML loader
 registerApp({
   /* Metadata (name, icon, cat, desc, w, h) lives in the app catalog:
    * data/applications.js — edit it there, not here. */
-  render(body) {
+  render(body, options) {
     body.innerHTML = `${bar('Browser', `<button class="btn sm" id="b-home">${iconSvg('home')} Home</button><select id="b-sites-menu" title="Built-in websites"><option value="">Built-in websites…</option>${Object.values(SITES).map((s) => `<option value="${s.id}">${MH.esc(s.name)}</option>`).join('')}</select>`)}
     <div class="appbar" style="background:#111"><span>${iconSvg('lock')}</span><input id="b-url" type="text" value="proton://home" style="flex:1;padding:7px 10px"><button class="btn sm primary" id="b-go">Go</button></div>
     <div class="app-main" id="b-main"></div>`;
     const main = body.querySelector('#b-main');
+    let navigation = 0, localUrls = [];
+    const clearLocalUrls = () => { localUrls.forEach((url) => URL.revokeObjectURL(url)); localUrls = []; };
+    const leavePage = () => { navigation++; clearLocalUrls(); };
     const ctx = { openApp, loadExternal, showHome: () => showHome(), showSite };
     /* Built-in site.html pages run in a frame and reach this context as
      * window.parent.__protonSiteCtx (same-origin, this device only). */
     window.__protonSiteCtx = ctx;
 
     function showHome() {
+      leavePage();
       body.querySelector('#b-url').value = 'proton://home';
       normalizeUserData();
       main.innerHTML = `<div class="pad"><h2>Welcome to the (tiny) proton web</h2>
@@ -64,28 +68,87 @@ registerApp({
     function showSite(id) {
       const site = SITES[id];
       if (!site) { showHome(); return; }
+      leavePage();
       body.querySelector('#b-url').value = 'proton://' + id;
       /* Built-in websites are standalone HTML pages (websites/<name>/site.html),
        * loaded in a frame. Their scripts can call back into the desktop via
        * window.parent.__protonSiteCtx (openApp / showSite / showHome). */
       main.innerHTML = `<iframe class="site-frame" title="${MH.esc(site.name)}" src="${MH.esc(site.page)}" style="width:100%;height:100%;min-height:420px;border:0;display:block;background:#050505"></iframe>`;
     }
-    function loadExternal(url) {
+    /* Open a virtual .html file in a browser frame, not as editable source.
+     * System pages use their real site URL so relative assets work. Account
+     * files have no HTTP URL: srcdoc + an opaque-origin sandbox prevents
+     * their scripts from accessing the desktop's accounts/localStorage. */
+    async function openLocal(path) {
+      const st = FS.stat(path);
+      if (!st || st.type !== 'file' || !['html', 'htm'].includes(FS.extname(st.path))) {
+        MH.toast('Choose an HTML file from Files.'); return;
+      }
+      leavePage();
+      const token = navigation;
+      body.querySelector('#b-url').value = 'file://' + st.path;
+      const header = `<div class="pad muted" style="padding:7px 14px;flex:none">${MH.esc(st.path)}${st.user ? ' · Account file (sandboxed)' : ' · Read-only system file'}</div>`;
+      main.innerHTML = `<div class="local-page">${header}<iframe title="${MH.esc(st.name)}" class="site-frame" sandbox="allow-scripts ${st.user ? '' : 'allow-same-origin '}allow-forms allow-popups allow-modals" allow="fullscreen"></iframe></div>`;
+      const frame = main.querySelector('iframe');
+      if (!st.user) {
+        frame.src = new URL(st.path.slice(1), document.baseURI).href;
+        return;
+      }
+      const urls = [];
+      try {
+        const html = await FS.read(st.path);
+        const doc = new DOMParser().parseFromString(html, 'text/html');
+        /* Resolve sibling images, stylesheets, scripts and media stored in
+         * this account. Blob URLs are revoked on navigation/window close. */
+        for (const el of doc.querySelectorAll('img[src],source[src],video[src],audio[src],script[src],link[href]')) {
+          const attr = el.hasAttribute('src') ? 'src' : 'href';
+          const ref = el.getAttribute(attr)?.trim();
+          if (!ref || /^(?:[a-z][\w+.-]*:|\/\/|#|\?)/i.test(ref)) continue;
+          let relative;
+          try { relative = decodeURIComponent(ref.split(/[?#]/)[0]); } catch { continue; }
+          const asset = FS.stat(FS.normalize(relative, FS.dirname(st.path)));
+          if (!asset || asset.type !== 'file') continue;
+          const url = URL.createObjectURL(await FS.readBlob(asset.path));
+          urls.push(url);
+          el.setAttribute(attr, url);
+        }
+        if (token !== navigation) { urls.forEach((url) => URL.revokeObjectURL(url)); return; }
+        localUrls = urls;
+        frame.srcdoc = '<!doctype html>\n' + doc.documentElement.outerHTML;
+      } catch (err) {
+        urls.forEach((url) => URL.revokeObjectURL(url));
+        if (token === navigation) main.innerHTML = `<div class="pad muted">Could not open ${MH.esc(st.name)}: ${MH.esc(err.message)}</div>`;
+      }
+    }
+    function loadExternal(raw) {
+      const url = normalizeUrl(raw);
+      if (!url) { MH.toast('Enter a valid http(s) address.'); return; }
+      leavePage();
       body.querySelector('#b-url').value = url;
-      main.innerHTML = `<div style="display:flex;flex-direction:column;height:100%"><div class="pad muted" style="padding-bottom:6px">Loading <b>${MH.esc(url)}</b> — if it stays blank, that site refuses embedding. <a href="${MH.esc(url)}" target="_blank" rel="noopener">Open in a new tab</a></div><iframe src="${MH.esc(url)}" style="flex:1;border:0;width:100%" title="Web page"></iframe></div>`;
+      main.innerHTML = `<div class="local-page"><div class="pad muted" style="padding:7px 14px;flex:none">Loading <b>${MH.esc(url)}</b> — if blank, this site refuses embedding. <a href="${MH.esc(url)}" target="_blank" rel="noopener">Open in a new tab</a></div><iframe src="${MH.esc(url)}" class="site-frame" sandbox="allow-scripts allow-forms allow-popups allow-modals" title="Web page"></iframe></div>`;
     }
     function go() {
       const raw = body.querySelector('#b-url').value.trim();
       if (raw === 'proton://home' || raw === 'home') { showHome(); return; }
+      if (/^file:\/\//i.test(raw) || raw.startsWith('/')) {
+        openLocal(raw.replace(/^file:\/\//i, '')); return;
+      }
       const id = raw.replace(/^proton:\/\//i, '').split(/[/?#]/)[0].toLowerCase();
       if (SITES[id]) { showSite(id); return; }
-      loadExternal(/^https?:\/\//i.test(raw) ? raw : 'https://' + raw);
+      if (/^proton:\/\//i.test(raw)) { MH.toast('Unknown built-in website.'); return; }
+      loadExternal(raw);
     }
+    body.openPath = ({ path, url }) => { if (path) openLocal(path); else if (url) loadExternal(url); };
+    body.onDestroy = () => {
+      leavePage();
+      if (window.__protonSiteCtx === ctx) delete window.__protonSiteCtx;
+    };
     body.querySelector('#b-home').onclick = showHome;
     body.querySelector('#b-go').onclick = go;
     body.querySelector('#b-sites-menu').onchange = (e) => { if (e.target.value) showSite(e.target.value); e.target.value = ''; };
     body.querySelector('#b-url').addEventListener('keydown', (e) => { if (e.key === 'Enter') go(); });
-    if (pendingBrowserURL) { const u = pendingBrowserURL; pendingBrowserURL = ''; loadExternal(u); }
+    if (options.path) openLocal(options.path);
+    else if (options.url) loadExternal(options.url);
     else showHome();
   },
 });

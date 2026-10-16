@@ -108,14 +108,18 @@ registerApp({
         MH.toast('Backup imported — your desktop was restored.');
       } catch { MH.toast('That file is not a proton backup.'); }
     };
-    body.querySelector('#s-addacct').onclick = () => { saveDataNow(); MH.$('desktop').hidden = true; wins.clear(); renderSetup(true); };
+    body.querySelector('#s-addacct').onclick = () => {
+      if (!saveDataNow() || !closeAllWindows()) return;
+      DesktopIcons.unmount();
+      MH.$('desktop').hidden = true; renderSetup(true);
+    };
     body.querySelector('#s-lock').onclick = lockDesktop;
     body.querySelector('#s-signout').onclick = signOut;
     body.querySelector('#s-delete').onclick = () => {
       if (!confirmBox(`Delete @${currentUser.username} and ALL its data on this device? This cannot be undone.`)) return;
       const accounts = MH.accounts(); delete accounts[currentUser.usernameLower];
       MH.saveAccounts(accounts); localStorage.removeItem(MH.userKey(currentUser.usernameLower));
-      signOut();
+      signOut({ skipSave: true, force: true }); // never recreate the deleted account data
     };
   },
 });

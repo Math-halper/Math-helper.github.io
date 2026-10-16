@@ -1,249 +1,709 @@
 <!DOCTYPE html>
 <html lang="en">
-<head>
-<meta charset="utf-8">
-<meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Files - proton app</title>
-</head>
+<head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><title>Files - proton app</title></head>
 <body>
-<p>This file is a proton app. It is not meant to be opened on its own:
-open <a href="../../index.html">proton</a> and launch <b>Files</b> from the
-proton menu. The script below is fetched and run by proton's HTML loader
-(assets/html-loader.js) at boot.</p>
-<!-- proton app: everything that registers and renders this app lives in
-     this one script block. Edit it, then reload proton. -->
+<p>Launch Files from <a href="../../index.html">proton</a>.</p>
 <script data-proton-app>
-/* proton app module: files — edit this file to change this app.
- * Loaded by index.html; calls registerApp() (see apps/README.md).
- *
- * A real file manager over the shared virtual file system (assets/fs.js):
- * the whole machine is one tree rooted at "/", the site's own files are the
- * read-only system layer (/apps, /assets, /data, /websites, …) and your
- * account's files live under /home/<user>/. Breadcrumbs, an address bar,
- * a / tree in the sidebar and full create/rename/delete/download. */
 'use strict';
-
+/* The Files window is a file manager for FS (assets/fs.js). Nothing outside
+ * /home/<user> is writable. Dropped computer files are imported to the VFS;
+ * dragging a VFS item moves it, or copies it with Ctrl/Option (system items
+ * are always copied). No operation silently replaces an existing file. */
 registerApp({
-  /* Metadata (name, icon, cat, desc, w, h) lives in the app catalog:
-   * data/applications.js — edit it there, not here. */
-  render(body) {
-    body.innerHTML = `${bar('Files', `<button class="btn sm" id="f-up">${iconSvg('chevron-left')} Up</button><button class="btn sm" id="f-new">${iconSvg('plus')} File</button><button class="btn sm" id="f-folder">${iconSvg('plus')} Folder</button><label class="btn sm" style="margin:0">${iconSvg('upload')} Import<input id="f-import" type="file" accept=".txt,.md,.csv,.log,.json,.js,.css,.html,.htm,.py,.yml,.yaml,.rtf,text/*" hidden></label><button class="btn sm" id="f-rename">Rename</button><button class="btn sm" id="f-del">${iconSvg('trash')} Delete</button><button class="btn sm" id="f-dl">${iconSvg('download')} Download</button>`)}
-    <div class="pathbar">
-      <span class="muted">Path</span>
-      <div class="crumbs" id="f-crumbs"></div>
-      <input id="f-path" class="grow" spellcheck="false" autocomplete="off" aria-label="Go to path">
-      <button class="btn sm" id="f-go">Go</button>
-      <label class="muted" style="display:flex;align-items:center;gap:5px;white-space:nowrap"><input type="checkbox" id="f-hidden" checked> hidden</label>
-    </div>
-    <div class="split"><aside class="side" id="f-tree"></aside><div style="display:flex;flex-direction:column;min-height:0">
-      <div class="app-main" id="f-main"></div><div id="f-editor"></div></div></div>`;
-    const main = body.querySelector('#f-main'), ed = body.querySelector('#f-editor');
-    const home = FS.home();
-    let cwd = home, selected = null, showHidden = true;
+  render(body, ctx) {
+    body.innerHTML = `${bar('Files', `<button class="btn sm" id="f-back" title="Back (Alt+Left)">${iconSvg('chevron-left')}</button><button class="btn sm" id="f-forward" title="Forward (Alt+Right)">${iconSvg('chevron-right')}</button><button class="btn sm" id="f-up" title="Parent folder (Alt+Up)">${iconSvg('folder-open')} Up</button><button class="btn sm" id="f-open" disabled>${iconSvg('external')} Open</button><button class="btn sm" id="f-new">${iconSvg('plus')} File</button><button class="btn sm" id="f-folder">${iconSvg('folder')} Folder</button><label class="btn sm" style="margin:0">${iconSvg('upload')} Import files<input id="f-import" type="file" multiple hidden></label><label class="btn sm" style="margin:0">${iconSvg('folder-open')} Import folder<input id="f-import-folder" type="file" webkitdirectory directory multiple hidden></label><button class="btn sm" id="f-copy" title="Copy (Ctrl+C)">${iconSvg('copy')} Copy</button><button class="btn sm" id="f-cut" title="Cut (Ctrl+X)">${iconSvg('cut')} Cut</button><button class="btn sm" id="f-paste" title="Paste (Ctrl+V)">${iconSvg('paste')} Paste</button><button class="btn sm" id="f-rename" title="Rename (F2)">Rename</button><button class="btn sm" id="f-del" title="Delete selected items">${iconSvg('trash')} Delete</button><button class="btn sm" id="f-dl">${iconSvg('download')} Download</button><button class="btn sm" id="f-more" title="More file actions / context menu" aria-label="More file actions">···</button>`)}
+      <div class="pathbar"><span class="muted">Path</span><div class="crumbs" id="f-crumbs"></div><input id="f-path" class="grow" spellcheck="false" autocomplete="off" aria-label="Go to path"><button class="btn sm" id="f-go">Go</button><input id="f-search" type="search" placeholder="Filter this folder…" aria-label="Filter this folder"><select id="f-sort" aria-label="Sort files"><option value="name">Name</option><option value="type">Type</option><option value="size">Size</option><option value="updated">Modified</option></select><button class="btn sm" id="f-reverse" title="Reverse sort order" aria-label="Reverse sort order">↑</button><label class="muted" style="display:flex;align-items:center;gap:5px;white-space:nowrap"><input type="checkbox" id="f-hidden" checked> Hidden</label></div>
+      <div class="split"><aside class="side" id="f-tree" aria-label="Folders"></aside><div class="f-workspace"><div class="app-main" id="f-main" aria-label="Files and folders"></div><div id="f-info"></div></div></div>
+      <div class="f-status" id="f-status" role="status" aria-live="polite"></div><div class="f-context" id="f-context" role="menu" hidden></div>`;
+    body.tabIndex = -1;
+    const main = body.querySelector('#f-main'), tree = body.querySelector('#f-tree');
+    const info = body.querySelector('#f-info'), menu = body.querySelector('#f-context');
+    const home = FS.home(), owner = userData;
+    let active = true;
+    function ensureActive() {
+      if (!active || userData !== owner) throw new Error('The Files window or account changed; operation cancelled.');
+    }
+    let cwd = home, selected = new Set(), anchor = null, showHidden = true;
+    let sortBy = 'name', descending = false, search = '';
+    let clipboard = null, dragPaths = null, dragTarget = null, busy = false;
+    let menuReturnFocus = null, detailsReturnFocus = null;
+    let history = [home], historyIndex = 0;
     const expanded = new Set(['/', '/home', home]);
-
-    /* ---------- icons ---------- */
-    const iconFor = (e) => {
-      if (e.type === 'dir') return 'folder';
-      const x = FS.extname(e.name);
-      if (['txt', 'md', 'csv', 'log', 'rtf'].includes(x)) return 'file-text';
-      if (['html', 'css', 'js', 'json', 'py', 'yml', 'yaml', 'sh'].includes(x)) return 'file';
-      if (['png', 'jpg', 'jpeg', 'gif', 'webp', 'bmp', 'ico', 'svg'].includes(x)) return 'image';
-      if (['mp3', 'wav', 'ogg', 'flac'].includes(x)) return 'music';
-      if (['mp4', 'mov', 'webm', 'avi'].includes(x)) return 'film';
-      if (['ttf', 'otf', 'woff', 'woff2'].includes(x)) return 'palette';
-      return 'file';
-    };
-
-    /* ---------- sidebar tree of the whole / file system ---------- */
+    let refreshTimer = null;
+    const unwatch = FS.watch(() => {
+      if (!body.isConnected || busy) return;
+      clearTimeout(refreshTimer);
+      refreshTimer = setTimeout(() => {
+        if (!body.isConnected) return;
+        if (!FS.isDir(cwd)) {
+          while (!FS.isDir(cwd) && cwd !== '/') cwd = FS.dirname(cwd);
+          selected.clear();
+        }
+        draw();
+      }, 40);
+    });
+    const control = (id) => body.querySelector('#f-' + id);
+    const paths = () => [...selected].filter((p) => FS.stat(p));
+    const canModify = (st) => !!st && !st.readonly && st.path !== home && FS.isWritable(st.path);
+    const canCopy = (st) => !!st && !['/', '/home', home].includes(st.path);
+    const targetFolder = (p) => FS.stat(p)?.type === 'dir' && FS.isWritable(p);
+    function message(err) { MH.toast(err instanceof Error ? err.message : String(err)); }
+    function validateName(value) {
+      const name = String(value ?? '').trim();
+      if (!name || name === '.' || name === '..' || name.length > 255 || /[\/\\\x00-\x1f]/.test(name)) {
+        throw new Error('Use a file/folder name without slashes, control characters or “..” (max 255 characters).');
+      }
+      return name;
+    }
+    function entryIcon(st) {
+      if (st.type === 'dir') return 'folder';
+      return { browser: 'globe', pdf: 'file-text', 'image-viewer': 'image',
+        media: FS.mediaKind(st.path) === 'audio' ? 'music' : 'film', 'text-editor': 'file-text' }[FS.appFor(st.path)] || 'file';
+    }
+    function visibleEntries() {
+      const entries = FS.list(cwd).filter((e) => (showHidden || !e.name.startsWith('.'))
+        && (!search || e.name.toLocaleLowerCase().includes(search.toLocaleLowerCase())));
+      entries.sort((a, b) => {
+        if (a.type !== b.type) return a.type === 'dir' ? -1 : 1;
+        let cmp = 0;
+        if (sortBy === 'size') cmp = a.size - b.size;
+        if (sortBy === 'updated') cmp = (a.updated || 0) - (b.updated || 0);
+        if (sortBy === 'type') cmp = FS.extname(a.path).localeCompare(FS.extname(b.path));
+        return (cmp || a.name.localeCompare(b.name, undefined, { numeric: true })) * (descending ? -1 : 1);
+      });
+      return entries;
+    }
+    function updateSelection() {
+      selected = new Set(paths());
+      const items = paths().map((p) => FS.stat(p));
+      main.querySelectorAll('.file-item').forEach((b) => {
+        b.classList.toggle('sel', selected.has(b.dataset.p));
+        b.classList.toggle('cut', clipboard?.mode === 'move' && clipboard.paths.includes(b.dataset.p));
+        b.setAttribute('aria-selected', String(selected.has(b.dataset.p)));
+      });
+      control('back').disabled = historyIndex === 0;
+      control('forward').disabled = historyIndex === history.length - 1;
+      control('open').disabled = items.length !== 1;
+      control('copy').disabled = busy || !items.length || items.some((st) => !canCopy(st));
+      control('cut').disabled = busy || !items.length || items.some((st) => !canModify(st));
+      control('paste').disabled = busy || !clipboard?.paths.length || !targetFolder(cwd);
+      control('rename').disabled = busy || items.length !== 1 || !canModify(items[0]);
+      control('del').disabled = busy || !items.length || items.some((st) => !canModify(st));
+      control('dl').disabled = busy || !items.length || items.some((st) => !canCopy(st));
+      control('new').disabled = busy || !targetFolder(cwd);
+      control('folder').disabled = busy || !targetFolder(cwd);
+      const status = busy ? 'Working…' : items.length ? `${items.length} selected${clipboard ? ` · ${clipboard.paths.length} ${clipboard.mode === 'move' ? 'cut' : 'copied'}` : ''}`
+        : `${FS.list(cwd).length} item(s) · ${FS.count().files} account file(s) · ${MH.fmtBytes(FS.count().bytes)} stored locally`;
+      control('status').textContent = status;
+      if (!items.length) {
+        info.innerHTML = '<div class="f-info muted">Select files with click / Ctrl / Shift. Double-click to open; right-click for actions. Drag onto a folder, or drop files from your computer.</div>';
+        return;
+      }
+      if (items.length > 1) {
+        info.innerHTML = `<div class="f-info">${iconSvg('copy')}<b>${items.length} items selected</b><span class="muted">Ctrl+C / Ctrl+X, then Ctrl+V in a folder. Hold Ctrl/Option while dragging to copy.</span></div>`;
+        return;
+      }
+      const st = items[0];
+      const kind = st.type === 'dir' ? `Folder · ${FS.list(st.path).length} item(s)`
+        : `${MH.fmtBytes(st.size)} · ${APPS[FS.appFor(st.path)]?.name || 'No viewer'}`;
+      info.innerHTML = `<div class="f-info">${iconSvg(entryIcon(st))}<b>${MH.esc(st.name)}</b><span class="muted f-detail">${MH.esc(st.path)} · ${MH.esc(kind)}${st.readonly ? ' · read-only' : ''}</span><button class="btn sm primary" id="fi-open">${iconSvg('external')} Open</button><button class="btn sm" id="fi-dl">${iconSvg('download')} Download</button></div>`;
+      info.querySelector('#fi-open').onclick = () => openItem(st.path);
+      info.querySelector('#fi-dl').disabled = !canCopy(st);
+      info.querySelector('#fi-dl').onclick = () => downloadItems([st.path]);
+    }
+    function drawGrid() {
+      const entries = visibleEntries();
+      main.innerHTML = entries.length ? `<div class="file-grid">${entries.map((st) => `<button class="file-item" draggable="${canCopy(st)}" data-p="${MH.esc(st.path)}" title="${MH.esc(st.path)}" aria-label="${MH.esc(st.name)}, ${st.type === 'dir' ? 'folder' : 'file'}" aria-selected="false"><span class="ic">${iconSvg(entryIcon(st))}</span><span class="f-name">${MH.esc(st.name)}</span><span class="muted">${st.type === 'dir' ? 'Folder' : MH.fmtBytes(st.size)}${st.readonly ? ' · sys' : ''}</span></button>`).join('')}</div>`
+        : `<div class="pad muted">${search ? 'No matching items.' : 'This folder is empty.'}${!search && targetFolder(cwd) ? ' Right-click to create a file or drop files here.' : ''}</div>`;
+      updateSelection();
+    }
     function treeHtml(dir, depth) {
       let out = '';
-      for (const e of FS.list(dir)) {
-        if (e.type !== 'dir') continue;
-        const open = expanded.has(e.path);
-        out += `<div class="f-trow${e.path === cwd ? ' sel' : ''}" data-t="${MH.esc(e.path)}" style="padding-left:${8 + depth * 15}px" title="${MH.esc(e.path)}">
-          <span class="f-caret${open ? ' open' : ''}" data-caret="${MH.esc(e.path)}"></span>${iconSvg('folder')}<span class="f-tname">${MH.esc(e.name)}</span></div>`;
-        if (open) out += treeHtml(e.path, depth + 1);
+      for (const st of FS.list(dir)) {
+        if (st.type !== 'dir' || (!showHidden && st.name.startsWith('.'))) continue;
+        const open = expanded.has(st.path);
+        out += `<div class="f-trow${st.path === cwd ? ' sel' : ''}" data-t="${MH.esc(st.path)}" draggable="${canCopy(st)}" role="button" tabindex="0" style="padding-left:${8 + depth * 15}px" title="${MH.esc(st.path)}"><span class="f-caret${open ? ' open' : ''}" data-caret="${MH.esc(st.path)}"></span>${iconSvg('folder')}<span class="f-tname">${MH.esc(st.name)}</span></div>`;
+        if (open) out += treeHtml(st.path, depth + 1);
       }
       return out;
     }
     function drawTree() {
-      const t = body.querySelector('#f-tree');
-      t.innerHTML = `<div class="f-trow${cwd === home ? ' sel' : ''}" data-t="${MH.esc(home)}">${iconSvg('home')}<span class="f-tname">Home</span></div>
-        <div class="f-trow${cwd === '/' ? ' sel' : ''}" data-t="/" style="padding-left:8px">${iconSvg('database')}<span class="f-tname">File system <span class="muted">(/)</span></span></div>
-        <div class="f-tree-body">${treeHtml('/', 1)}</div>
-        <div class="pad muted" style="padding:12px 14px">${FS.count().files} file(s) in your home folder · ${MH.fmtBytes(FS.count().bytes)} saved on this device.<br>Everything under <b>/</b> except <b>${MH.esc(home)}</b> is the system itself — read-only.</div>`;
-      t.querySelectorAll('.f-trow').forEach((r) => r.onclick = () => { go(r.dataset.t); });
-      t.querySelectorAll('.f-caret').forEach((c) => c.onclick = (ev) => {
-        ev.stopPropagation();
-        const p = c.dataset.caret;
-        expanded.has(p) ? expanded.delete(p) : expanded.add(p);
-        draw();
+      tree.innerHTML = `<div class="f-trow${cwd === home ? ' sel' : ''}" data-t="${MH.esc(home)}" role="button" tabindex="0">${iconSvg('home')}<span class="f-tname">Home</span></div><div class="f-trow${cwd === '/' ? ' sel' : ''}" data-t="/" role="button" tabindex="0" style="padding-left:8px">${iconSvg('database')}<span class="f-tname">File system <span class="muted">(/)</span></span></div><div class="f-tree-body">${treeHtml('/', 1)}</div><div class="pad muted" style="padding:12px 14px">System files are read-only. Drop or paste copies under <b>${MH.esc(home)}</b>. Files stay in this browser; importing does not upload anything.</div>`;
+      tree.querySelectorAll('.f-trow').forEach((row) => {
+        row.onclick = () => go(row.dataset.t);
+        row.onkeydown = (e) => { if (e.key === 'Enter') { e.preventDefault(); go(row.dataset.t); } };
       });
-    }
-
-    /* ---------- main pane ---------- */
-    function crumbHtml() {
-      const parts = cwd.split('/').filter(Boolean);
-      let out = `<button class="crumb" data-c="/">/</button>`, acc = '';
-      for (const part of parts) {
-        acc += '/' + part;
-        out += `<span class="muted">›</span><button class="crumb${acc === cwd ? ' cur' : ''}" data-c="${MH.esc(acc)}">${MH.esc(part)}</button>`;
-      }
-      return out;
+      tree.querySelectorAll('.f-caret').forEach((caret) => caret.onclick = (e) => {
+        e.stopPropagation();
+        expanded.has(caret.dataset.caret) ? expanded.delete(caret.dataset.caret) : expanded.add(caret.dataset.caret);
+        drawTree();
+      });
     }
     function draw() {
-      body.querySelector('#f-crumbs').innerHTML = crumbHtml();
-      body.querySelectorAll('.crumb').forEach((b) => b.onclick = () => go(b.dataset.c));
-      body.querySelector('#f-path').value = cwd;
-      let entries = FS.list(cwd);
-      if (!showHidden) entries = entries.filter((e) => !e.name.startsWith('.'));
-      if (cwd === '/' && !showHidden) entries = entries.filter((e) => e.name !== '.github');
-      main.innerHTML = entries.length ? `<div class="file-grid">${entries.map((e) => `
-        <button class="file-item ${e.path === selected ? 'sel' : ''}" data-p="${MH.esc(e.path)}" title="${MH.esc(e.path)}">
-          <span class="ic">${iconSvg(iconFor(e))}</span><span class="f-name">${MH.esc(e.name)}</span>
-          <span class="muted">${e.type === 'dir' ? 'Folder' : MH.fmtBytes(e.size)}${e.readonly && e.path !== '/' ? ' · sys' : ''}</span></button>`).join('')}</div>`
-        : `<div class="pad muted">This folder is empty.${FS.isWritable(cwd) ? ' Create a file or folder to get started.' : ''}</div>`;
-      main.querySelectorAll('.file-item').forEach((b) => {
-        b.onclick = () => { selected = b.dataset.p; draw(); };
-        b.ondblclick = () => { selected = b.dataset.p; draw(); openSelected(); };
-      });
-      drawTree();
-      drawEditor();
+      let crumb = '<button class="crumb" data-c="/">/</button>', partPath = '';
+      for (const part of cwd.split('/').filter(Boolean)) {
+        partPath += '/' + part;
+        crumb += `<span class="muted">›</span><button class="crumb${partPath === cwd ? ' cur' : ''}" data-c="${MH.esc(partPath)}">${MH.esc(part)}</button>`;
+      }
+      control('crumbs').innerHTML = crumb;
+      control('crumbs').querySelectorAll('.crumb').forEach((b) => b.onclick = () => go(b.dataset.c));
+      control('path').value = cwd;
+      drawGrid(); drawTree();
     }
-
-    /* ---------- editor / preview pane ---------- */
-    function drawEditor() {
-      const st = selected ? FS.stat(selected) : null;
-      if (!st) { ed.innerHTML = ''; return; }
-      if (st.type === 'dir') {
-        ed.innerHTML = `<div class="f-info">${iconSvg('folder')} <b>${MH.esc(st.name)}</b><span class="muted">Folder · ${FS.list(st.path).length} item(s) inside · ${MH.esc(st.path)}</span></div>`;
-        return;
-      }
-      const sys = st.readonly;
-      if (FS.isBinary(st.path)) {
-        ed.innerHTML = `<div class="f-info">${iconSvg('file')} <b>${MH.esc(st.name)}</b>
-          <span class="muted">${MH.fmtBytes(st.size)} · binary file${sys ? ' · system' : ''} · ${MH.esc(st.path)}</span>
-          <button class="btn sm" id="fe-dl">${iconSvg('download')} Download</button></div>`;
-        ed.querySelector('#fe-dl').onclick = async () => {
-          const blob = await FS.readBlob(st.path);
-          MH.download(st.name, blob, blob.type || 'application/octet-stream');
-        };
-        return;
-      }
-      ed.innerHTML = `<div style="border-top:1px solid var(--line);background:#111">
-        <div class="appbar"><strong style="margin-right:auto">${iconSvg('file-text')} ${MH.esc(st.name)}${sys ? ' <span class="muted">(read-only system file)</span>' : ''}</strong>
-        <button class="btn sm" id="fe-dl">${iconSvg('download')} Download</button>${sys ? '' : '<button class="btn sm primary" id="fe-save">Save</button>'}</div>
-        <textarea id="fe-text" rows="9" ${sys ? 'readonly' : ''} style="border:0;border-radius:0;resize:vertical"></textarea></div>`;
-      const ta = ed.querySelector('#fe-text');
-      /* system files are fetched on demand; user files live in memory */
-      if (st.user) ta.value = userData.files.find((f) => f.path === st.path)?.content ?? '';
-      else {
-        ta.value = 'Loading…';
-        FS.read(st.path).then((text) => { ta.value = text; }).catch((e) => { ta.value = 'Could not load: ' + e.message; });
-      }
-      ed.querySelector('#fe-dl').onclick = async () => {
-        const blob = await FS.readBlob(st.path);
-        MH.download(st.name, blob, blob.type || 'text/plain');
-      };
-      if (!sys) {
-        const save = () => { FS.write(st.path, ta.value); MH.toast('File saved.'); draw(); };
-        ed.querySelector('#fe-save').onclick = save;
-        ta.addEventListener('input', () => FS.write(st.path, ta.value));
-      }
+    function closeMenu() {
+      const hadFocus = menu.contains(document.activeElement);
+      menu.hidden = true; menu.innerHTML = '';
+      if (hadFocus && body.isConnected) (menuReturnFocus?.isConnected ? menuReturnFocus : body).focus({ preventScroll: true });
+      menuReturnFocus = null;
     }
-
-    /* ---------- navigation + actions ---------- */
+    function closeDetails() {
+      const dialog = body.querySelector('#f-dialog');
+      const hadFocus = dialog?.contains(document.activeElement);
+      dialog?.remove();
+      if (hadFocus && body.isConnected) (detailsReturnFocus?.isConnected ? detailsReturnFocus : body).focus({ preventScroll: true });
+      detailsReturnFocus = null;
+    }
     function go(path) {
-      try {
-        const p = FS.normalize(path, cwd);
-        const st = FS.stat(p);
-        if (!st) { MH.toast(`Not found: ${p}`); return; }
-        if (st.type === 'file') {
-          const parent = FS.dirname(p);
-          cwd = parent; selected = p;
-          for (let d = parent; d !== '/'; d = FS.dirname(d)) expanded.add(d);
-          expanded.add('/');
-          draw();
-          return;
-        }
-        cwd = p; selected = null;
-        for (let d = p; d !== '/'; d = FS.dirname(d)) expanded.add(d);
-        expanded.add('/');
-        draw();
-      } catch (e) { MH.toast(e.message); }
+      closeMenu(); closeDetails();
+      const p = FS.normalize(path, cwd), st = FS.stat(p);
+      if (!st) { MH.toast(`Not found: ${p}`); return; }
+      const dir = st.type === 'dir' ? p : FS.dirname(p);
+      if (dir !== cwd) {
+        cwd = dir; selected.clear(); anchor = null; search = ''; control('search').value = '';
+        history = history.slice(0, historyIndex + 1); history.push(cwd); historyIndex++;
+      }
+      if (st.type === 'file') { selected = new Set([p]); anchor = p; }
+      for (let d = cwd; d !== '/'; d = FS.dirname(d)) expanded.add(d);
+      expanded.add('/');
+      draw();
+      if (st.type === 'file') openFSItem(p);
     }
-    function openSelected() {
-      const st = selected && FS.stat(selected);
+    function visitHistory(index) {
+      const direction = index < historyIndex ? -1 : 1;
+      while (index >= 0 && index < history.length && !FS.isDir(history[index])) index += direction;
+      if (index < 0 || index >= history.length) { MH.toast('No more folders in that direction.'); return; }
+      historyIndex = index; cwd = history[index]; selected.clear(); anchor = null;
+      search = ''; control('search').value = ''; closeMenu(); draw();
+    }
+    function openItem(p = paths()[0]) {
+      const st = p && FS.stat(p);
       if (!st) return;
       if (st.type === 'dir') go(st.path);
-      else { drawEditor(); ed.querySelector('#fe-text')?.focus(); }
+      else openFSItem(st.path);
     }
-    function needWritable() {
-      if (!FS.isWritable(cwd)) {
-        MH.toast(`Read-only — ${cwd} is part of the system. Try ${home}.`);
-        return false;
+    function selectItem(p, e = {}) {
+      const visible = visibleEntries().map((st) => st.path);
+      if (e.shiftKey && anchor && visible.includes(anchor)) {
+        const a = visible.indexOf(anchor), b = visible.indexOf(p);
+        if (!(e.ctrlKey || e.metaKey)) selected.clear();
+        visible.slice(Math.min(a, b), Math.max(a, b) + 1).forEach((path) => selected.add(path));
+      } else if (e.ctrlKey || e.metaKey) {
+        selected.has(p) ? selected.delete(p) : selected.add(p);
+        anchor = p;
+      } else { selected = new Set([p]); anchor = p; }
+      updateSelection();
+    }
+    function selectAll() {
+      selected = new Set(visibleEntries().map((st) => st.path));
+      anchor = [...selected].at(-1) || null; updateSelection();
+    }
+    main.onclick = (e) => {
+      const tile = e.target.closest('.file-item');
+      if (tile && main.contains(tile)) selectItem(tile.dataset.p, e);
+      else if (!e.ctrlKey && !e.metaKey && !e.shiftKey) { selected.clear(); anchor = null; updateSelection(); }
+    };
+    /* Do not redraw the grid on click: replacing a tile on the first click
+     * stops browsers dispatching the double-click to that same element. */
+    main.ondblclick = (e) => {
+      const tile = e.target.closest('.file-item');
+      if (tile && main.contains(tile)) { selected = new Set([tile.dataset.p]); anchor = tile.dataset.p; updateSelection(); openItem(tile.dataset.p); }
+    };
+    main.onkeydown = (e) => {
+      const tile = e.target.closest('.file-item');
+      if (!tile) return;
+      if (e.key === 'Enter' || e.key === ' ') {
+        e.preventDefault();
+        if (e.key === 'Enter') { selected = new Set([tile.dataset.p]); anchor = tile.dataset.p; updateSelection(); openItem(tile.dataset.p); }
+        else selectItem(tile.dataset.p, { ctrlKey: e.ctrlKey || e.metaKey, shiftKey: e.shiftKey });
+      } else if (['ArrowLeft', 'ArrowRight', 'ArrowUp', 'ArrowDown', 'Home', 'End'].includes(e.key) && !e.altKey) {
+        e.preventDefault();
+        const entries = [...main.querySelectorAll('.file-item')], index = entries.indexOf(tile);
+        const cols = Math.max(1, getComputedStyle(main.querySelector('.file-grid')).gridTemplateColumns.split(' ').filter(Boolean).length);
+        const delta = { ArrowLeft: -1, ArrowRight: 1, ArrowUp: -cols, ArrowDown: cols }[e.key];
+        const next = e.key === 'Home' ? 0 : e.key === 'End' ? entries.length - 1 : Math.max(0, Math.min(index + delta, entries.length - 1));
+        entries[next].focus();
+        if (!e.ctrlKey && !e.metaKey) selectItem(entries[next].dataset.p, { shiftKey: e.shiftKey });
       }
-      return true;
+    };
+    function requireFolder(dir) {
+      if (targetFolder(dir)) return true;
+      MH.toast(`Read-only folder — choose somewhere inside ${home}.`); return false;
     }
-    body.querySelector('#f-up').onclick = () => { if (cwd !== '/') go(FS.dirname(cwd)); };
-    body.querySelector('#f-go').onclick = () => go(body.querySelector('#f-path').value);
-    body.querySelector('#f-path').addEventListener('keydown', (e) => { if (e.key === 'Enter') go(e.target.value); });
-    body.querySelector('#f-hidden').onchange = (e) => { showHidden = e.target.checked; draw(); };
-    body.querySelector('#f-new').onclick = () => {
-      if (!needWritable()) return;
-      const name = prompt('File name:', 'Untitled.txt'); if (!name?.trim()) return;
-      const p = FS.join(cwd, name.trim());
-      if (FS.exists(p)) { MH.toast('A file with that name already exists.'); return; }
-      try { FS.write(p, ''); selected = p; draw(); ed.querySelector('#fe-text')?.focus(); }
-      catch (err) { MH.toast(err.message); }
-    };
-    body.querySelector('#f-folder').onclick = () => {
-      if (!needWritable()) return;
-      const name = prompt('Folder name:'); if (!name?.trim()) return;
+    function createFile(dir = cwd) {
+      if (!requireFolder(dir)) return;
+      const input = prompt('New text file name:', 'Untitled.txt'); if (input === null) return;
       try {
-        FS.mkdir(FS.join(cwd, name.trim()));
-        expanded.add(cwd); selected = FS.join(cwd, name.trim()); draw();
-      } catch (err) { MH.toast(err.message); }
-    };
-    body.querySelector('#f-import').onchange = async (e) => {
-      const file = e.target.files[0]; e.target.value = '';
-      if (!file) return;
-      if (!needWritable()) return;
+        const dest = FS.join(dir, validateName(input));
+        if (FS.exists(dest)) throw new Error('An item with that name already exists.');
+        FS.write(dest, '');
+        if (dir === cwd) selected = new Set([dest]);
+        draw();
+        openApp('text-editor', { path: dest }); // edit source, even for a new HTML document
+      } catch (err) { message(err); }
+    }
+    function createFolder(dir = cwd) {
+      if (!requireFolder(dir)) return;
+      const input = prompt('New folder name:', 'New Folder'); if (input === null) return;
       try {
-        const p = FS.join(cwd, file.name);
-        FS.write(p, await file.text());
-        selected = p; draw(); MH.toast(`Imported ${file.name}`);
-      } catch (err) { MH.toast(err.message); }
-    };
-    body.querySelector('#f-rename').onclick = () => {
-      const st = selected && FS.stat(selected);
-      if (!st) { MH.toast('Select a file or folder first.'); return; }
-      if (st.readonly) { MH.toast('System files cannot be renamed.'); return; }
-      const name = prompt(st.type === 'dir' ? 'Folder name:' : 'File name:', st.name);
-      if (!name?.trim() || name.trim() === st.name) return;
-      try { selected = FS.rename(st.path, FS.join(FS.dirname(st.path), name.trim())).path; draw(); }
-      catch (err) { MH.toast(err.message); }
-    };
-    body.querySelector('#f-del').onclick = () => {
-      const st = selected && FS.stat(selected);
-      if (!st) { MH.toast('Select a file or folder first.'); return; }
-      if (st.readonly) { MH.toast('System files cannot be deleted.'); return; }
-      const what = st.type === 'dir' ? `folder “${st.name}” and everything inside it` : `“${st.name}”`;
-      if (!confirmBox(`Delete ${what}?`)) return;
-      try { FS.rm(st.path, '/', true); selected = null; draw(); MH.toast('Deleted.'); }
-      catch (err) { MH.toast(err.message); }
-    };
-    body.querySelector('#f-dl').onclick = async () => {
-      const st = selected && FS.stat(selected);
-      if (!st || st.type === 'dir') { MH.toast('Select a file first.'); return; }
+        const dest = FS.join(dir, validateName(input));
+        FS.mkdir(dest);
+        expanded.add(dir);
+        if (dir === cwd) selected = new Set([dest]);
+        draw();
+      } catch (err) { message(err); }
+    }
+    function renamedPath(p, from, to) { return p === from || p.startsWith(from + '/') ? to + p.slice(from.length) : p; }
+    function renameItems(items = paths()) {
+      if (items.length !== 1 || !canModify(FS.stat(items[0]))) return;
+      const st = FS.stat(items[0]);
+      const input = prompt(st.type === 'dir' ? 'Rename folder:' : 'Rename file:', st.name);
+      if (input === null) return;
       try {
-        const blob = await FS.readBlob(st.path);
-        MH.download(st.name, blob, blob.type || 'text/plain');
-      } catch (err) { MH.toast(err.message); }
+        const dest = FS.join(FS.dirname(st.path), validateName(input));
+        if (dest === st.path) return;
+        FS.rename(st.path, dest);
+        selected = new Set([dest]); anchor = dest;
+        if (st.type === 'dir') {
+          cwd = renamedPath(cwd, st.path, dest);
+          const dirs = [...expanded].map((p) => renamedPath(p, st.path, dest));
+          expanded.clear(); dirs.forEach((p) => expanded.add(p));
+          history = history.map((p) => renamedPath(p, st.path, dest));
+        }
+        if (clipboard) clipboard.paths = clipboard.paths.map((p) => renamedPath(p, st.path, dest));
+        draw();
+      } catch (err) { message(err); }
+    }
+    function deleteItems(items = paths()) {
+      if (!items.length || items.some((p) => !canModify(FS.stat(p)))) { MH.toast('System and home folders cannot be deleted.'); return; }
+      const what = items.length === 1 ? `“${FS.basename(items[0])}”${FS.isDir(items[0]) ? ' and everything inside it' : ''}` : `${items.length} selected items and their contents`;
+      if (!confirmBox(`Permanently delete ${what}? This cannot be undone.`)) return;
+      const deleted = [];
+      try {
+        for (const p of items) { FS.rm(p, '/', true); deleted.push(p); }
+      } catch (err) { message(err); }
+      for (const p of deleted) selected.delete(p);
+      if (clipboard) clipboard.paths = clipboard.paths.filter((p) => !deleted.some((gone) => p === gone || p.startsWith(gone + '/')));
+      if (!clipboard?.paths.length) clipboard = null;
+      if (!FS.isDir(cwd)) {
+        while (!FS.isDir(cwd) && cwd !== '/') cwd = FS.dirname(cwd);
+        history = history.slice(0, historyIndex + 1); history.push(cwd); historyIndex++;
+      }
+      draw();
+      if (deleted.length) MH.toast(`${deleted.length} item(s) permanently deleted.`);
+    }
+    function copyToClipboard(mode, items = paths()) {
+      if (!items.length || items.some((p) => !canCopy(FS.stat(p)) || (mode === 'move' && !canModify(FS.stat(p))))) {
+        MH.toast('These items cannot be cut or copied. System files can only be copied.'); return;
+      }
+      clipboard = { paths: [...items], mode };
+      updateSelection();
+      MH.toast(`${items.length} item(s) ${mode === 'move' ? 'cut' : 'copied'} — open a folder and paste.`);
+    }
+    function uniqueDestination(dir, name, reserved) {
+      const dot = name.lastIndexOf('.');
+      const stem = dot > 0 ? name.slice(0, dot) : name;
+      const ext = dot > 0 ? name.slice(dot) : '';
+      let dest = FS.join(dir, name), n = 1;
+      while (FS.exists(dest) || reserved.has(dest)) {
+        dest = FS.join(dir, stem + (n === 1 ? ' (copy)' : ` (copy ${n})`) + ext);
+        n++;
+      }
+      return dest;
+    }
+    async function transfer(items, dir, mode) {
+      if (!active) return;
+      if (busy) { MH.toast('Wait for the current file operation to finish.'); return; }
+      if (!requireFolder(dir)) return;
+      if (!items.length) return;
+      try {
+        ensureActive();
+        for (const p of items) {
+          const st = FS.stat(p);
+          if (!canCopy(st) || (mode === 'move' && !canModify(st))) throw new Error(`Cannot ${mode} ${p}: read-only or missing item.`);
+          if (st.type === 'dir' && (dir === p || dir.startsWith(p + '/'))) throw new Error('Cannot put a folder inside itself.');
+        }
+      } catch (err) { message(err); return; }
+      busy = true; updateSelection();
+      const created = [], failed = [], reserved = new Set();
+      for (const p of items) {
+        try {
+          ensureActive();
+          const same = FS.join(dir, FS.basename(p)) === p;
+          if (same && mode === 'move') continue;
+          const dest = uniqueDestination(dir, FS.basename(p), reserved);
+          if (mode === 'move') FS.rename(p, dest);
+          else await FS.copy(p, dest);
+          ensureActive();
+          reserved.add(dest); created.push({ from: p, to: dest });
+        } catch (err) {
+          failed.push(`${FS.basename(p)}: ${err.message}`);
+          if (!active || userData !== owner) break;
+        }
+      }
+      busy = false;
+      if (!active || userData !== owner) return created;
+      if (mode === 'move' && clipboard?.mode === 'move') {
+        clipboard.paths = clipboard.paths.filter((p) => !created.some((item) => item.from === p));
+        if (!clipboard.paths.length) clipboard = null;
+      }
+      if (dir === cwd && created.length) selected = new Set(created.map((item) => item.to));
+      else if (mode === 'move') for (const item of created) selected.delete(item.from);
+      if (created.length) expanded.add(dir);
+      draw();
+      if (created.length) MH.toast(`${created.length} item(s) ${mode === 'move' ? 'moved' : 'copied'} to ${dir}.`);
+      else if (!failed.length) MH.toast('Already in this folder. Hold Ctrl/Option while dragging to copy.');
+      if (failed.length) MH.toast(`${failed.length} item(s) not ${mode === 'move' ? 'moved' : 'copied'}: ${failed[0]}`);
+      return created;
+    }
+    function paste(dir = cwd) {
+      if (!clipboard?.paths.length) { MH.toast('Nothing to paste.'); return; }
+      return transfer([...clipboard.paths], dir, clipboard.mode);
+    }
+    function duplicate(items = paths()) {
+      if (!items.length) return;
+      const dir = FS.dirname(items[0]);
+      if (items.some((p) => FS.dirname(p) !== dir)) { MH.toast('Select items from one folder to duplicate.'); return; }
+      return transfer(items, dir, 'copy');
+    }
+    function sendTo(items, mode) {
+      if (!items.length) return;
+      const path = prompt(`${mode === 'copy' ? 'Copy' : 'Move'} to folder path:`, home + '/Documents');
+      if (path?.trim()) return transfer(items, FS.normalize(path.trim(), cwd), mode);
+    }
+    async function downloadItems(items = paths()) {
+      if (!items.length || !active) return;
+      try {
+        ensureActive();
+        if (items.length === 1 && FS.stat(items[0])?.type === 'file') {
+          const st = FS.stat(items[0]), blob = await FS.readBlob(st.path);
+          ensureActive(); MH.download(st.name, blob, FS.mime(st.path));
+        } else {
+          const blob = await FS_ARCHIVE.zip(items);
+          ensureActive(); MH.download(items.length === 1 ? `${FS.basename(items[0])}.zip` : 'Files.zip', blob, 'application/zip');
+        }
+      } catch (err) { if (active) message(err); }
+    }
+    function showDetails(items = paths()) {
+      if (!items.length) return;
+      closeMenu(); closeDetails();
+      detailsReturnFocus = body.contains(document.activeElement) ? document.activeElement : body;
+      const list = items.map((p) => FS.stat(p)).filter(Boolean);
+      const st = list[0], multiple = list.length > 1;
+      const element = document.createElement('div');
+      element.id = 'f-dialog'; element.className = 'f-dialog-backdrop';
+      element.innerHTML = `<div class="f-dialog" role="dialog" aria-modal="true" aria-label="Properties"><h3>${iconSvg('info')} Properties</h3><dl><dt>Name</dt><dd>${MH.esc(multiple ? `${list.length} items` : st.name)}</dd><dt>Location</dt><dd>${MH.esc(multiple ? cwd : FS.dirname(st.path))}</dd><dt>Type</dt><dd>${MH.esc(multiple ? 'Multiple items' : st.type === 'dir' ? 'Folder' : FS.mime(st.path))}</dd><dt>Size</dt><dd>${MH.esc(multiple ? 'Multiple items' : st.type === 'dir' ? `${FS.list(st.path).length} direct item(s)` : MH.fmtBytes(st.size))}</dd><dt>Modified</dt><dd>${MH.esc(multiple ? '—' : st.updated ? new Date(st.updated).toLocaleString() : 'System file')}</dd><dt>Access</dt><dd>${multiple ? 'Mixed' : canModify(st) ? 'Read & write (this account)' : 'Read-only'}</dd></dl><button class="btn primary" id="f-dialog-close">Close</button></div>`;
+      body.appendChild(element);
+      element.onclick = (e) => { if (e.target === element || e.target.id === 'f-dialog-close') closeDetails(); };
+      element.querySelector('button').focus();
+    }
+    /* File objects from both the picker and a computer drag retain their raw
+     * bytes; UTF-8 text without NUL is stored as text so the editor can read it. */
+    async function importRecords(records, dir) {
+      if (!active || userData !== owner) return;
+      if (busy) { MH.toast('Wait for the current file operation to finish.'); return; }
+      if (!requireFolder(dir)) return;
+      if (!records.length) { MH.toast('No files or folders found in that drop.'); return; }
+      busy = true; updateSelection();
+      let imported = 0, skipped = 0;
+      const errors = [], roots = new Set();
+      try {
+        if (records.length > 500) throw new Error('Import at most 500 items at a time.');
+        const ensureDir = (parts) => {
+          let p = dir;
+          for (const part of parts) {
+            p = FS.join(p, validateName(part));
+            const st = FS.stat(p);
+            if (!st) FS.mkdir(p);
+            else if (st.type !== 'dir') throw new Error(`${p} is a file, not a folder.`);
+          }
+          return p;
+        };
+        for (const record of records) {
+          try {
+            ensureActive();
+            const parts = record.parts.map(validateName);
+            if (!parts.length) throw new Error('An imported item has no name.');
+            roots.add(parts[0]);
+            if (record.type === 'dir') { ensureDir(parts); imported++; continue; }
+            const file = record.file;
+            if (!file || file.size > FS.MAX_BLOB_SIZE) throw new Error(`${parts.join('/')} exceeds the 2 MB per-file storage limit.`);
+            const parent = ensureDir(parts.slice(0, -1));
+            const dest = FS.join(parent, parts.at(-1)), existing = FS.stat(dest);
+            if (existing) {
+              if (existing.type === 'dir' || existing.readonly) throw new Error(`${dest} is not a replaceable file.`);
+              if (!confirmBox(`Replace “${dest}” with the file from your computer?`)) { skipped++; continue; }
+            }
+            const bytes = new Uint8Array(await file.arrayBuffer());
+            ensureActive();
+            let text = null;
+            const textType = !file.type || /^(?:text\/|application\/(?:json|javascript|xml)|image\/svg\+xml)/i.test(file.type);
+            if (!FS.BINARY_EXT.has(FS.extname(dest)) && textType && !bytes.includes(0)) {
+              try { text = new TextDecoder('utf-8', { fatal: true }).decode(bytes); } catch { /* preserve non-UTF-8 as binary */ }
+            }
+            if (text === null) await FS.writeBlob(dest, file);
+            else FS.write(dest, text);
+            imported++;
+          } catch (err) {
+            errors.push(err.message);
+            if (!active || userData !== owner || /storage is full/i.test(err.message)) break;
+          }
+        }
+      } catch (err) { errors.push(err.message); }
+      busy = false;
+      if (!active || userData !== owner) return;
+      if (dir === cwd) selected = new Set([...roots].map((name) => FS.join(dir, name)).filter((p) => FS.exists(p)));
+      expanded.add(dir); draw();
+      if (imported) MH.toast(`Imported ${imported} item(s)${skipped ? `; skipped ${skipped}` : ''}.`);
+      if (errors.length) MH.toast(`${errors.length} import error(s): ${errors[0]}`);
+    }
+    function fileRecords(files) {
+      return Array.from(files, (file) => ({ type: 'file', file,
+        parts: (file.webkitRelativePath || file.name).split('/') }));
+    }
+    async function dropRecords(dt) {
+      const items = Array.from(dt?.items || []).filter((item) => item.kind === 'file');
+      const entries = items.map((item) => item.webkitGetAsEntry?.()).filter(Boolean);
+      const records = [];
+      if (entries.length) {
+        async function walk(entry, parts = []) {
+          const path = [...parts, entry.name];
+          if (entry.isFile) {
+            const file = await new Promise((resolve, reject) => entry.file(resolve, reject));
+            records.push({ type: 'file', file, parts: path });
+          } else if (entry.isDirectory) {
+            records.push({ type: 'dir', parts: path });
+            const reader = entry.createReader();
+            while (true) {
+              const chunk = await new Promise((resolve, reject) => reader.readEntries(resolve, reject));
+              if (!chunk.length) break;
+              for (const child of chunk) await walk(child, path);
+            }
+          }
+        }
+        for (const entry of entries) await walk(entry);
+        return records;
+      }
+      const handles = items.map((item) => item.getAsFileSystemHandle?.()).filter(Boolean);
+      if (handles.length) {
+        async function walk(handle, parts = []) {
+          const path = [...parts, handle.name];
+          if (handle.kind === 'file') records.push({ type: 'file', file: await handle.getFile(), parts: path });
+          else if (handle.kind === 'directory') {
+            records.push({ type: 'dir', parts: path });
+            for await (const child of handle.values()) await walk(child, path);
+          }
+        }
+        for (const promise of handles) await walk(await promise);
+        return records;
+      }
+      return fileRecords(dt?.files || []);
+    }
+    function dropLocation(target) {
+      const el = target?.closest?.('.file-item, .f-trow, .crumb, #f-main');
+      if (!el || !body.contains(el)) return null;
+      const st = el.matches('.file-item') ? FS.stat(el.dataset.p) : null;
+      const dir = el.matches('.f-trow') ? el.dataset.t : el.matches('.crumb') ? el.dataset.c
+        : st?.type === 'dir' ? st.path : cwd;
+      return { dir, el: st?.type === 'file' ? main : el };
+    }
+    function clearDrop() { dragTarget?.classList.remove('f-drop-target'); dragTarget = null; }
+    function draggingFiles(dt) { return Array.from(dt?.types || []).includes('Files') || !!dt?.files?.length; }
+    body.addEventListener('dragstart', (e) => {
+      const tile = e.target.closest('.file-item, .f-trow');
+      if (!tile || !body.contains(tile)) return;
+      const p = tile.dataset.p || tile.dataset.t;
+      if (!canCopy(FS.stat(p))) { e.preventDefault(); return; }
+      if (!selected.has(p)) { selected = new Set([p]); anchor = p; updateSelection(); }
+      dragPaths = paths();
+      if (tile.matches('.f-trow')) dragPaths = [p]; // tree rows are not grid selections
+      /* Desktop drops create links, not moves. Keep paths in this tab rather
+       * than in the transferable payload (which can leave the website). */
+      window.__protonFilesDrag = { account: currentUser.usernameLower, paths: [...dragPaths] };
+      e.dataTransfer.effectAllowed = 'copyMove';
+      /* Drag state stays in this window, not in a transferable path payload
+       * that a different website could read if an item is dragged outside. */
+      e.dataTransfer.setData('application/x-proton-files', 'files');
+      e.dataTransfer.setData('text/plain', dragPaths.length === 1 ? FS.basename(dragPaths[0]) : `${dragPaths.length} Proton files`);
+    });
+    body.addEventListener('dragover', (e) => {
+      if (!dragPaths && !draggingFiles(e.dataTransfer)) return;
+      const dest = dropLocation(e.target);
+      e.preventDefault(); clearDrop();
+      if (!dest || !targetFolder(dest.dir) || busy) { e.dataTransfer.dropEffect = 'none'; return; }
+      dest.el.classList.add('f-drop-target'); dragTarget = dest.el;
+      const allWritable = dragPaths?.every((p) => canModify(FS.stat(p)));
+      e.dataTransfer.dropEffect = !dragPaths || !allWritable || e.ctrlKey || e.metaKey || e.altKey ? 'copy' : 'move';
+    });
+    body.addEventListener('dragleave', (e) => { if (!e.relatedTarget || !body.contains(e.relatedTarget)) clearDrop(); });
+    body.addEventListener('dragend', () => { dragPaths = null; window.__protonFilesDrag = null; clearDrop(); });
+    body.addEventListener('drop', async (e) => {
+      if (!dragPaths && !draggingFiles(e.dataTransfer)) return;
+      e.preventDefault();
+      const dest = dropLocation(e.target), items = dragPaths;
+      dragPaths = null; window.__protonFilesDrag = null; clearDrop();
+      if (!dest || !requireFolder(dest.dir)) return;
+      if (items) {
+        const writable = items.every((p) => canModify(FS.stat(p)));
+        const copy = !writable || e.ctrlKey || e.metaKey || e.altKey;
+        await transfer(items, dest.dir, copy ? 'copy' : 'move');
+      } else {
+        try { await importRecords(await dropRecords(e.dataTransfer), dest.dir); }
+        catch (err) { message(err); }
+      }
+    });
+    function showMenu(e, item = null, dir = cwd, select = false) {
+      e?.preventDefault?.(); closeMenu();
+      menuReturnFocus = body.contains(document.activeElement) ? document.activeElement : body;
+      if (select && item && !selected.has(item)) { selected = new Set([item]); anchor = item; updateSelection(); }
+      else if (select && !item) { selected.clear(); anchor = null; updateSelection(); }
+      const items = item ? (select && selected.has(item) ? paths() : [item]) : (select ? [] : paths());
+      const single = items.length === 1 ? FS.stat(items[0]) : null;
+      const writable = items.length && items.every((p) => canModify(FS.stat(p)));
+      const copyable = items.length && items.every((p) => canCopy(FS.stat(p)));
+      const inFolder = item && FS.isDir(item) ? item : dir;
+      const actions = [];
+      const add = (label, shortcut, allowed, run) => actions.push({ label, shortcut, allowed, run });
+      if (items.length) {
+        add('Open', 'Enter', items.length === 1, () => openItem(items[0]));
+        if (single?.type === 'file' && !FS.isBinary(single.path)) add('Edit source in Text Editor', '', true, () => openApp('text-editor', { path: single.path }));
+        add('Copy', 'Ctrl+C', copyable, () => copyToClipboard('copy', items));
+        add('Cut', 'Ctrl+X', writable, () => copyToClipboard('move', items));
+        add('Duplicate', 'Ctrl+D', copyable && items.every((p) => targetFolder(FS.dirname(p))), () => duplicate(items));
+        add(items.length === 1 ? 'Add shortcut to desktop' : 'Add shortcuts to desktop', '', items.every((p) => !!FS.stat(p)), () => DesktopIcons.addPaths(items));
+        add('Copy to…', '', copyable, () => sendTo(items, 'copy'));
+        add('Move to…', '', writable, () => sendTo(items, 'move'));
+        add('Rename', 'F2', !!single && writable, () => renameItems(items));
+        add('Download', '', copyable, () => downloadItems(items));
+        add('Delete permanently', 'Delete', writable, () => deleteItems(items));
+        add('Properties', '', true, () => showDetails(items));
+        actions.push(null);
+      }
+      add('Paste into this folder', 'Ctrl+V', !!clipboard?.paths.length && targetFolder(inFolder), () => paste(inFolder));
+      add('New text file', '', targetFolder(inFolder), () => createFile(inFolder));
+      add('New folder', 'Ctrl+Shift+N', targetFolder(inFolder), () => createFolder(inFolder));
+      if (!items.length) {
+        add('Import files…', '', targetFolder(cwd), () => control('import').click());
+        add('Import folder…', '', targetFolder(cwd), () => control('import-folder').click());
+        actions.push(null);
+        add('Select all', 'Ctrl+A', !!visibleEntries().length, selectAll);
+        add('Sort by name', '', true, () => setSort('name'));
+        add('Sort by type', '', true, () => setSort('type'));
+        add('Sort by size', '', true, () => setSort('size'));
+        add('Sort by modified', '', true, () => setSort('updated'));
+        add(showHidden ? 'Hide hidden items' : 'Show hidden items', '', true, () => { showHidden = !showHidden; control('hidden').checked = showHidden; selected.clear(); draw(); });
+        add('Refresh', 'Ctrl+R', true, draw);
+        add('Folder properties', '', true, () => showDetails([cwd]));
+      }
+      menu.innerHTML = actions.map((a, i) => a ? `<button type="button" role="menuitem" data-action="${i}"${a.allowed ? '' : ' disabled'}><span>${MH.esc(a.label)}</span><small>${MH.esc(a.shortcut)}</small></button>` : '<div class="f-menu-rule" role="separator"></div>').join('');
+      menu.querySelectorAll('[data-action]').forEach((button) => button.onclick = () => {
+        const action = actions[+button.dataset.action]; closeMenu();
+        try { Promise.resolve(action.run()).catch(message); } catch (err) { message(err); }
+      });
+      menu.hidden = false;
+      const rect = body.getBoundingClientRect();
+      const x = (e?.clientX ?? rect.left + 24) - rect.left + body.scrollLeft;
+      const y = (e?.clientY ?? rect.top + 24) - rect.top + body.scrollTop;
+      menu.style.left = `${Math.max(4, Math.min(x, body.clientWidth - menu.offsetWidth - 6))}px`;
+      menu.style.top = `${Math.max(4, Math.min(y, body.clientHeight - menu.offsetHeight - 6))}px`;
+      menu.querySelector('button:not(:disabled)')?.focus({ preventScroll: true });
+    }
+    function setSort(value) { sortBy = value; control('sort').value = value; drawGrid(); }
+    body.addEventListener('contextmenu', (e) => {
+      const tile = e.target.closest('.file-item');
+      if (tile && main.contains(tile)) showMenu(e, tile.dataset.p, cwd, true);
+      else {
+        const row = e.target.closest('.f-trow'), crumb = e.target.closest('.crumb');
+        if (row && tree.contains(row)) showMenu(e, row.dataset.t, row.dataset.t);
+        else if (crumb && control('crumbs').contains(crumb)) showMenu(e, crumb.dataset.c, crumb.dataset.c);
+        else if (main.contains(e.target)) showMenu(e, null, cwd, true);
+      }
+    });
+    const dismissOutside = (e) => { if (!menu.hidden && !menu.contains(e.target)) closeMenu(); };
+    document.addEventListener('pointerdown', dismissOutside, true);
+    body.addEventListener('scroll', (e) => { if (e.target !== menu) closeMenu(); }, true);
+    body.addEventListener('keydown', (e) => {
+      if (e.key === 'Escape') { closeMenu(); closeDetails(); return; }
+      if (body.querySelector('#f-dialog') || (!menu.hidden && menu.contains(e.target))) return;
+      const row = e.target.closest?.('.f-trow');
+      const treePath = row && tree.contains(row) ? row.dataset.t : null;
+      if ((e.key === 'ContextMenu' || (e.key === 'F10' && e.shiftKey))) {
+        e.preventDefault();
+        const tile = e.target.closest?.('.file-item');
+        showMenu(e, tile?.dataset.p || treePath || null, treePath || cwd, !!tile); return;
+      }
+      if (e.altKey && ['ArrowLeft', 'ArrowRight', 'ArrowUp'].includes(e.key)) {
+        e.preventDefault();
+        if (e.key === 'ArrowLeft' && historyIndex > 0) visitHistory(historyIndex - 1);
+        if (e.key === 'ArrowRight' && historyIndex < history.length - 1) visitHistory(historyIndex + 1);
+        if (e.key === 'ArrowUp' && cwd !== '/') go(FS.dirname(cwd));
+        return;
+      }
+      if (e.target.closest?.('input, textarea, select, [contenteditable="true"]')) return;
+      const mod = e.ctrlKey || e.metaKey, key = e.key.toLowerCase();
+      const focused = treePath ? [treePath] : paths();
+      /* Let the browser dispatch a native paste event when the Files clipboard
+       * is empty, so a copied computer file/image can be imported too. */
+      if (mod && key === 'v' && !clipboard?.paths.length) return;
+      if (mod && ['a', 'c', 'x', 'v', 'd', 'l', 'r', 'f'].includes(key)) {
+        e.preventDefault();
+        if (key === 'a') selectAll();
+        if (key === 'c') copyToClipboard('copy', focused);
+        if (key === 'x') copyToClipboard('move', focused);
+        if (key === 'v') paste(treePath || cwd);
+        if (key === 'd') duplicate(focused);
+        if (key === 'l') { control('path').focus(); control('path').select(); }
+        if (key === 'f') { control('search').focus(); control('search').select(); }
+        if (key === 'r') draw();
+      } else if (mod && e.shiftKey && key === 'n') { e.preventDefault(); createFolder(); }
+      else if (e.key === 'F2') { e.preventDefault(); renameItems(focused); }
+      else if (e.key === 'F5') { e.preventDefault(); draw(); }
+      else if (e.key === 'Delete') { e.preventDefault(); deleteItems(focused); }
+      else if (e.key === 'Backspace') { e.preventDefault(); if (cwd !== '/') go(FS.dirname(cwd)); }
+      else if (e.key === 'Enter' && e.target === body) openItem();
+    });
+    body.addEventListener('paste', (e) => {
+      if (e.target.closest?.('input, textarea, select, [contenteditable="true"]')) return;
+      const files = e.clipboardData?.files;
+      if (files?.length) { e.preventDefault(); importRecords(fileRecords(files), cwd); }
+      else if (clipboard?.paths.length) { e.preventDefault(); paste(); }
+    });
+    control('back').onclick = () => { if (historyIndex > 0) visitHistory(historyIndex - 1); };
+    control('forward').onclick = () => { if (historyIndex < history.length - 1) visitHistory(historyIndex + 1); };
+    control('up').onclick = () => { if (cwd !== '/') go(FS.dirname(cwd)); };
+    control('open').onclick = () => openItem();
+    control('go').onclick = () => go(control('path').value);
+    control('path').onkeydown = (e) => { if (e.key === 'Enter') go(e.target.value); };
+    control('new').onclick = () => createFile();
+    control('folder').onclick = () => createFolder();
+    control('copy').onclick = () => copyToClipboard('copy');
+    control('cut').onclick = () => copyToClipboard('move');
+    control('paste').onclick = () => paste();
+    control('rename').onclick = () => renameItems();
+    control('del').onclick = () => deleteItems();
+    control('dl').onclick = () => downloadItems();
+    control('more').onclick = (e) => showMenu({ clientX: e.currentTarget.getBoundingClientRect().left, clientY: e.currentTarget.getBoundingClientRect().bottom });
+    for (const id of ['import', 'import-folder']) control(id).onchange = async (e) => {
+      const files = Array.from(e.target.files || []); e.target.value = '';
+      if (files.length) await importRecords(fileRecords(files), cwd);
     };
-
-    draw();
+    control('hidden').onchange = (e) => { showHidden = e.target.checked; selected.clear(); draw(); };
+    control('search').oninput = (e) => { search = e.target.value.trim(); selected.clear(); drawGrid(); };
+    control('sort').onchange = (e) => setSort(e.target.value);
+    control('reverse').onclick = (e) => { descending = !descending; e.currentTarget.textContent = descending ? '↓' : '↑'; drawGrid(); };
+    body.openPath = ({ path }) => { if (path) go(path); };
+    body.onDestroy = () => { active = false; unwatch(); clearTimeout(refreshTimer); document.removeEventListener('pointerdown', dismissOutside, true); dragPaths = null; window.__protonFilesDrag = null; clearDrop(); closeMenu(); closeDetails(); };
+    if (ctx.path) go(ctx.path); else draw();
+    body.focus({ preventScroll: true });
   },
 });
 </script>

@@ -1,17 +1,13 @@
 /* proton — streamed arcade game host.
  *
- * The nineteen arcade titles in the Games category are NOT stored in this
- * repository. Each one is framed live from Proton Arcade,
- * https://proton-arcade.github.io, which publishes the same builds this
- * desktop's games library was taken from (see CREDITS.md for the provenance of
- * every title, and for what streaming does and does not mean).
+ * Games in the catalog are framed live from their publisher's GitHub Pages
+ * origin (Proton Arcade or Gams Offline); none of their builds are vendored.
+ * See CREDITS.md for provenance, licensing and the network requirement.
  *
- * They stay remote on purpose. Those builds are single self-contained .html
- * files with their whole payload inlined — five of them are 20-56 MB, and the
- * set adds up to about half a gigabyte. Vendoring them would make every clone,
- * every GitHub Pages deploy and every version in git history carry that weight
- * forever, and GitHub refuses single files over 100 MB outright. A streamed
- * game costs this repository one small HTML module instead.
+ * They stay remote on purpose: the publishers' payloads are large (many are
+ * self-contained HTML; others need whole asset directories) and generally
+ * have no licence permitting redistribution. A streamed game adds only a
+ * small HTML module here, not someone else's game build to every deploy.
  *
  * Every game app (apps/<game>/app.html) is a thin module that calls
  * PROTON_ARCADE.open(body, ctx, {...}) with its own remote path. This file
@@ -21,10 +17,10 @@
  * frame itself, and a footnote that says plainly where the bytes come from.
  *
  * Nothing is proxied, cached or stored here: the player's browser talks to
- * proton-arcade.github.io directly. proton never sees the game's traffic, and
- * the game never sees proton's accounts or localStorage. If the site is
- * unreachable or a title refuses to be framed, the window says so and offers
- * the direct link rather than sitting there blank.
+ * the publisher's origin directly. proton never sees the game's traffic, and
+ * the game never sees proton's accounts or localStorage. A stuck or blank
+ * frame has a direct-link escape hatch; cross-origin frames cannot reliably
+ * report whether the remote game failed to this page.
  *
  * Loaded by index.html after assets/core.js (it uses bar(), iconSvg() and MH)
  * and before assets/boot.js, so every game module can rely on PROTON_ARCADE
@@ -33,13 +29,12 @@
 'use strict';
 
 const PROTON_ARCADE = (function () {
-  /* Where the builds live. Paths handed to open() are relative to this,
-   * exactly as they are in Proton Arcade's own catalog. */
+  /* Default for the original games; Gams modules specify their own base. */
   const ORIGIN = 'https://proton-arcade.github.io';
 
   /* Cross-origin framing, so this sandbox cannot be escaped by the game:
-   * allow-same-origin hands the build back to ITS OWN origin — proton-arcade
-   * .github.io, never this one — which is what lets a title keep its saves in
+   * allow-same-origin hands the build back to ITS OWN origin, not proton's —
+   * which is what lets a title keep its saves in
    * localStorage and run its own workers. The rest are what games actually ask
    * for: pointer lock for first-person and 3D titles, modals for their confirm
    * dialogs, popups and downloads for "share your score" buttons. */
@@ -59,8 +54,8 @@ const PROTON_ARCADE = (function () {
   const SLOW_AFTER = 120000;
 
   /* Turn a catalog-relative path into the absolute address of the build. */
-  function urlFor(src) {
-    return ORIGIN + '/' + String(src || '').replace(/^\/+/, '');
+  function urlFor(src, origin = ORIGIN) {
+    return String(origin).replace(/\/+$/, '') + '/' + String(src || '').replace(/^\/+/, '');
   }
 
   /* The app's own display name lives in the catalog, not in its module, so
@@ -73,8 +68,9 @@ const PROTON_ARCADE = (function () {
   }
 
   /* Build the game window. `game` is:
-   *   src    path of the build, relative to ORIGIN (required)
-   *   size   human-readable first-load weight, shown while it downloads
+   *   src    path of the build, relative to origin (required)
+   *   origin base URL, defaulting to Proton Arcade
+   *   size   optional human-readable first-load weight
    *   note   optional extra line for the footnote (controls, caveats) */
   function open(body, ctx, game) {
     const cfg = game || {};
@@ -85,7 +81,8 @@ const PROTON_ARCADE = (function () {
       return;
     }
 
-    const url = urlFor(cfg.src);
+    const url = urlFor(cfg.src, cfg.origin || ORIGIN);
+    const hostname = new URL(url).hostname;
     const name = nameFor(ctx, cfg.name);
     const weight = cfg.size ? ` · about ${MH.esc(cfg.size)} on first load` : '';
 
@@ -101,12 +98,17 @@ const PROTON_ARCADE = (function () {
           <div class="arcade-loading" data-w="loading">
             <div class="arcade-spinner"></div>
             <b>${MH.esc(name)}</b>
-            <span class="muted">Streaming from proton-arcade.github.io${weight}</span>
+            <span class="muted">Streaming from ${MH.esc(hostname)}${weight}</span>
             <span class="arcade-elapsed muted" data-w="elapsed"></span>
+            <div class="arcade-failed" data-w="error" hidden>
+              <span>This game could not load here. Check your connection, or try opening it in a new tab.</span>
+              <div><button class="btn sm" data-w="retry-inline">${iconSvg('refresh')} Retry</button>
+                <button class="btn sm primary" data-w="ext-inline">${iconSvg('external')} Open in new tab</button></div>
+            </div>
           </div>
         </div>
         <p class="arcade-foot muted">Streams live from
-          <a href="${MH.esc(url)}" target="_blank" rel="noopener">proton-arcade.github.io</a> —
+          <a href="${MH.esc(url)}" target="_blank" rel="noopener">${MH.esc(hostname)}</a> —
           proton does not store, proxy or upload any of it${weight}.
           ${cfg.note ? MH.esc(cfg.note) : ''}
           Blank or stuck? Use <b>Open in new tab</b>: some builds refuse to be framed.</p>
@@ -116,6 +118,7 @@ const PROTON_ARCADE = (function () {
     const frame = body.querySelector('[data-w="frame"]');
     const loading = body.querySelector('[data-w="loading"]');
     const elapsed = body.querySelector('[data-w="elapsed"]');
+    const errorPanel = body.querySelector('[data-w="error"]');
 
     /* A 56 MB build takes a while, so show how long the player has been
      * waiting — a slow first load then reads as downloading, not broken.
@@ -147,28 +150,46 @@ const PROTON_ARCADE = (function () {
       return stopTicker;
     }
 
-    /* The load event fires for cross-origin frames too (only their contents
-     * stay unreadable), so it is a reliable "the bytes arrived" signal.
-     *
-     * Deliberately NOT a HEAD probe for a missing build, which is how Proton
-     * Arcade's own player detects one: that fetch is same-origin for them and
-     * cross-origin for us, so a blocked or CORS-less response would be
-     * indistinguishable from a real 404 and we would report healthy games as
-     * missing. The footnote's "Open in new tab" is the honest fallback — it
-     * shows the player whatever the build really does, error page included. */
+    /* An iframe's `load` fires EVEN when Chromium displays its internal
+     * network-error page. On that failure it is an accessible chrome-error:
+     * document; a working publisher page is cross-origin and inaccessible.
+     * Keep an explicit, nonblank retry/direct-link panel for detectable
+     * failures. Do not probe with HEAD/fetch: the games are cross-origin and
+     * CORS failures would be mistaken for missing builds. A publisher's 404
+     * or a silent failure inside its own code cannot be diagnosed from here. */
+    function showFailure() {
+      if (stopTicker) stopTicker();
+      loading.classList.remove('gone', 'slow');
+      loading.classList.add('failed');
+      elapsed.textContent = '';
+      errorPanel.hidden = false;
+    }
     frame.addEventListener('load', () => {
       if (stopTicker) stopTicker();
-      loading.classList.add('gone');
+      let errorPage = false;
+      try {
+        const doc = frame.contentDocument;
+        errorPage = !!doc && /^(chrome-error:|about:neterror|about:certerror)/.test(doc.URL);
+      } catch { /* A real cross-origin game is not readable. */ }
+      if (errorPage) showFailure();
+      else loading.classList.add('gone');
     });
+    frame.addEventListener('error', showFailure); // not fired by every browser
     startTicker();
 
-    body.querySelector('[data-w="reload"]').onclick = () => {
-      loading.classList.remove('gone', 'slow');
+    function reload() {
+      loading.classList.remove('gone', 'slow', 'failed');
+      errorPanel.hidden = true;
       elapsed.textContent = '';
-      if (!stopTicker) startTicker();
+      if (stopTicker) stopTicker();
+      startTicker();
       frame.src = url;
-    };
-    body.querySelector('[data-w="ext"]').onclick = () => window.open(url, '_blank', 'noopener');
+    }
+    const external = () => window.open(url, '_blank', 'noopener');
+    body.querySelector('[data-w="reload"]').onclick = reload;
+    body.querySelector('[data-w="retry-inline"]').onclick = reload;
+    body.querySelector('[data-w="ext"]').onclick = external;
+    body.querySelector('[data-w="ext-inline"]').onclick = external;
     /* Fullscreen the stage rather than the frame, so the toolbar goes away and
      * the game gets the whole screen; Esc brings proton back. */
     body.querySelector('[data-w="full"]').onclick = () => {
@@ -187,11 +208,8 @@ const PROTON_ARCADE = (function () {
       if (stage.requestFullscreen) guard(stage.requestFullscreen());
       else blocked();
     };
-    /* No teardown hook is needed on close: closeWin() removes the whole window
-     * element, destroying the frame with it, and the browser stops the game
-     * (and its audio) on its own. The stage is absolutely positioned, so
-     * resizing the window resizes the frame and the build's own resize handler
-     * fires — nothing to re-nudge here either. */
+    /* The frame is destroyed with its window; stop our own loading timer too. */
+    body.onDestroy = () => { if (stopTicker) stopTicker(); };
   }
 
   return { ORIGIN, SANDBOX, ALLOW, urlFor, open };

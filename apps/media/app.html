@@ -23,14 +23,14 @@ proton menu. The script below is fetched and run by proton's HTML loader
 registerApp({
   /* Metadata (name, icon, cat, desc, w, h) lives in the app catalog:
    * data/applications.js — edit it there, not here. */
-  render(body) {
-    let items = [], cur = -1, shuffle = false, repeat = 0;
-    body.innerHTML = `${bar('Media', `<label class="btn sm primary" style="margin:0">+ Open MP4 / MP3<input id="md-file" type="file" accept=".mp4,.mp3,audio/mpeg,video/mp4" multiple hidden></label><button class="btn sm" id="md-clear">Clear playlist</button>`)}
+  render(body, ctx) {
+    let items = [], cur = -1, shuffle = false, repeat = 0, token = 0;
+    body.innerHTML = `${bar('Media', `<label class="btn sm primary" style="margin:0">${iconSvg('folder-open')} Open from computer<input id="md-file" type="file" accept="audio/*,video/*,.mp3,.mp4,.m4a,.aac,.flac,.wav,.ogg,.oga,.ogv,.mov,.webm,.avi" multiple hidden></label><button class="btn sm" id="md-clear">Clear playlist</button>`)}
     <div class="app-main" style="display:grid;grid-template-columns:1fr 230px;min-height:0">
       <div style="padding:14px;display:flex;flex-direction:column;gap:10px;min-width:0">
         <video id="md-video" controls style="width:100%;max-height:300px;background:#000;border-radius:8px" hidden></video>
         <audio id="md-audio" controls style="width:100%" hidden></audio>
-        <div id="md-now" class="card" style="text-align:center;padding:22px"><span class="card-ic" style="font-size:34px">${iconSvg('film')}</span><br><b>No media loaded</b><br><span class="muted">Open MP4 or MP3 files — they play locally and are never uploaded. (Unlike notes &amp; files, media can't be stored in the browser, so the playlist lasts for this session.)</span></div>
+        <div id="md-now" class="card" style="text-align:center;padding:22px"><span class="card-ic" style="font-size:34px">${iconSvg('film')}</span><br><b>No media loaded</b><br><span class="muted">Double-click media in Files, or choose audio/video from your computer. Nothing is uploaded; this playlist lasts until you close Media.</span></div>
         <div style="display:flex;gap:7px;justify-content:center;flex-wrap:wrap">
           <button class="btn" id="md-prev" title="Previous">${iconSvg('skip-back')}</button><button class="btn" id="md-play" title="Play / pause">${iconSvg('play')} ${iconSvg('pause')}</button><button class="btn" id="md-next" title="Next">${iconSvg('skip-forward')}</button>
           <button class="btn" id="md-shuffle" aria-pressed="false">${iconSvg('shuffle')} Shuffle</button><button class="btn" id="md-repeat">${iconSvg('repeat')} Repeat: off</button>
@@ -45,6 +45,7 @@ registerApp({
     }
     function play(i) {
       if (!items[i]) return;
+      video.pause(); audio.pause(); // a hidden player must never keep playing
       cur = i; const it = items[i];
       video.hidden = it.kind !== 'video'; audio.hidden = it.kind !== 'audio';
       const e = el(); e.src = it.url; e.playbackRate = +body.querySelector('#md-speed').value;
@@ -54,28 +55,55 @@ registerApp({
     }
     function next(auto) {
       if (!items.length) return;
-      if (auto && repeat === 2) { el().currentTime = 0; el().play(); return; }
+      if (auto && repeat === 2) { el().currentTime = 0; el().play().catch(() => {}); return; }
       let n = shuffle ? Math.floor(Math.random() * items.length) : cur + 1;
       if (n >= items.length) { if (auto && repeat === 0) { body.querySelector('#md-status').textContent = 'End of playlist.'; return; } n = 0; }
       play(n);
     }
     [video, audio].forEach((e) => e.addEventListener('ended', () => next(true)));
     body.querySelector('#md-file').onchange = (e) => {
+      token++;
       for (const f of e.target.files) {
-        const kind = f.name.toLowerCase().endsWith('.mp4') ? 'video' : f.name.toLowerCase().endsWith('.mp3') ? 'audio' : null;
+        const kind = FS.mediaKind(f.name);
         if (kind) items.push({ name: f.name, url: URL.createObjectURL(f), kind });
       }
+      e.target.value = '';
       drawList(); if (cur < 0 && items.length) play(0);
-      body.querySelector('#md-status').textContent = items.length ? `${items.length} item(s) in playlist.` : 'Only .mp4 and .mp3 are supported.';
+      body.querySelector('#md-status').textContent = items.length ? `${items.length} item(s) in playlist.` : 'This file type is not supported.';
     };
-    body.querySelector('#md-play').onclick = () => { const e = el(); if (!e.src) return; e.paused ? e.play() : e.pause(); };
+    body.querySelector('#md-play').onclick = () => { const e = el(); if (!e.src) return; if (e.paused) e.play().catch(() => {}); else e.pause(); };
     body.querySelector('#md-prev').onclick = () => play(Math.max(0, cur - 1));
     body.querySelector('#md-next').onclick = () => next(false);
-    body.querySelector('#md-shuffle').onclick = (e) => { shuffle = !shuffle; e.target.setAttribute('aria-pressed', shuffle); e.target.classList.toggle('primary', shuffle); };
+    body.querySelector('#md-shuffle').onclick = (e) => { shuffle = !shuffle; e.currentTarget.setAttribute('aria-pressed', shuffle); e.currentTarget.classList.toggle('primary', shuffle); };
     body.querySelector('#md-repeat').onclick = (e) => { repeat = (repeat + 1) % 3; e.currentTarget.innerHTML = iconSvg('repeat') + ' Repeat: ' + ['off', 'all', 'one'][repeat]; };
     body.querySelector('#md-speed').onchange = (e) => { if (el().src) el().playbackRate = +e.target.value; };
-    body.querySelector('#md-clear').onclick = () => { items.forEach((i) => URL.revokeObjectURL(i.url)); items = []; cur = -1; video.removeAttribute('src'); audio.removeAttribute('src'); drawList(); };
+    function clear() {
+      token++; video.pause(); audio.pause();
+      video.removeAttribute('src'); audio.removeAttribute('src');
+      video.hidden = true; audio.hidden = true;
+      items.forEach((i) => URL.revokeObjectURL(i.url)); items = []; cur = -1;
+      body.querySelector('#md-now').innerHTML = `<span class="card-ic">${iconSvg('film')}</span><br><b>No media loaded</b>`;
+      body.querySelector('#md-status').textContent = '';
+      drawList();
+    }
+    body.querySelector('#md-clear').onclick = clear;
+    async function open(path) {
+      const st = FS.stat(path), kind = FS.mediaKind(path);
+      if (!st || st.type !== 'file' || !kind) { MH.toast('Choose an audio or video file from Files.'); return; }
+      const thisLoad = ++token;
+      body.querySelector('#md-status').textContent = `Loading ${st.name}…`;
+      try {
+        const blob = await FS.readBlob(st.path);
+        if (thisLoad !== token) return;
+        items.push({ name: st.name, url: URL.createObjectURL(blob), kind });
+        play(items.length - 1);
+        body.querySelector('#md-status').textContent = `${items.length} item(s) in playlist.`;
+      } catch (err) { if (thisLoad === token) MH.toast(`Could not open media: ${err.message}`); }
+    }
+    body.openPath = ({ path }) => { if (path) open(path); };
+    body.onDestroy = clear;
     drawList();
+    if (ctx.path) open(ctx.path);
   },
 });
 </script>

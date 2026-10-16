@@ -30,8 +30,8 @@ const MH = {
     catch { return MH.clone(fallback); }
   },
   saveJSON(key, value) {
-    try { localStorage.setItem(key, JSON.stringify(value)); }
-    catch (e) { MH.toast('Storage is full — some changes could not be saved.'); console.warn(e); }
+    try { localStorage.setItem(key, JSON.stringify(value)); return true; }
+    catch (e) { MH.toast('Storage is full — some changes could not be saved.'); console.warn(e); return false; }
   },
 
   accounts() { return MH.loadJSON(MH.ACCOUNTS_KEY, {}); },
@@ -59,6 +59,17 @@ const MH = {
     return (await MH.hashPassword(password, account.salt)) === account.hash;
   },
 
+  /* Desktop entries are links, not copies of apps or files. Return fresh
+   * objects so accounts can rearrange/remove them independently. */
+  defaultDesktopIcons(username) {
+    const home = '/home/' + String(username || 'user').toLowerCase();
+    return [
+      { id: 'desktop-files', kind: 'app', target: 'files', col: 0, row: 0 },
+      { id: 'desktop-browser', kind: 'app', target: 'browser', col: 0, row: 1 },
+      { id: 'desktop-documents', kind: 'path', target: home + '/Documents', col: 0, row: 2 },
+    ];
+  },
+
   /* ---- seeded state for a brand-new account ---- */
   defaultData(displayName, username) {
     const today = MH.todayISO();
@@ -67,6 +78,7 @@ const MH = {
     return {
       version: 1,
       settings: { wallpaper: 'mint', accent: '#ffffff', pinned: ['files', 'calculator', 'notes', 'browser', 'terminal'] },
+      desktopIcons: MH.defaultDesktopIcons(username),
       notes: [{
         id: MH.uid(), title: 'Welcome to proton',
         html: `<p>This desktop is a <b>static clone of Mixt</b> (from <i>proton-arcade/mlp</i>), rebranded and rebuilt to run with <b>no server at all</b>.</p><h2><span style="font-size:19px">Things to try</span></h2><ul><li>Open the <b>Calculator</b> app — calculator, solver and graph plotter</li><li>Everything you type here is <b>saved on this device</b>, under your account</li><li>Drag windows, pin apps to the panel, change the wallpaper in Settings</li></ul><p>Have fun!</p>`,
@@ -135,7 +147,7 @@ function saveData() {
   saveTimer = setTimeout(() => MH.saveJSON(MH.userKey(currentUser.usernameLower), userData), 150);
 }
 function saveDataNow() {
-  if (!currentUser) return;
+  if (!currentUser) return false;
   clearTimeout(saveTimer);
-  MH.saveJSON(MH.userKey(currentUser.usernameLower), userData);
+  return MH.saveJSON(MH.userKey(currentUser.usernameLower), userData);
 }

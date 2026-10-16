@@ -11,6 +11,9 @@ const ICON_PATHS = {
   atom: '<circle cx="12" cy="12" r="1.7" fill="currentColor" stroke="none"/><ellipse cx="12" cy="12" rx="10" ry="4.1"/><ellipse cx="12" cy="12" rx="10" ry="4.1" transform="rotate(60 12 12)"/><ellipse cx="12" cy="12" rx="10" ry="4.1" transform="rotate(120 12 12)"/>',
   folder: '<path d="M3 7a2 2 0 0 1 2-2h4l2 2h8a2 2 0 0 1 2 2v9a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/>',
   'folder-open': '<path d="M3 7a2 2 0 0 1 2-2h4l2 2h8a2 2 0 0 1 2 2H8.5L5 19a2 2 0 0 1-2-1.8z"/><path d="M3 9h20"/>',
+  copy: '<rect x="8" y="8" width="12" height="13" rx="2"/><path d="M16 8V5a2 2 0 0 0-2-2H5a2 2 0 0 0-2 2v10a2 2 0 0 0 2 2h3"/>',
+  cut: '<circle cx="6" cy="18" r="2"/><circle cx="18" cy="18" r="2"/><path d="M7.5 16.5 19 5M16.5 16.5 5 5M12 12l2 2"/>',
+  paste: '<rect x="5" y="5" width="14" height="17" rx="2"/><path d="M9 5V3h6v2M8 12h8M8 16h6"/>',
   file: '<path d="M6 3h8l4 4v14H6z"/><path d="M14 3v4h4"/>',
   'file-text': '<path d="M6 3h8l4 4v14H6z"/><path d="M14 3v4h4"/><path d="M9 12h6M9 16h6"/>',
   calendar: '<rect x="3" y="5" width="18" height="16" rx="2"/><path d="M3 10h18M8 3v4M16 3v4"/>',
@@ -166,5 +169,10 @@ function iconFor(value, fallback = 'grid') {
 /* <option> list for icon picker <select>s, with `selected` pre-chosen. */
 function iconOptions(selected) {
   const cur = iconNameFrom(selected, 'grid');
-  return ICON_CHOICES.map(([name, label]) => `<option value="${name}" ${name === cur ? 'selected' : ''}>${label}</option>`).join('');
+  const option = (name, label) => `<option value="${name}" ${name === cur ? 'selected' : ''}>${MH.esc(label)}</option>`;
+  const general = ICON_CHOICES.map(([name, label]) => option(name, label)).join('');
+  /* Populate the picker from the catalog so all 92 game glyphs can be chosen
+   * in Customize, without maintaining a second list of game names. */
+  const games = (window.PROTON_APPLICATIONS || []).filter((a) => a.cat === 'Games' && ICON_PATHS[a.icon]);
+  return general + `<optgroup label="Games">${games.map((a) => option(a.icon, a.name)).join('')}</optgroup>`;
 }
