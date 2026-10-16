@@ -127,6 +127,17 @@ request, so it is no longer linked either.
 
 ### Gams Offline (68 additional games)
 
+**Copied into this repository (partial):** the Gams builds listed below were
+copied as files from the upstream snapshot at the commit above, under
+`games/gams/g/g/<game>/`, at the project owner's request. No licence is listed
+upstream, so no redistribution rights are granted by this project. These games
+run from this site in a sandbox without same-origin access (no localStorage
+saves). Remove any of them on request from the rights holders.
+
+- A Dance of Fire and Ice (`g/g/fireice`), Grey Box Testing (`g/g/greybox`)
+
+All other Gams games remain streamed from <https://gams-offline.github.io/Gams/>.
+
 - Source: <https://github.com/Gams-Offline/Gams/tree/main/g> (catalog in
   `Gams.html`, inspected at commit `b75cc91c639e612c04db7d0966eb0fe6d39badf9`)
 - Served from: <https://gams-offline.github.io/Gams/g/…>

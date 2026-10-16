@@ -30,7 +30,7 @@ Your app can use: `userData` (the account's saved data), `saveData()`,
 `openApp(id)`, `MH.toast(...)`, `MH.download(...)`, `FS` (the virtual file
 system — `FS.read`, `FS.write`, `FS.list`, …) and all the CSS classes in
 `assets/styles.css` (`.btn`, `.card`, `.appbar`, …). Look at
-`apps/hello-test/app.html` — the smallest complete example.
+`apps/_template/app.html` — the starting point.
 
 ## Remove an app
 
@@ -67,9 +67,6 @@ system — `FS.read`, `FS.write`, `FS.list`, …) and all the CSS classes in
 | `checkers/` | Checkers (`checkers`) |
 | `klondike/` | Klondike (`klondike`) |
 | `backgammon/` | Backgammon (`backgammon`) |
-| `hello-test/` | Hello Test (`hello-test`) |
-| `speed-test/` | Speed Test (`speed-test`) |
-| `storage-test/` | Storage Test (`storage-test`) |
 
 ### Desktop shortcut workflow
 
