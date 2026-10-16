@@ -71,7 +71,7 @@ test('the catalog is the five System apps plus the one built-in test site', () =
   /* websites/ is back, but only with the catalogued site and the template. */
   const siteFolders = fs.readdirSync(path.join(ROOT, 'websites'), { withFileTypes: true })
     .filter((e) => e.isDirectory()).map((e) => e.name).sort();
-  assert.deepEqual(siteFolders, ['_template', 'test-page']);
+  assert.deepEqual(siteFolders, ['_embed', '_template', 'test-page']);
   const index = source('index.html');
   assert.ok(!index.includes('game-icons.js') && !index.includes('game-host.js'));
 });
@@ -89,7 +89,7 @@ test('every catalog entry points at a real, syntactically valid app module', () 
   /* apps/ holds only the shipped apps plus the developer template + guide. */
   const folders = fs.readdirSync(path.join(ROOT, 'apps'), { withFileTypes: true })
     .filter((e) => e.isDirectory()).map((e) => e.name).sort();
-  assert.deepEqual(folders, ['_template', 'about', 'app-center', 'browser', 'customize', 'settings']);
+  assert.deepEqual(folders, ['_embed', '_template', 'about', 'app-center', 'browser', 'customize', 'settings']);
 });
 
 test('the system manifest still matches the repository exactly', () => {
@@ -114,10 +114,15 @@ test('the system manifest still matches the repository exactly', () => {
       assert.equal(e.s, fs.statSync(full).size, `Wrong VFS size: ${e.p}`);
     }
   }
-  /* Every deployed file of the trimmed site is listed (bar dev-only folders). */
+  /* Every deployed file of the trimmed site is listed, using the same
+   * exclusions as tools/gen-fs-manifest.py (dependencies, tests, and the
+   * underscore-prefixed copy-me template folders). */
   const walk = (dir, prefix = '') => fs.readdirSync(path.join(ROOT, dir), { withFileTypes: true }).flatMap((e) => {
     const rel = prefix + e.name;
-    if (e.isDirectory()) return ['node_modules', '.git', 'tests'].includes(e.name) ? [] : walk(path.join(dir, e.name), rel + '/');
+    if (e.isDirectory()) {
+      return ['node_modules', '.git', 'tests'].includes(e.name) || e.name.startsWith('_')
+        ? [] : walk(path.join(dir, e.name), rel + '/');
+    }
     return [rel];
   });
   const onDisk = walk('.').filter((p) => p !== 'data/fs-manifest.js').sort();
@@ -218,6 +223,43 @@ test('Customize still resets to defaults that exist', async () => {
     assert.deepEqual(Array.from(w.eval('userData.settings.pinned')), ['settings', 'appcenter', 'browser']);
     assert.deepEqual(Array.from(w.eval('userData.desktopIcons'), (s) => s.target), ['settings', 'browser']);
   } finally { w.close(); }
+});
+
+/* apps/_embed and websites/_embed are the "just frame a page" starting
+ * points: one EMBED_URL constant to change and nothing else to edit. */
+test('the embed templates are one constant away from a working embed', () => {
+  const { apps, sites } = catalog();
+  const ctx = vm.createContext({ window: {} });
+  vm.runInContext(source('data/fs-manifest.js'), ctx);
+  const listed = new Set(Array.from(ctx.window.PROTON_FS_MANIFEST, (e) => e.p));
+
+  for (const p of ['apps/_embed/app.html', 'websites/_embed/index.html']) {
+    const html = source(p);
+    /* Exactly one place to change, and it is a plain https string constant. */
+    const urls = [...html.matchAll(/^const EMBED_URL = '([^']*)';$/gm)].map((m) => m[1]);
+    assert.equal(urls.length, 1, `${p} should have one EMBED_URL constant to change`);
+    assert.match(urls[0], /^https:\/\/[^'"\s]+$/, `${p}'s EMBED_URL is not a plain https address`);
+    assert.match(html, /CHANGE ME/, `${p} no longer marks the line to change`);
+
+    // A template is a starting point: never registered, never deployed.
+    assert.ok(!apps.some((a) => a.path === p), `${p} must not be in the app catalog`);
+    assert.ok(!sites.some((s) => s.path === p), `${p} must not be in the website catalog`);
+    assert.equal(listed.has(p), false, `${p} must stay out of the generated manifest`);
+
+    // Both parse as JavaScript, and both frame the page safely.
+    const script = html.match(/<script(?: data-proton-app)?>([\s\S]*?)<\/script>/);
+    assert.ok(script, `${p} has no script block`);
+    assert.doesNotThrow(() => new vm.Script(script[1], { filename: p }), `Syntax error in ${p}`);
+    assert.match(html, /<iframe/, `${p} embeds nothing`);
+    assert.match(html, /sandbox="[^"]*allow-scripts[^"]*"/, `${p}'s frame is not sandboxed`);
+    assert.ok(!/sandbox="[^"]*allow-same-origin/.test(html),
+      `${p} must not give an embedded page same-origin access to proton's storage`);
+    assert.match(html, /Open in new tab/, `${p} needs an escape hatch for sites that refuse framing`);
+  }
+
+  /* The commented-out example blocks in both catalogs must stay comments. */
+  assert.ok(!apps.some((a) => a.id === 'my-embed'));
+  assert.ok(!sites.some((s) => s.id === 'my-embed'));
 });
 
 /* The built-in test site is the smoke test for the Browser, so it has to

@@ -28,6 +28,17 @@ left in `data/websites.js` (see
 ## Add your own app (developer workflow)
 
 1. Copy the `apps/_template/` folder and rename it, e.g. `apps/my-app/`.
+   If the app is only **one framed page** — a build, a doc, another site —
+   copy `apps/_embed/` instead and skip to step 3: its module is a toolbar
+   (address, Reload, Open in new tab) plus a full-height sandboxed `<iframe>`,
+   and the only thing to change is one constant at the top of its script:
+   `const EMBED_URL = 'https://example.com/';`. The frame is sandboxed
+   **without** `allow-same-origin` so an embedded page cannot reach proton's
+   localStorage, and the toolbar keeps an **Open in new tab** escape hatch for
+   sites that refuse framing (`X-Frame-Options` / `frame-ancestors`).
+   `websites/_embed/` is the same thing as a built-in website instead of an
+   app. Template folders are never registered or deployed —
+   `tools/gen-fs-manifest.py` skips every underscore-prefixed folder.
 2. Add ONE `[application]` block to `data/applications.js` (copy the template
    in that file's header): `id`, `name`, `path=apps/my-app/app.html`, `icon`
    (a name from `assets/icons.js` such as `folder`, `globe` or `star`),
@@ -67,6 +78,7 @@ exactly where the old one left off.
 | `about/` | About (`about`) — provenance, licence, what's inside |
 | `browser/` | Browser (`browser`) — built-in websites (none right now), saved websites, external addresses and VFS HTML files |
 | `_template/` | not an app — the starting point for a new one |
+| `_embed/` | not an app — the starting point for one that is only a framed page (`EMBED_URL`) |
 
 ### Desktop shortcut workflow
 

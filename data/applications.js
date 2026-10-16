@@ -85,4 +85,20 @@ desc=Visit web addresses and any built-in websites from data/websites.js
 w=940
 h=600
 
+/* TEMPLATE — an app that is only an embedded page. Copy apps/_embed/,
+   rename it, change the EMBED_URL constant in its app.html, then
+   uncomment a block like this one (and delete these lines):
+
+[application]
+id=my-embed
+name=My Embed
+path=apps/my-embed/app.html
+icon=globe
+cat=System
+desc=Frames https://example.com in a window
+w=980
+h=640
+
+*/
+
 `;

@@ -30,7 +30,8 @@ typing an address in the Browser visits it without saving it.)
 
 ## Add your own site (developer workflow)
 
-1. Copy the `websites/_template/` folder and rename it, e.g. `websites/my-site/`.
+1. Copy the `websites/_template/` folder and rename it, e.g. `websites/my-site/`
+   — or copy `websites/_embed/` instead if the site is only a framed page.
 2. Edit `websites/my-site/site.html`.
 3. Add ONE `[website]` block to `data/websites.js` (copy the template in that
    file's header): `id`, `name`, `path=websites/my-site/site.html`, `icon` (a
@@ -60,9 +61,42 @@ directly, outside the Browser, where `window.parent` is the page itself.
   its home page says there are no built-in sites and its “Built-in websites…”
   menu disappears.
 
+## Embed an existing page instead (`websites/_embed/`)
+
+If all you want is **one framed page** — a build, a doc, another site — copy
+`websites/_embed/` instead of `websites/_template/`. Its whole body is a bar
+(the address, Reload, Open in new tab), a full-height `<iframe>` and a
+footnote, and the script has exactly one thing to change:
+
+```js
+/* =====================================================================
+   CHANGE ME — the one line this template exists for.
+   ===================================================================== */
+const EMBED_URL = 'https://example.com/';
+```
+
+```bash
+cp -r websites/_embed websites/my-site
+# edit EMBED_URL in websites/my-site/index.html
+# add the [website] block (a commented example waits in data/websites.js)
+python3 tools/gen-fs-manifest.py && npm test
+```
+
+Two things it does deliberately: the frame is sandboxed **without**
+`allow-same-origin`, so an embedded third-party page cannot reach proton's
+localStorage where the accounts live; and the bar always offers **Open in new
+tab**, because many sites send `X-Frame-Options` / `frame-ancestors` and render
+blank in a frame. The page loads live from that address — proton never proxies,
+caches or stores it — so it needs a network connection and proton served over
+HTTP(S). [`apps/_embed/`](../apps/_embed/) is the same idea as a desktop app
+instead of a website. Neither template folder is registered or deployed:
+`tools/gen-fs-manifest.py` skips every underscore-prefixed folder, so they stay
+out of the virtual file system's `/` tree.
+
 ## The sites
 
 | Folder | Site (address) |
 | --- | --- |
 | `test-page/` | Test Page (`proton://test-page`) — buttons, forms, clock, counter, canvas, storage and automated checks against the Browser |
 | `_template/` | not a site — the starting point for a new one |
+| `_embed/` | not a site — the starting point for one that is only a framed page (`EMBED_URL`) |

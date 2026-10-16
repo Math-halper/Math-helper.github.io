@@ -40,4 +40,17 @@ path=websites/test-page/site.html
 icon=flask
 desc=TEST SITE: automated checks plus buttons, forms, clock, counter, canvas and storage to try the Browser with
 
+/* TEMPLATE — a site that is only an embedded page. Copy websites/_embed/,
+   rename it, change the EMBED_URL constant in its index.html, then
+   uncomment a block like this one (and delete these lines):
+
+[website]
+id=my-embed
+name=My Embed
+path=websites/my-embed/index.html
+icon=globe
+desc=Frames https://example.com
+
+*/
+
 `;

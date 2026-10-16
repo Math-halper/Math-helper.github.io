@@ -50,15 +50,18 @@ runtime dependencies or build step. Optional regression tests use jsdom:
 ## Project layout (everything is a module)
 
 - **Apps:** one folder + HTML file each — `apps/<name>/app.html` (5 apps, plus
-  `apps/_template/` as the starting point for a new one). Every app's name,
+  two starting points: `apps/_template/` for a normal app and `apps/_embed/`
+  for one that is only a framed page — change its single `EMBED_URL` constant).
+  Every app's name,
   location, icon, category, description and window size is listed in **one
   catalog file** — `data/applications.js`. Add one by copying
   `apps/_template/` and adding an `[application]` block there; remove one by
   deleting that block. Full guide: [`apps/README.md`](apps/README.md).
 - **Built-in websites:** the same catalog system — `data/websites.js`, one
   `[website]` block per site, each page a `websites/<name>/site.html`. One site
-  ships: **Test Page** (`websites/test-page/`), plus `websites/_template/` as
-  the starting point for a new one. The Browser also visits any address typed
+  ships: **Test Page** (`websites/test-page/`), plus `websites/_template/` and
+  `websites/_embed/` (one framed page, one `EMBED_URL` constant to change) as
+  the starting points for a new one. The Browser also visits any address typed
   into its bar and opens HTML files from the virtual file system. Guide:
   [`websites/README.md`](websites/README.md).
 - **Core:** `data/applications.js` (the app catalog), `data/websites.js` (the
