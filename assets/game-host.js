@@ -47,12 +47,6 @@ const PROTON_ARCADE = (function () {
    * game's own), audio without a second gesture, gamepads, pointer lock and
    * the clipboard ("copy your score" buttons). Matches what Proton Arcade's
    * own player page grants its frame. */
-  /* Games copied into this site (cfg.local) run from proton's own origin, so
-   * they must NOT get allow-same-origin: that would let their scripts reach
-   * proton's page and storage. They run in an opaque origin instead (no
-   * localStorage saves). */
-  const SANDBOX_LOCAL = SANDBOX.replace('allow-same-origin', '').replace(/\s+/g, ' ').trim();
-
   const ALLOW = 'fullscreen; autoplay; gamepad; pointer-lock; clipboard-read; clipboard-write';
 
   /* How long to keep saying "still downloading" before suggesting the player
@@ -87,12 +81,8 @@ const PROTON_ARCADE = (function () {
       return;
     }
 
-    const url = cfg.local
-      ? new URL(cfg.src, document.baseURI).href
-      : urlFor(cfg.src, cfg.origin || ORIGIN);
-    const hostname = cfg.local ? location.hostname : new URL(url).hostname;
-    const sandbox = cfg.local ? SANDBOX_LOCAL : SANDBOX;
-    const sourceLabel = cfg.local ? 'Runs from this site' : 'Streaming from ' + hostname;
+    const url = urlFor(cfg.src, cfg.origin || ORIGIN);
+    const hostname = new URL(url).hostname;
     const name = nameFor(ctx, cfg.name);
     const weight = cfg.size ? ` · about ${MH.esc(cfg.size)} on first load` : '';
 
@@ -104,11 +94,11 @@ const PROTON_ARCADE = (function () {
       <div class="app-main arcade-main">
         <div class="arcade-stage" data-w="stage">
           <iframe class="arcade-frame" data-w="frame" title="${MH.esc(name)}" src="${MH.esc(url)}"
-            sandbox="${sandbox}" allow="${ALLOW}" allowfullscreen referrerpolicy="no-referrer"></iframe>
+            sandbox="${SANDBOX}" allow="${ALLOW}" allowfullscreen referrerpolicy="no-referrer"></iframe>
           <div class="arcade-loading" data-w="loading">
             <div class="arcade-spinner"></div>
             <b>${MH.esc(name)}</b>
-            <span class="muted">${MH.esc(sourceLabel)}${weight}</span>
+            <span class="muted">Streaming from ${MH.esc(hostname)}${weight}</span>
             <span class="arcade-elapsed muted" data-w="elapsed"></span>
             <div class="arcade-failed" data-w="error" hidden>
               <span>This game could not load here. Check your connection, or try opening it in a new tab.</span>
@@ -117,7 +107,7 @@ const PROTON_ARCADE = (function () {
             </div>
           </div>
         </div>
-        <p class="arcade-foot muted">${cfg.local ? 'Served from this site' : 'Streams live from'}
+        <p class="arcade-foot muted">Streams live from
           <a href="${MH.esc(url)}" target="_blank" rel="noopener">${MH.esc(hostname)}</a> —
           proton does not store, proxy or upload any of it${weight}.
           ${cfg.note ? MH.esc(cfg.note) : ''}

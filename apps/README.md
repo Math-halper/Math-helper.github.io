@@ -180,7 +180,7 @@ PROTON_ARCADE.open(body, ctx, {
 });
 ```
 
-Most publishers' games are **network-only**; the eight games listed in [`CREDITS.md`](../CREDITS.md#streamed-arcade-games) are copied under `games/gams/` and set `local: true`. Keep their modules small and do
+Both publishers' games are **network-only**. Keep their modules small and do
 not copy any builds into `apps/`; several games require entire asset trees,
 and the source repositories do not grant a blanket redistribution licence.
 Each game's `icon=game-<id>` selects a unique hand-drawn monochrome SVG in

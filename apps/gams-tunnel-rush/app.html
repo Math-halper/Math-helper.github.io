@@ -3,14 +3,14 @@
 <head><meta charset="utf-8"><title>Tunnel Rush - proton app</title></head>
 <body>
 <p>Launch Tunnel Rush from <a href="../../index.html">proton</a>.</p>
-<!-- Copied from Gams Offline (see CREDITS.md); served from this site. -->
+<!-- Streamed from Gams Offline; the game build is NOT in this repository. -->
 <script data-proton-app>
 'use strict';
 registerApp({
   render(body, ctx) {
     PROTON_ARCADE.open(body, ctx, {
-      local: true,
-      src: 'games/gams/g/g/tunnelrush/tunnelrush.html',
+      origin: 'https://gams-offline.github.io/Gams',
+      src: 'g/g/tunnelrush/tunnelrush.html',
     });
   },
 });

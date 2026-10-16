@@ -62,7 +62,7 @@ test('all 24 local apps render content and all 87 streamed games open a nonblank
         const frame = body?.querySelector('iframe.arcade-frame');
         const match = source(app.path).match(/src: '([^']+)'/);
         if (!frame || !match || !frame.src.endsWith('/' + match[1])
-          || !(/^https:\/\/(proton-arcade|gams-offline)\.github\.io\//.test(frame.src) || /local: true/.test(source(app.path)))
+          || !/^https:\/\/(proton-arcade|gams-offline)\.github\.io\//.test(frame.src)
           || !body.querySelector('.arcade-loading')
           || !body.querySelector('[data-w="error"]')?.hidden
           || !body.querySelector('.arcade-foot a[target="_blank"]')
