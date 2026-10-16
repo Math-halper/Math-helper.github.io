@@ -20,8 +20,11 @@ proton menu. The script below is fetched and run by proton's HTML loader
  * built-in site is a real HTML page in its own folder:
  * websites/<name>/site.html, listed in the website catalog
  * data/websites.js (same system as the app catalog). Add a site folder
- * + one [website] block there and it shows up here automatically. The
- * user's own saved websites live in userData and are managed by
+ * + one [website] block there and it shows up here automatically. That
+ * catalog is EMPTY in this build — every built-in website was removed with
+ * the non-system apps — so the home page just offers the address bar, HTML
+ * files from the virtual file system and the account's saved websites.
+ * The user's own saved websites live in userData and are managed by
  * apps/app-center and on the Browser home page below.
  */
 'use strict';
@@ -30,7 +33,8 @@ registerApp({
   /* Metadata (name, icon, cat, desc, w, h) lives in the app catalog:
    * data/applications.js — edit it there, not here. */
   render(body, options) {
-    body.innerHTML = `${bar('Browser', `<button class="btn sm" id="b-home">${iconSvg('home')} Home</button><select id="b-sites-menu" title="Built-in websites"><option value="">Built-in websites…</option>${Object.values(SITES).map((s) => `<option value="${s.id}">${MH.esc(s.name)}</option>`).join('')}</select>`)}
+    const siteList = Object.values(SITES);
+    body.innerHTML = `${bar('Browser', `<button class="btn sm" id="b-home">${iconSvg('home')} Home</button>${siteList.length ? `<select id="b-sites-menu" title="Built-in websites"><option value="">Built-in websites…</option>${siteList.map((s) => `<option value="${s.id}">${MH.esc(s.name)}</option>`).join('')}</select>` : ''}`)}
     <div class="appbar" style="background:#111"><span>${iconSvg('lock')}</span><input id="b-url" type="text" value="proton://home" style="flex:1;padding:7px 10px"><button class="btn sm primary" id="b-go">Go</button></div>
     <div class="app-main" id="b-main"></div>`;
     const main = body.querySelector('#b-main');
@@ -47,12 +51,12 @@ registerApp({
       body.querySelector('#b-url').value = 'proton://home';
       normalizeUserData();
       main.innerHTML = `<div class="pad"><h2>Welcome to the (tiny) proton web</h2>
-      <p class="muted">This static site has no server, so the Browser ships with built-in websites — each one is a real HTML page in <span class="kbd">websites/&lt;name&gt;/site.html</span>, like the original project's bundled sites in <span class="kbd">internet/</span>. Real websites can be opened from the address bar too, though many refuse to be embedded.</p>
-      <h3>${iconSvg('book')} Built-in websites</h3><div class="grid-cards">
-      ${Object.values(SITES).map((s) => `<div class="card"><div class="card-ic" style="font-size:24px">${iconFor(s.icon, 'globe')}</div><h3 style="margin:5px 0 3px">${MH.esc(s.name)}</h3><p class="muted">${MH.esc(s.desc || '')}</p><button class="btn primary" data-site="${s.id}">Visit</button></div>`).join('')}
-      </div>
+      <p class="muted">This static site has no server, so the Browser only shows what this repository ships. Real websites can be opened from the address bar too, though many refuse to be embedded.</p>
+      <h3>${iconSvg('book')} Built-in websites</h3>${siteList.length ? `<div class="grid-cards">
+      ${siteList.map((s) => `<div class="card"><div class="card-ic" style="font-size:24px">${iconFor(s.icon, 'globe')}</div><h3 style="margin:5px 0 3px">${MH.esc(s.name)}</h3><p class="muted">${MH.esc(s.desc || '')}</p><button class="btn primary" data-site="${s.id}">Visit</button></div>`).join('')}
+      </div>` : '<p class="muted">This proton build ships no built-in websites — the catalog <span class="kbd">data/websites.js</span> is empty. Add a page under <span class="kbd">websites/&lt;name&gt;/site.html</span> plus one <span class="kbd">[website]</span> block there and it appears here.</p>'}
       <h3 style="margin-top:20px">${iconSvg('globe')} Your websites</h3><div class="grid-cards" id="b-sites"></div>
-      <p class="muted" style="margin-top:14px">Adding websites is disabled. Type any address in the bar above to visit it without saving it, or open one of the built-in websites.</p></div>`;
+      <p class="muted" style="margin-top:14px">Adding websites is disabled. Type any address in the bar above to visit it without saving it, or open an HTML file from the virtual file system with <span class="kbd">file:///path/to/page.html</span>.</p></div>`;
       main.querySelectorAll('[data-site]').forEach((b) => b.onclick = () => showSite(b.dataset.site));
       const sitesBox = main.querySelector('#b-sites');
       sitesBox.innerHTML = userData.websites.length ? userData.websites.map((s) => `
@@ -82,7 +86,7 @@ registerApp({
     async function openLocal(path) {
       const st = FS.stat(path);
       if (!st || st.type !== 'file' || !['html', 'htm'].includes(FS.extname(st.path))) {
-        MH.toast('Choose an HTML file from Files.'); return;
+        MH.toast('That path is not an HTML file in your account or the system tree.'); return;
       }
       leavePage();
       const token = navigation;
@@ -145,7 +149,8 @@ registerApp({
     };
     body.querySelector('#b-home').onclick = showHome;
     body.querySelector('#b-go').onclick = go;
-    body.querySelector('#b-sites-menu').onchange = (e) => { if (e.target.value) showSite(e.target.value); e.target.value = ''; };
+    const sitesMenu = body.querySelector('#b-sites-menu');
+    if (sitesMenu) sitesMenu.onchange = (e) => { if (e.target.value) showSite(e.target.value); e.target.value = ''; };
     body.querySelector('#b-url').addEventListener('keydown', (e) => { if (e.key === 'Enter') go(); });
     if (options.path) openLocal(options.path);
     else if (options.url) loadExternal(options.url);

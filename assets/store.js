@@ -60,13 +60,14 @@ const MH = {
   },
 
   /* Desktop entries are links, not copies of apps or files. Return fresh
-   * objects so accounts can rearrange/remove them independently. */
-  defaultDesktopIcons(username) {
-    const home = '/home/' + String(username || 'user').toLowerCase();
+   * objects so accounts can rearrange/remove them independently. proton
+   * ships its System apps only, so a new account starts with two shortcuts:
+   * Settings and the Browser. (The old Files/Documents links pointed at the
+   * Files app, which is no longer part of this build.) */
+  defaultDesktopIcons() {
     return [
-      { id: 'desktop-files', kind: 'app', target: 'files', col: 0, row: 0 },
+      { id: 'desktop-settings', kind: 'app', target: 'settings', col: 0, row: 0 },
       { id: 'desktop-browser', kind: 'app', target: 'browser', col: 0, row: 1 },
-      { id: 'desktop-documents', kind: 'path', target: home + '/Documents', col: 0, row: 2 },
     ];
   },
 
@@ -77,11 +78,11 @@ const MH = {
     const home = '/home/' + String(username || 'user').toLowerCase();
     return {
       version: 1,
-      settings: { wallpaper: 'mint', accent: '#ffffff', pinned: ['files', 'calculator', 'notes', 'browser', 'terminal'] },
-      desktopIcons: MH.defaultDesktopIcons(username),
+      settings: { wallpaper: 'mint', accent: '#ffffff', pinned: ['settings', 'appcenter', 'browser'] },
+      desktopIcons: MH.defaultDesktopIcons(),
       notes: [{
         id: MH.uid(), title: 'Welcome to proton',
-        html: `<p>This desktop is a <b>static clone of Mixt</b> (from <i>proton-arcade/mlp</i>), rebranded and rebuilt to run with <b>no server at all</b>.</p><h2><span style="font-size:19px">Things to try</span></h2><ul><li>Open the <b>Calculator</b> app — calculator, solver and graph plotter</li><li>Everything you type here is <b>saved on this device</b>, under your account</li><li>Drag windows, pin apps to the panel, change the wallpaper in Settings</li></ul><p>Have fun!</p>`,
+        html: `<p>This desktop is a <b>static clone of Mixt</b> (from <i>proton-arcade/mlp</i>), rebranded and rebuilt to run with <b>no server at all</b>.</p><h2><span style="font-size:19px">Things to try</span></h2><ul><li>This build ships its <b>System apps only</b>: App Center, Customize, Settings, About and the Browser</li><li>Everything you type here is <b>saved on this device</b>, under your account</li><li>Drag windows, pin apps to the panel, change the wallpaper in Settings</li></ul><p>Have fun!</p>`,
         updated: Date.now(),
       }],
       events: [{ id: MH.uid(), date: today, time: '09:00', title: 'First day on proton', notes: 'Created my account today.' }],
@@ -94,8 +95,8 @@ const MH = {
        * /home/<user> is the read-only system tree. */
       dirs: [home + '/Desktop', home + '/Documents', home + '/Pictures', home + '/Downloads'],
       files: [
-        { path: home + '/Documents/Welcome.txt', content: 'Welcome to proton!\n\nYour Files app now browses a real file system rooted at / :\n- /  holds every single file of the proton system (read-only)\n- /home/<you>  is yours — create, edit and organise files freely\n\nTry the Terminal too:  ls /,  cd,  cat README.md,  tree ~', updated: Date.now() },
-        { path: home + '/Documents/Ideas.txt', content: 'Ideas:\n- Practise 20 minutes of maths a day\n- Beat the Sudoku hard mode\n- ', updated: Date.now() },
+        { path: home + '/Documents/Welcome.txt', content: 'Welcome to proton!\n\nThis build ships its System apps only: App Center, Customize,\nSettings, About and the Browser. Your account still has a real\nvirtual file system rooted at / :\n- /  holds every single file of the proton system (read-only)\n- /home/<you>  is yours\n\nThe Browser can open any HTML file in it, and Settings exports\nyour whole account as a backup.', updated: Date.now() },
+        { path: home + '/Documents/Ideas.txt', content: 'Ideas:\n- Try a new wallpaper in Settings\n- Rename an app in Customize\n- ', updated: Date.now() },
         { path: home + '/README.txt', content: 'proton — static clone of Mixt (proton-arcade/mlp @ arena/170861f7-mlp), rebranded.\nLicensed AGPL-3.0-only. See CREDITS.md in the project repo.', updated: Date.now() },
       ],
       sheets: { 'Budget': { 'B1': 'Item', 'C1': 'Cost', 'B2': 'Books', 'C2': '25', 'B3': 'Snacks', 'C3': '8', 'B4': 'Total', 'C4': '=SUM(C2:C3)' } },

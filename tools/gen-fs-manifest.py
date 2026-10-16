@@ -4,8 +4,8 @@ shows under / (see assets/fs.js).
 
 The site is static, so the VFS cannot ask the server for a directory listing.
 Instead this script snapshots the site's files (path + size) into one small
-JS file. Dependencies and local build caches are excluded: they aren't part
-of the deployed site. The Files app and Terminal read it to build the / tree,
+JS file. Dependencies, the regression tests and local build caches are
+excluded: they aren't part of the deployed site. The Files app and Terminal read it to build the / tree,
 and file contents are fetched over HTTP on demand when opened.
 
 Run from anywhere (paths are resolved from this script's location):
@@ -22,16 +22,16 @@ ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 OUT = os.path.join(ROOT, 'data', 'fs-manifest.js')
 SELF = 'data/fs-manifest.js'  # included too — the manifest lists itself
 EXCLUDE_DIRS = {'.git', '.arena', 'node_modules', '__pycache__', '.cache', '.pytest_cache',
-                '.venv', 'dist', 'build', 'coverage', '.next'}
+                '.venv', 'dist', 'build', 'coverage', '.next', 'tests'}
 
 HEADER = """\
 /* proton — file system manifest — GENERATED FILE, do not edit by hand.
  *
  * Every deployed site file (path + size in bytes) so the virtual file
  * system (assets/fs.js) can show a complete / directory tree: the system
- * folders apps/, assets/, data/, tools/, websites/ and every single file in
- * them, plus the root files. Contents are fetched over HTTP on demand when
- * a file is opened in the Files app or the Terminal (cat).
+ * folders apps/, assets/, data/ and tools/, every single file in them, plus
+ * the root files. Contents are fetched over HTTP on demand when a file is
+ * opened (the Browser does this for HTML pages).
  *
  * Regenerate after adding/removing/renaming files:
  *     python3 tools/gen-fs-manifest.py
