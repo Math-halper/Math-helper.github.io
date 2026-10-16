@@ -30,7 +30,7 @@ Your app can use: `userData` (the account's saved data), `saveData()`,
 `openApp(id)`, `MH.toast(...)`, `MH.download(...)`, `FS` (the virtual file
 system — `FS.read`, `FS.write`, `FS.list`, …) and all the CSS classes in
 `assets/styles.css` (`.btn`, `.card`, `.appbar`, …). Look at
-`apps/hello-test/app.html` — the smallest complete example.
+`apps/_template/app.html` — the starting point.
 
 ## Remove an app
 
@@ -67,9 +67,6 @@ system — `FS.read`, `FS.write`, `FS.list`, …) and all the CSS classes in
 | `checkers/` | Checkers (`checkers`) |
 | `klondike/` | Klondike (`klondike`) |
 | `backgammon/` | Backgammon (`backgammon`) |
-| `hello-test/` | Hello Test (`hello-test`) |
-| `speed-test/` | Speed Test (`speed-test`) |
-| `storage-test/` | Storage Test (`storage-test`) |
 
 ### Desktop shortcut workflow
 
@@ -183,7 +180,7 @@ PROTON_ARCADE.open(body, ctx, {
 });
 ```
 
-Both publishers' games are **network-only**. Keep their modules small and do
+Most publishers' games are **network-only**; the eight games listed in [`CREDITS.md`](../CREDITS.md#streamed-arcade-games) are copied under `games/gams/` and set `local: true`. Keep their modules small and do
 not copy any builds into `apps/`; several games require entire asset trees,
 and the source repositories do not grant a blanket redistribution licence.
 Each game's `icon=game-<id>` selects a unique hand-drawn monochrome SVG in

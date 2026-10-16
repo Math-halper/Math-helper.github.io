@@ -9,7 +9,7 @@ const source = (p) => fs.readFileSync(path.join(ROOT, p), 'utf8');
 // Real Chromium is used for visual QA; this jsdom regression test checks
 // the render path of EVERY catalogued app without needing a live server,
 // an installed Chromium binary or the publishers' external game builds.
-test('all 27 local apps render content and all 87 streamed games open a nonblank host', async () => {
+test('all 24 local apps render content and all 87 streamed games open a nonblank host', async () => {
   const virtualConsole = new VirtualConsole(), errors = [];
   virtualConsole.on('jsdomError', (err) => errors.push(err.message));
   const dom = new JSDOM('<!doctype html><main id="auth" hidden></main><div id="desktop" hidden></div><div id="toasts"></div>', {
@@ -62,7 +62,7 @@ test('all 27 local apps render content and all 87 streamed games open a nonblank
         const frame = body?.querySelector('iframe.arcade-frame');
         const match = source(app.path).match(/src: '([^']+)'/);
         if (!frame || !match || !frame.src.endsWith('/' + match[1])
-          || !/^https:\/\/(proton-arcade|gams-offline)\.github\.io\//.test(frame.src)
+          || !(/^https:\/\/(proton-arcade|gams-offline)\.github\.io\//.test(frame.src) || /local: true/.test(source(app.path)))
           || !body.querySelector('.arcade-loading')
           || !body.querySelector('[data-w="error"]')?.hidden
           || !body.querySelector('.arcade-foot a[target="_blank"]')
@@ -72,7 +72,7 @@ test('all 27 local apps render content and all 87 streamed games open a nonblank
       } else counts.local++;
       w.closeWin(app.id, true);
     }
-    assert.deepEqual(counts, { local: 27, streamed: 87 });
+    assert.deepEqual(counts, { local: 24, streamed: 87 });
     assert.deepEqual(failures, []);
     assert.deepEqual(errors, []);
   } finally { dom.window.close(); }

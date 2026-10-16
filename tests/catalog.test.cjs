@@ -25,7 +25,8 @@ test('every registered game gets its own monochrome SVG icon, including Flappy B
   assert.equal(upstream.games.length, 71);
   const expected = upstream.games.filter((g) => !['Pacman', 'Bloxorz', 'Spacebar Clicker'].includes(g.name))
     .map((g) => g.source).sort();
-  const actual = Array.from(gams, (g) => source(g.path).match(/src: '([^']+)'/)[1]).sort();
+  const actual = Array.from(gams, (g) => source(g.path).match(/src: '([^']+)'/)[1]
+    .replace(/^games\/gams\//, '')).sort();
   assert.deepEqual(actual, expected, 'No upstream game missing, extra, or mistyped');
   assert.equal(new Set(games.map((a) => a.icon)).size, games.length);
   const parser = new JSDOM('').window.DOMParser;
@@ -59,7 +60,7 @@ test('game host preserves project subpaths for both publishers', () => {
 
 test('every catalog entry points to a real, syntactically valid app module', () => {
   const { apps } = catalog();
-  assert.equal(apps.length, 114);
+  assert.equal(apps.length, 111);
   assert.equal(new Set(apps.map((a) => a.id)).size, apps.length);
   for (const app of apps) {
     assert.ok(fs.existsSync(path.join(ROOT, app.path)), `Missing module: ${app.path}`);
@@ -67,8 +68,15 @@ test('every catalog entry points to a real, syntactically valid app module', () 
     assert.ok(script, `${app.id} is not a proton module`);
     assert.doesNotThrow(() => new vm.Script(script[1], { filename: app.path }), `Syntax in ${app.id}`);
     if (app.id.startsWith('gams-')) {
-      assert.match(script[1], /https:\/\/gams-offline\.github\.io\/Gams/);
-      assert.match(script[1], /src: 'g\/.+\.html'/);
+      const local = /local: true/.test(script[1]);
+      if (local) {
+        const src = script[1].match(/src: 'games\/gams\/(g\/.+\.html)'/);
+        assert.ok(src, `${app.id} must point at a copied Gams build`);
+        assert.ok(fs.existsSync(path.join(ROOT, 'games/gams', src[1])), `Missing copied game: ${src[1]}`);
+      } else {
+        assert.match(script[1], /https:\/\/gams-offline\.github\.io\/Gams/);
+        assert.match(script[1], /src: 'g\/.+\.html'/);
+      }
     }
   }
 });

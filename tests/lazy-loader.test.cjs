@@ -21,9 +21,9 @@ test('boot loads only local apps; streamed games register immediately and fetch 
     w.fetchText = async (p) => { calls.push(p); return source(p); };
     await w.loadHtmlModules();
     const apps = w.eval('APPS'), wins = w.eval('wins');
-    assert.equal(Object.keys(apps).length, 114);
+    assert.equal(Object.keys(apps).length, 111);
     assert.equal(Object.keys(w.eval('SITES')).length, 6);
-    assert.equal(calls.length, 27, 'Only 27 local desktop apps should be fetched at boot');
+    assert.equal(calls.length, 24, 'Only 24 local desktop apps should be fetched at boot');
     assert.ok(!calls.some((p) => p.startsWith('apps/gams-')));
     assert.ok(!calls.includes('apps/flappy-bird/app.html'));
     w.eval("currentUser = {username:'Ada',usernameLower:'ada',displayName:'Ada'}; userData = MH.defaultData('Ada','ada'); userData.moduleOverrides = {'gams-2048': {name:'Tiles 2048'}}; applyModuleOverrides();");
