@@ -47,6 +47,7 @@ registerApp({
         <p class="muted site-url" style="min-height:34px">${MH.esc(a.desc || a.url)}</p><span class="chip">My Apps</span>
         <div style="display:flex;gap:6px;flex-wrap:wrap;margin-top:11px"><button class="btn sm primary" data-copen="${a.id}">Open</button>
         <button class="btn sm" data-cpin="${a.id}">${(userData.settings.pinned || []).includes(a.id) ? 'Unpin' : iconSvg('pin') + ' Pin'}</button>
+        <button class="btn sm" data-desktop="${MH.esc(a.id)}">${userData.desktopIcons.some((x) => x.kind === 'app' && x.target === a.id) ? 'Remove desktop icon' : iconSvg('plus') + ' Desktop icon'}</button>
         <button class="btn sm" data-cedit="${a.id}">Edit</button>
         <button class="btn sm" data-cdel="${a.id}">Remove</button></div></div>`).join('')
         : '<p class="muted">No saved web-address apps on this account. Adding them is disabled.</p>';
@@ -68,9 +69,10 @@ registerApp({
       body.querySelectorAll('[data-cdel]').forEach((b) => b.onclick = () => {
         const a = userData.customApps.find((x) => x.id === b.dataset.cdel);
         if (!a || !confirmBox(`Remove the app “${a.name}”? This deletes it from this account.`)) return;
-        closeWin(a.id);
+        if (!closeWin(a.id)) return;
         userData.customApps = userData.customApps.filter((x) => x.id !== a.id);
         userData.settings.pinned = (userData.settings.pinned || []).filter((x) => x !== a.id);
+        userData.desktopIcons = userData.desktopIcons.filter((x) => x.kind !== 'app' || x.target !== a.id);
         syncCustomApps(); saveData(); refreshChrome(); draw(); MH.toast(`App “${a.name}” removed.`);
       });
 
@@ -95,7 +97,7 @@ registerApp({
           let buttons;
           if (removed) buttons = `<button class="btn sm primary" data-restore="${a.id}">${iconSvg('plus')} Add back</button>`;
           else {
-            buttons = `<button class="btn sm primary" data-open="${a.id}">Open</button><button class="btn sm" data-pin="${a.id}">${pinned ? 'Unpin' : iconSvg('pin') + ' Pin'}</button>`;
+            buttons = `<button class="btn sm primary" data-open="${MH.esc(a.id)}">Open</button><button class="btn sm" data-pin="${MH.esc(a.id)}">${pinned ? 'Unpin' : iconSvg('pin') + ' Pin'}</button><button class="btn sm" data-desktop="${MH.esc(a.id)}">${userData.desktopIcons.some((x) => x.kind === 'app' && x.target === a.id) ? 'Remove desktop icon' : iconSvg('plus') + ' Desktop icon'}</button>`;
             buttons += PROTECTED.includes(a.id)
               ? '<span class="muted" title="This one keeps the desktop manageable">Built-in</span>'
               : `<button class="btn sm" data-remove="${a.id}">Remove</button>`;
@@ -105,6 +107,11 @@ registerApp({
           <div style="display:flex;gap:6px;flex-wrap:wrap;margin-top:11px">${buttons}</div></div>`;
         }).join('');
       body.querySelectorAll('[data-open]').forEach((b) => b.onclick = () => openApp(b.dataset.open));
+      body.querySelectorAll('[data-desktop]').forEach((b) => b.onclick = () => {
+        const id = b.dataset.desktop;
+        const existing = userData.desktopIcons.find((x) => x.kind === 'app' && x.target === id);
+        if (existing ? DesktopIcons.remove(existing.id) : DesktopIcons.addApp(id)) draw();
+      });
       body.querySelectorAll('[data-pin]').forEach((b) => b.onclick = () => {
         const id = b.dataset.pin, p = userData.settings.pinned;
         userData.settings.pinned = p.includes(id) ? p.filter((x) => x !== id) : [...p, id];
@@ -113,7 +120,7 @@ registerApp({
       body.querySelectorAll('[data-remove]').forEach((b) => b.onclick = () => {
         const a = APPS[b.dataset.remove];
         if (!a || !confirmBox(`Remove “${a.name}” from the proton menu? You can add it back here any time.`)) return;
-        closeWin(a.id);
+        if (!closeWin(a.id)) return;
         userData.hiddenApps.push(a.id);
         userData.settings.pinned = (userData.settings.pinned || []).filter((x) => x !== a.id);
         saveData(); refreshChrome(); draw(); MH.toast(`“${a.name}” removed — find it here to add it back.`);

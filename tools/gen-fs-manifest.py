@@ -3,8 +3,9 @@
 shows under / (see assets/fs.js).
 
 The site is static, so the VFS cannot ask the server for a directory listing.
-Instead this script snapshots EVERY file in the repository (path + size) into
-one small JS file. The Files app and the Terminal read it to build the / tree,
+Instead this script snapshots the site's files (path + size) into one small
+JS file. Dependencies and local build caches are excluded: they aren't part
+of the deployed site. The Files app and Terminal read it to build the / tree,
 and file contents are fetched over HTTP on demand when opened.
 
 Run from anywhere (paths are resolved from this script's location):
@@ -19,12 +20,14 @@ import os
 
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 OUT = os.path.join(ROOT, 'data', 'fs-manifest.js')
-SELF = 'data/fs-manifest.js'  # included too — the manifest lists every file
+SELF = 'data/fs-manifest.js'  # included too — the manifest lists itself
+EXCLUDE_DIRS = {'.git', '.arena', 'node_modules', '__pycache__', '.cache', '.pytest_cache',
+                '.venv', 'dist', 'build', 'coverage', '.next'}
 
 HEADER = """\
 /* proton — file system manifest — GENERATED FILE, do not edit by hand.
  *
- * Every file in this repository (path + size in bytes) so the virtual file
+ * Every deployed site file (path + size in bytes) so the virtual file
  * system (assets/fs.js) can show a complete / directory tree: the system
  * folders apps/, assets/, data/, tools/, websites/ and every single file in
  * them, plus the root files. Contents are fetched over HTTP on demand when
@@ -41,7 +44,7 @@ window.PROTON_FS_MANIFEST = [
 def collect():
     entries = []
     for dirpath, dirnames, filenames in os.walk(ROOT):
-        dirnames[:] = sorted(d for d in dirnames if d != '.git')
+        dirnames[:] = sorted(d for d in dirnames if d not in EXCLUDE_DIRS)
         for fn in sorted(filenames):
             full = os.path.join(dirpath, fn)
             rel = os.path.relpath(full, ROOT).replace(os.sep, '/')

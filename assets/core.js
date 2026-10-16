@@ -30,8 +30,6 @@ function registerApp(def) {
 
 /* ---------- user-added apps & websites (Mixt-style add/remove) ---------- */
 const dynamicAppIds = new Set();
-let pendingBrowserURL = '';
-
 function normalizeUserData() {
   if (!userData) return;
   userData.customApps ||= [];
@@ -43,6 +41,31 @@ function normalizeUserData() {
   const LEGACY_APP_IDS = { math: 'calculator', 'pdf-viewer': 'pdf' };
   userData.settings.pinned = userData.settings.pinned.map((id) => LEGACY_APP_IDS[id] || id);
   userData.hiddenApps = userData.hiddenApps.map((id) => LEGACY_APP_IDS[id] || id);
+  /* Missing means an older account: give it the same initial shortcuts as a
+   * new account. An empty array is deliberate (the user cleared the desktop).
+   * Older versions also saved desktopApps as app ids; preserve that choice. */
+  if (!Array.isArray(userData.desktopIcons)) {
+    const legacy = Array.isArray(userData.desktopApps) ? userData.desktopApps
+      : Array.isArray(userData.settings.desktopApps) ? userData.settings.desktopApps : null;
+    userData.desktopIcons = legacy
+      ? legacy.filter((id) => typeof id === 'string').map((id, i) =>
+        ({ id: 'legacy-desktop-' + i, kind: 'app', target: id, col: 0, row: i }))
+      : MH.defaultDesktopIcons(currentUser?.usernameLower);
+  }
+  const seenIds = new Set(), seenTargets = new Set();
+  userData.desktopIcons = userData.desktopIcons.slice(0, 200).flatMap((entry) => {
+    if (!entry || !['app', 'path'].includes(entry.kind) || typeof entry.target !== 'string' || !entry.target || entry.target.length > 1024) return [];
+    let target = entry.kind === 'app' ? (LEGACY_APP_IDS[entry.target] || entry.target) : FS.normalize(entry.target);
+    if (entry.kind === 'path' && (!entry.target.startsWith('/') || (target.startsWith('/home/') && target !== FS.home() && !target.startsWith(FS.home() + '/')))) return [];
+    const key = entry.kind + ':' + target;
+    if (seenTargets.has(key)) return [];
+    seenTargets.add(key);
+    let id = typeof entry.id === 'string' && entry.id.length <= 120 && entry.id ? entry.id : 'desktop-' + MH.uid();
+    if (seenIds.has(id)) id = 'desktop-' + MH.uid();
+    seenIds.add(id);
+    const coord = (n) => Number.isSafeInteger(n) && n >= 0 && n < 256 ? n : 0;
+    return [{ id, kind: entry.kind, target, col: coord(entry.col), row: coord(entry.row) }];
+  });
   /* --- modular customisation state --- */
   userData.moduleOverrides ||= {};   // appId -> {name, icon, cat, desc, order}
   userData.customThemes ||= [];      // {id, name, accent, wallpaper}
@@ -67,7 +90,6 @@ function normalizeUrl(raw) {
 function clearDynamicApps() {
   for (const id of dynamicAppIds) delete APPS[id];
   dynamicAppIds.clear();
-  pendingBrowserURL = '';
 }
 /* (Re)register this account's custom apps so they behave exactly like
  * built-ins: proton menu, pinning, windows, search. */
@@ -92,7 +114,7 @@ function syncCustomApps() {
   }
   applyModuleOverrides();
 }
-function refreshChrome() { renderStartMenu(''); renderPanelApps(); }
+function refreshChrome() { renderStartMenu(''); renderPanelApps(); DesktopIcons.render(); }
 
 /* Every built-in module's factory metadata, captured once, so user edits
  * (rename, re-icon, re-categorise, reorder) can always be reset. */
@@ -154,14 +176,8 @@ function applyComponents() {
   const search = document.querySelector('.sm-search');
   if (search) search.style.display = c.startSearch !== false ? '' : 'none';
 }
-/* Open a website already saved on this account in the Browser app
- * (fresh window so it navigates). New websites cannot be added, and a
- * saved website can no longer be turned into an app. */
-function openWebsite(site) {
-  pendingBrowserURL = site.url;
-  if (wins.has('browser')) closeWin('browser');
-  openApp('browser');
-}
+/* Open an account's saved website, even when the Browser is already open. */
+function openWebsite(site) { openApp('browser', { url: site.url }); }
 
 /* ---------------- built-in websites registry ----------------
  * Each built-in website is a standalone HTML page in
@@ -234,11 +250,14 @@ function focusWin(id) {
   document.querySelectorAll('.win').forEach((e) => e.classList.toggle('active', e === w.el));
   renderPanelApps();
 }
-function closeWin(id) {
-  const w = wins.get(id); if (!w) return;
+function closeWin(id, force = false) {
+  const w = wins.get(id); if (!w) return true;
+  if (!force && w.body.beforeClose?.() === false) return false;
+  w.body.onDestroy?.(); // revoke object URLs / stop any resources the app owns
   w.el.remove(); wins.delete(id);
   if (activeApp === id) activeApp = null;
   renderPanelApps();
+  return true;
 }
 function toggleMin(id) {
   const w = wins.get(id); if (!w) return;
@@ -247,11 +266,17 @@ function toggleMin(id) {
   renderPanelApps();
 }
 
-function openApp(id) {
+/* options.path hands a virtual file/folder to an app. A running app receives
+ * it via body.openPath, so opening a second file reuses the same window. */
+function openApp(id, options = {}) {
   const app = APPS[id]; if (!app) return;
   MH.$('startmenu')?.setAttribute('hidden', '');
   document.querySelector('.menu-btn')?.classList.remove('open');
-  if (wins.has(id)) { focusWin(id); return; }
+  if (wins.has(id)) {
+    focusWin(id);
+    if (options.path || options.url) wins.get(id).body.openPath?.(options);
+    return;
+  }
   userData.counters.windowsOpened = (userData.counters.windowsOpened || 0) + 1; saveData();
 
   const el = document.createElement('section');
@@ -306,14 +331,24 @@ function openApp(id) {
     addEventListener('pointermove', move); addEventListener('pointerup', up);
   });
 
-  try { app.render(body, { openApp, close: () => closeWin(id), winEl: el }); }
+  try { app.render(body, { openApp, close: () => closeWin(id), winEl: el, ...options }); }
   catch (err) { body.innerHTML = `<div class="pad"><h3>${iconSvg('alert')} ${MH.esc(app.name)} hit a snag</h3><p class="muted">${MH.esc(err.message)}</p></div>`; console.error(err); }
   renderPanelApps();
 }
 
+/* The Files app and Terminal both use the same file associations. Selecting
+ * an item only highlights it; activating it opens the appropriate app. */
+function openFSItem(path) {
+  const st = FS.stat(path);
+  if (!st) { MH.toast(`File not found: ${path}`); return; }
+  if (st.type === 'dir') { openApp('files', { path: st.path }); return; }
+  const appId = FS.appFor(st.path);
+  if (appId && APPS[appId]) openApp(appId, { path: st.path });
+  else MH.toast(`No viewer for ${st.name}. Select it in Files to download it.`);
+}
+
 /* ---------------- desktop ---------------- */
-/* No shortcut icons on the desktop itself: apps open from the proton menu
- * or the panel. (Older saved settings may still carry desktopApps — ignored.) */
+/* Movable, per-account app and file shortcuts live in desktop-icons.js. */
 
 /* Avatar background: accounts created by the coloured version keep their
  * old colour value; map it to a dark grey so avatars stay black-and-white. */
@@ -331,6 +366,7 @@ function userInitials(u) {
 }
 
 function enterDesktop() {
+  DesktopIcons.unmount();
   normalizeUserData(); syncCustomApps();
   locked = false;
   MH.$('auth').hidden = true;
@@ -339,7 +375,17 @@ function enterDesktop() {
   document.title = `proton — ${currentUser.displayName}`;
   d.innerHTML = `
     <div class="wallpaper wp-${MH.esc(userData.settings.wallpaper)}"></div>
-    <div class="desktop-hint" id="desktop-hint">${MH.esc(new Date().toLocaleDateString(undefined, { weekday: 'long', day: 'numeric', month: 'long' }))}<br>Press the proton menu to open apps</div>
+    <div class="desktop-hint" id="desktop-hint">${MH.esc(new Date().toLocaleDateString(undefined, { weekday: 'long', day: 'numeric', month: 'long' }))}<br>Double-click a shortcut or open the proton menu</div>
+    <div class="desktop-icon-area" id="desktop-icons" aria-label="Desktop shortcuts">
+      <div id="desktop-icon-list"></div>
+      <div class="desktop-tools">
+        <button class="desktop-open" id="desktop-open" type="button" hidden>${iconSvg('external')} Open selected</button>
+        <button class="desktop-remove" id="desktop-remove" type="button" hidden>${iconSvg('x')} Remove selected</button>
+        <button class="desktop-add" id="desktop-add" type="button">${iconSvg('plus')} Add icon</button>
+      </div>
+    </div>
+    <div class="desktop-context" id="desktop-context" role="menu" hidden></div>
+    <div class="desktop-picker" id="desktop-picker" hidden></div>
     <div class="windows-layer" id="windows"></div>
     <div class="startmenu" id="startmenu" hidden></div>
     <footer class="panel">
@@ -353,6 +399,7 @@ function enterDesktop() {
     </footer>`;
   MH.$('tray-avt').textContent = userInitials(currentUser);
   renderPanelApps(); renderStartMenu(''); applyWallpaper(); applyComponents();
+  DesktopIcons.mount();
   MH.$('menubtn').onclick = () => {
     const sm = MH.$('startmenu'), open = sm.hidden;
     sm.hidden = !open; MH.$('menubtn').classList.toggle('open', open);
@@ -396,7 +443,7 @@ function renderStartMenu(q) {
     const inCat = list.filter((a) => a.cat === cat)
       .sort((x, y) => (x.sortOrder ?? x.baseIndex ?? 999) - (y.sortOrder ?? y.baseIndex ?? 999));
     if (!inCat.length) continue;
-    html += `<div class="sm-cat">${cat}</div>` + inCat.map((a) => `<button class="sm-item" data-app="${a.id}"><span class="ic">${iconFor(a.icon)}</span>${MH.esc(a.name)}</button>`).join('');
+    html += `<div class="sm-cat">${MH.esc(cat)}</div>` + inCat.map((a) => `<button class="sm-item" data-app="${MH.esc(a.id)}" draggable="true" title="Open ${MH.esc(a.name)} · drag to desktop to add a shortcut"><span class="ic">${iconFor(a.icon)}</span>${MH.esc(a.name)}</button>`).join('');
   }
   if (!list.length) html += `<p style="grid-column:1/-1;opacity:.7;padding:10px 4px">No apps match “${MH.esc(query)}”.</p>`;
   html += `</div>
@@ -408,7 +455,15 @@ function renderStartMenu(q) {
   sm.innerHTML = html;
   const input = MH.$('sm-search-input');
   input.oninput = () => { const v = input.value, pos = input.selectionStart; renderStartMenu(v); const n = MH.$('sm-search-input'); n.focus(); n.setSelectionRange(pos, pos); };
-  sm.querySelectorAll('.sm-item').forEach((b) => b.onclick = () => openApp(b.dataset.app));
+  sm.querySelectorAll('.sm-item').forEach((b) => {
+    b.onclick = () => openApp(b.dataset.app);
+    b.oncontextmenu = (e) => { e.preventDefault(); DesktopIcons.menu(e, { appId: b.dataset.app }); };
+    b.ondragstart = (e) => {
+      e.dataTransfer.setData('application/x-proton-app', b.dataset.app);
+      e.dataTransfer.setData('text/plain', APPS[b.dataset.app].name);
+      e.dataTransfer.effectAllowed = 'copy';
+    };
+  });
   applyComponents();
   MH.$('sm-user').onclick = () => openApp('settings');
   MH.$('sm-lock').onclick = lockDesktop;
@@ -418,11 +473,23 @@ document.addEventListener('pointerdown', (e) => {
   const sm = MH.$('startmenu');
   if (sm && !sm.hidden && !e.target.closest('#startmenu,#menubtn')) { sm.hidden = true; MH.$('menubtn')?.classList.remove('open'); }
 });
-function signOut() {
-  saveDataNow(); clearDynamicApps(); MH.setSession('');
-  wins.clear(); currentUser = null; userData = null; locked = false;
+function closeAllWindows(force = false) {
+  if (!force && [...wins.values()].some((w) => w.body.beforeClose?.() === false)) return false;
+  for (const id of [...wins.keys()]) closeWin(id, true);
+  return true;
+}
+function signOut({ skipSave = false, force = false } = {}) {
+  if (!force && [...wins.values()].some((w) => w.body.beforeClose?.() === false)) return false;
+  if (skipSave) clearTimeout(saveTimer);
+  else if (!saveDataNow()) return false;
+  closeAllWindows(true);
+  DesktopIcons.unmount();
+  clearDynamicApps(); MH.setSession('');
+  currentUser = null; userData = null; locked = false;
+  clearInterval(clockTimer);
   MH.$('desktop').hidden = true; MH.$('desktop').innerHTML = '';
   route();
+  return true;
 }
 function lockDesktop() {
   locked = true; saveDataNow();

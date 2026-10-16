@@ -1,32 +1,13 @@
 /* proton — HTML module loader.
  *
- * Apps and built-in websites are HTML files:
- *   apps/<name>/app.html       contains a <script data-proton-app> block
- *                              that calls registerApp({...}) — just the
- *                              render() code; metadata (name, icon, cat,
- *                              desc, window size) comes from the catalog.
- *   websites/<name>/site.html  is a standalone HTML page the Browser app
- *                              loads in a frame at proton://<id>.
+ * Each app is an apps/<name>/app.html containing a <script data-proton-app>
+ * registration block. Metadata lives in data/applications.js; built-in sites
+ * are standalone websites/<name>/site.html pages. Nothing needs a build step.
  *
- * Apps and websites use the SAME catalog system — one INI-style file each:
- *   data/applications.js  [application] blocks: id, name, path, icon, cat,
- *                         desc, w, h
- *   data/websites.js      [website] blocks: id, name, path, icon, desc
- * assets/config-loader.js parses them into window.PROTON_APPLICATIONS and
- * window.PROTON_WEBSITES, and loadHtmlModules() (called at boot by
- * assets/boot.js) then:
- *   - fetches each app's file and executes its registration script in
- *     catalog order (the catalog order is the proton menu order), handing
- *     the catalog entry to registerApp() (see assets/core.js), so the
- *     catalog is the single source of truth for app metadata, and
- *   - registers each website's catalog entry + page URL in the SITES
- *     registry, so the Browser app can load the page in a frame at
- *     proton://<id> (site pages are fetched lazily by the frame itself —
- *     nothing to download at boot).
- *
- * Because the modules are loaded over HTTP, proton must be served over HTTP(S) — GitHub
- * Pages or a local server such as `python3 -m http.server`. Opening
- * index.html straight from the file system will not load the modules.
+ * Local desktop apps load at boot. Streamed games (streamed=true in the
+ * catalog) get a lightweight registered placeholder and fetch their tiny
+ * app.html only when launched. A library of 87 links should not make every
+ * sign-in download 87 extra modules before the desktop appears.
  */
 'use strict';
 
@@ -42,40 +23,70 @@ function fetchText(url) {
   });
 }
 
+function executeAppModule(entry, text) {
+  const doc = new DOMParser().parseFromString(text, 'text/html');
+  const src = doc.querySelector('script[data-proton-app]');
+  if (!src) throw new Error(entry.path + ' has no <script data-proton-app> block');
+  const before = APPS[entry.id];
+  window.__protonPendingApp = entry; // catalog metadata wins in registerApp()
+  try {
+    const el = document.createElement('script');
+    el.textContent = src.textContent;
+    el.dataset.protonFrom = entry.path;
+    document.body.appendChild(el);
+    el.remove();
+  } finally {
+    window.__protonPendingApp = null;
+  }
+  if (!APPS[entry.id] || APPS[entry.id] === before) {
+    throw new Error(entry.path + ' did not register app id "' + entry.id + '"');
+  }
+}
+
+function registerLazyGame(entry) {
+  let pending = null;
+  function render(body, ctx) {
+    body.innerHTML = `<div class="pad muted">${iconSvg('refresh')} Opening ${MH.esc(entry.name)}…</div>`;
+    if (!pending) pending = fetchText(entry.path).then((text) => {
+      executeAppModule(entry, text);
+      if (userData) applyModuleOverrides(); // restore this account's name/icon edits
+      return APPS[entry.id];
+    }).catch((err) => { pending = null; throw err; });
+    pending.then((app) => {
+      if (wins.get(entry.id)?.body !== body) return; // closed while downloading
+      try { app.render(body, ctx); }
+      catch (err) {
+        console.error(err);
+        body.innerHTML = `<div class="pad"><h3>${iconSvg('alert')} Could not open ${MH.esc(app.name)}</h3><p class="muted">${MH.esc(err.message)}</p></div>`;
+      }
+    }).catch((err) => {
+      if (wins.get(entry.id)?.body !== body) return;
+      body.innerHTML = `<div class="pad"><h3>${iconSvg('alert')} Could not load ${MH.esc(entry.name)}</h3><p class="muted">${MH.esc(err.message)}</p><button class="btn" id="game-retry">Retry</button></div>`;
+      body.querySelector('#game-retry').onclick = () => render(body, ctx);
+    });
+  }
+  window.__protonPendingApp = entry;
+  try { registerApp({ render }); }
+  finally { window.__protonPendingApp = null; }
+}
+
 async function loadHtmlModules() {
   const appEntries = Array.isArray(window.PROTON_APPLICATIONS) ? window.PROTON_APPLICATIONS : [];
-  if (!appEntries.length) {
-    throw new Error('Application catalog is empty — add [application] blocks to data/applications.js');
-  }
+  if (!appEntries.length) throw new Error('Application catalog is empty — add [application] blocks to data/applications.js');
   const siteEntries = Array.isArray(window.PROTON_WEBSITES) ? window.PROTON_WEBSITES : [];
 
-  /* Fetch all app modules in parallel, but execute/register in catalog order. */
-  const appTexts = await Promise.all(appEntries.map((e) => fetchText(e.path)));
+  /* Fetch local apps in parallel, then register everything in catalog order. */
+  const eager = appEntries.filter((e) => e.streamed !== 'true');
+  const texts = await Promise.all(eager.map((e) => fetchText(e.path)));
+  const byId = new Map(eager.map((e, i) => [e.id, texts[i]]));
+  for (const entry of appEntries) {
+    if (entry.streamed === 'true') registerLazyGame(entry);
+    else executeAppModule(entry, byId.get(entry.id));
+  }
 
-  appTexts.forEach((text, i) => {
-    const entry = appEntries[i];
-    const doc = new DOMParser().parseFromString(text, 'text/html');
-    const src = doc.querySelector('script[data-proton-app]');
-    if (!src) throw new Error(entry.path + ' has no <script data-proton-app> block');
-    window.__protonPendingApp = entry; // catalog metadata; merged by registerApp()
-    try {
-      const el = document.createElement('script');
-      el.textContent = src.textContent;
-      el.dataset.protonFrom = entry.path;
-      document.body.appendChild(el);
-      el.remove();
-    } finally {
-      window.__protonPendingApp = null;
-    }
-    if (!APPS[entry.id]) throw new Error(entry.path + ' did not register app id "' + entry.id + '"');
-  });
-
-  /* Websites need no boot-time fetch: the catalog entry IS the metadata,
-   * and the Browser's frame loads the page itself when it is visited. */
-  siteEntries.forEach((entry) => {
-    registerSite({
-      id: entry.id, name: entry.name, icon: entry.icon, desc: entry.desc,
-      page: new URL(entry.path, document.baseURI).href,
-    });
-  });
+  /* Site pages are loaded by the Browser frame only when visited. */
+  siteEntries.forEach((entry) => registerSite({
+    id: entry.id, name: entry.name, icon: entry.icon, desc: entry.desc,
+    page: new URL(entry.path, document.baseURI).href,
+  }));
 }

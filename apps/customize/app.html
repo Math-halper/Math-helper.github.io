@@ -60,9 +60,18 @@ registerApp({
 
     <h3 id="cust-desktop">${iconSvg('monitor')} Desktop parts</h3>
     <div class="card" id="cust-components"></div>
+    <div class="card" style="margin-top:12px"><b>Desktop icons</b>
+      <p class="muted">Drag icons on the wallpaper to move them; double-click to open. Removing an icon never deletes its original app or file.</p>
+      <div id="cust-shortcuts"></div>
+      <div style="display:flex;gap:7px;flex-wrap:wrap;margin-top:12px">
+        <button class="btn sm" id="cust-add-shortcut">${iconSvg('plus')} Add application icon</button>
+        <button class="btn sm" id="cust-files-shortcut">${iconSvg('folder')} Add file/folder from Files</button>
+        <button class="btn sm" id="cust-arrange-shortcuts">Arrange icons</button>
+      </div>
+    </div>
 
     <h3>${iconSvg('refresh')} Start over</h3>
-    <div class="card"><p class="muted" style="margin-top:0">Reset every customisation (app renames/icons/categories/order, hidden apps, pins, themes, wallpapers, desktop parts) back to proton defaults. Your content — notes, files, calendar, saved web apps and websites — is <b>not</b> deleted.</p>
+    <div class="card"><p class="muted" style="margin-top:0">Reset every customisation (app renames/icons/categories/order, hidden apps, pins, themes, wallpapers, desktop parts and shortcut layout) back to proton defaults. Your content — notes, files, calendar, saved web apps and websites — is <b>not</b> deleted.</p>
     <button class="btn danger" id="cust-reset">Reset customisations</button></div>
     </div>`;
 
@@ -110,7 +119,8 @@ registerApp({
       body.querySelectorAll('[data-mhide]').forEach((b) => b.onclick = () => {
         const a = APPS[b.dataset.mhide];
         if (a && confirmBox(`Remove “${a.name}” from the proton menu? You can add it back here or in App Center.`)) {
-          closeWin(a.id); userData.hiddenApps.push(a.id);
+          if (!closeWin(a.id)) return;
+          userData.hiddenApps.push(a.id);
           userData.settings.pinned = userData.settings.pinned.filter((x) => x !== a.id);
           saveData(); refreshChrome(); drawModules();
         }
@@ -236,6 +246,23 @@ registerApp({
       });
     }
 
+    function drawShortcuts() {
+      const box = body.querySelector('#cust-shortcuts');
+      box.innerHTML = userData.desktopIcons.length ? userData.desktopIcons.map((entry) => {
+        const app = entry.kind === 'app' ? APPS[entry.target] : null;
+        const st = entry.kind === 'path' ? FS.stat(entry.target) : null;
+        const name = app?.name || (st?.path === FS.home() ? 'Home' : st?.name) || (entry.kind === 'path' ? FS.basename(entry.target) : entry.target);
+        const glyph = app?.icon || (st?.type === 'dir' ? 'folder' : st ? 'file' : 'alert');
+        return `<div class="rowitem" style="display:flex;align-items:center;gap:10px;padding:8px 0"><span style="font-size:21px">${iconFor(glyph)}</span><span style="flex:1;min-width:0;overflow-wrap:anywhere"><b>${MH.esc(name)}</b> <small class="muted">${entry.kind === 'app' ? 'App' : 'File / folder'}${entry.kind === 'path' && !st ? ' · missing' : ''}</small></span><button class="btn sm" data-shortcut-remove="${MH.esc(entry.id)}">Remove icon</button></div>`;
+      }).join('') : '<p class="muted">No icons yet. Add an application below or right-click an item in Files.</p>';
+      box.querySelectorAll('[data-shortcut-remove]').forEach((b) => b.onclick = () => DesktopIcons.remove(b.dataset.shortcutRemove));
+    }
+    body.querySelector('#cust-add-shortcut').onclick = () => DesktopIcons.showPicker();
+    body.querySelector('#cust-files-shortcut').onclick = () => openApp('files');
+    body.querySelector('#cust-arrange-shortcuts').onclick = () => DesktopIcons.arrange();
+    window.addEventListener('proton-desktop-icons-changed', drawShortcuts);
+    body.onDestroy = () => window.removeEventListener('proton-desktop-icons-changed', drawShortcuts);
+
     body.querySelector('#cust-q').addEventListener('input', drawModules);
     body.querySelector('#cust-goto-appcenter').onclick = () => openApp('appcenter');
     body.querySelectorAll('[data-jump]').forEach((a) => a.onclick = (e) => {
@@ -261,19 +288,20 @@ registerApp({
       drawWalls(); drawThemes(); MH.toast(`Wallpaper “${w.name}” added and applied.`);
     };
     body.querySelector('#cust-reset').onclick = () => {
-      if (!confirmBox('Reset ALL customisations to proton defaults? Your notes, files, custom apps, websites and other content stay untouched.')) return;
+      if (!confirmBox('Reset ALL customisations, including desktop shortcuts and their positions, to proton defaults? Your notes, files, custom apps, websites and other content stay untouched.')) return;
       userData.moduleOverrides = {}; userData.hiddenApps = [];
+      userData.desktopIcons = MH.defaultDesktopIcons(currentUser.usernameLower);
       userData.settings.pinned = ['files', 'calculator', 'notes', 'browser', 'terminal'];
       userData.customThemes = []; userData.customWallpapers = [];
       userData.settings.activeThemeId = 'proton-dark';
       userData.settings.accent = '#ffffff'; userData.settings.wallpaper = 'mint';
       userData.settings.components = { clock: true, desktopHint: true, lockButton: true, userButton: true, startSearch: true, panelLabels: false };
       applyModuleOverrides(); saveData(); applyAccent(); applyWallpaper(); applyComponents(); refreshChrome();
-      drawModules(); drawThemes(); drawWalls(); drawComponents();
+      drawModules(); drawThemes(); drawWalls(); drawComponents(); drawShortcuts();
       MH.toast('Customisations reset to defaults.');
     };
 
-    drawModules(); drawThemes(); drawWalls(); drawComponents();
+    drawModules(); drawThemes(); drawWalls(); drawComponents(); drawShortcuts();
   },
 });
 </script>

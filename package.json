@@ -1,0 +1,11 @@
+{
+  "name": "proton-static-desktop",
+  "private": true,
+  "description": "Optional development tests for the dependency-free static desktop",
+  "scripts": {
+    "test": "node --test tests/*.test.cjs"
+  },
+  "devDependencies": {
+    "jsdom": "26.1.0"
+  }
+}
