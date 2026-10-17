@@ -43,7 +43,7 @@ registerApp({
 
       body.querySelector('#ac-custom-count').textContent = `(${userData.customApps.length})`;
       body.querySelector('#ac-custom').innerHTML = userData.customApps.filter(match).length ? userData.customApps.filter(match).map((a) => `
-        <div class="card"><div class="card-ic" style="font-size:30px">${iconFor(a.icon, 'grid')}</div><h3 style="margin:7px 0 3px">${MH.esc(a.name)}</h3>
+        <div class="card"><div class="card-ic" style="font-size:30px">${appIcon(a, 'grid')}</div><h3 style="margin:7px 0 3px">${MH.esc(a.name)}</h3>
         <p class="muted site-url" style="min-height:34px">${MH.esc(a.desc || a.url)}</p><span class="chip">My Apps</span>
         <div style="display:flex;gap:6px;flex-wrap:wrap;margin-top:11px"><button class="btn sm primary" data-copen="${a.id}">Open</button>
         <button class="btn sm" data-cpin="${a.id}">${(userData.settings.pinned || []).includes(a.id) ? 'Unpin' : iconSvg('pin') + ' Pin'}</button>
@@ -63,7 +63,12 @@ registerApp({
         const url = normalizeUrl(prompt('Web address:', a.url) ?? '');
         if (!url) { MH.toast('That address does not look valid.'); return; }
         const icon = prompt('Icon name (folder, globe, star, dice, music...):', iconNameFrom(a.icon, 'grid'));
-        a.name = name.trim() || a.name; a.url = url; if (icon) a.icon = iconNameFrom(icon, 'grid');
+        a.name = name.trim() || a.name; a.url = url;
+        if (icon) {
+          const nextIcon = iconNameFrom(icon, 'grid');
+          if (nextIcon !== iconNameFrom(a.icon, 'grid')) delete a.iconImage;
+          a.icon = nextIcon;
+        }
         syncCustomApps(); saveData(); refreshChrome(); draw(); MH.toast('App updated.');
       });
       body.querySelectorAll('[data-cdel]').forEach((b) => b.onclick = () => {
@@ -78,7 +83,7 @@ registerApp({
 
       body.querySelector('#ac-sites-count').textContent = `(${userData.websites.length})`;
       body.querySelector('#ac-sites').innerHTML = userData.websites.filter(match).length ? userData.websites.filter(match).map((s) => `
-        <div class="card"><div class="card-ic" style="font-size:30px">${iconFor(s.icon, 'globe')}</div><h3 style="margin:7px 0 3px">${MH.esc(s.name)}</h3>
+        <div class="card"><div class="card-ic" style="font-size:30px">${catalogIconFor(s.icon, s.svgIcon !== false, 'globe')}</div><h3 style="margin:7px 0 3px">${MH.esc(s.name)}</h3>
         <p class="muted site-url" style="min-height:34px">${MH.esc(s.url)}</p><span class="chip">Website</span>
         <div style="display:flex;gap:6px;flex-wrap:wrap;margin-top:11px"><button class="btn sm primary" data-sopen="${s.id}">Open</button>
         <button class="btn sm" data-sdel="${s.id}">Remove</button></div></div>`).join('')
@@ -102,7 +107,7 @@ registerApp({
               ? '<span class="muted" title="This one keeps the desktop manageable">Built-in</span>'
               : `<button class="btn sm" data-remove="${a.id}">Remove</button>`;
           }
-          return `<div class="card" ${removed ? 'style="opacity:.62"' : ''}><div class="card-ic" style="font-size:30px">${iconFor(a.icon)}</div><h3 style="margin:7px 0 3px">${MH.esc(a.name)}</h3>
+          return `<div class="card" ${removed ? 'style="opacity:.62"' : ''}><div class="card-ic" style="font-size:30px">${appIcon(a)}</div><h3 style="margin:7px 0 3px">${MH.esc(a.name)}</h3>
           <p class="muted" style="min-height:34px">${MH.esc(a.desc)}</p><span class="chip">${a.cat}</span>${removed ? ' <span class="chip" style="background:#f8d7d4;color:#8c2b24">Removed</span>' : ''}
           <div style="display:flex;gap:6px;flex-wrap:wrap;margin-top:11px">${buttons}</div></div>`;
         }).join('');

@@ -37,6 +37,39 @@
     return records;
   }
 
+  function normalizeCatalogIcon(kind, item, fallback) {
+    const value = item.icon || fallback;
+    const requested = String(item['svg-icon'] || '').toLowerCase();
+    let svgIcon;
+    if (requested === 'true') svgIcon = true;
+    else if (requested === 'false') svgIcon = false;
+    else {
+      if (requested) warnings.push(`${kind} ${item.id} has invalid svg-icon value "${item['svg-icon']}"; inferring from icon.`);
+      /* Keep old catalogs working: known icon names are SVGs; data/icons paths are images. */
+      svgIcon = isSvgIconName(value);
+      if (!svgIcon && !isIconAssetPath(value)) {
+        warnings.push(`${kind} ${item.id} has an unknown icon "${value}"; using ${fallback}.`);
+        item.icon = fallback;
+        item.svgIcon = true;
+        delete item['svg-icon'];
+        return;
+      }
+    }
+    if (svgIcon && !isSvgIconName(value)) {
+      warnings.push(`${kind} ${item.id} sets svg-icon=true but "${value}" is not a named SVG icon; using ${fallback}.`);
+      item.icon = fallback;
+      item.svgIcon = true;
+    } else if (!svgIcon && !isIconAssetPath(value)) {
+      warnings.push(`${kind} ${item.id} sets svg-icon=false but "${value}" is not a local data/icons image path; using ${fallback}.`);
+      item.icon = fallback;
+      item.svgIcon = true;
+    } else {
+      item.icon = value;
+      item.svgIcon = svgIcon;
+    }
+    delete item['svg-icon'];
+  }
+
   /* Shared validation: id, name and path are required; duplicates and
    * enabled=false entries are dropped; the rest get defaults. */
   function validate(kind, records, defaults) {
@@ -52,7 +85,7 @@
       }
       if (String(item.enabled).toLowerCase() === 'false') return false; // hidden without deleting the block
       /* Defaults keep a block minimal — id, name and path are enough. */
-      item.icon = item.icon || defaults.icon;
+      normalizeCatalogIcon(kind, item, defaults.icon);
       item.desc = item.desc || '';
       ids.add(item.id);
       return true;

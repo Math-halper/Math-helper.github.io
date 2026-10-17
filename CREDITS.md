@@ -47,33 +47,36 @@ authors.
 
 ## What this build ships
 
-Everything above describes how proton was built. This build has since been
-**cut back to its System apps**: App Center, Customize, Settings, About and
-the Browser. Removed with the rest:
+Everything above describes how proton was built. The current base is trimmed
+to five core System apps: App Center, Customize, Settings, About and Browser.
+Celeste Classic is added as an iframe-only wrapper around its separately
+hosted Math-halper GitHub Pages; no game content is copied into this repository. The older bundled apps and game catalogs remain removed:
 
 - **19 bundled apps** — Files, Text Editor, Image Viewer, Notes, Calendar,
   Contacts, Calculator, Spreadsheet, Presentation, Whiteboard, Logic Sim,
   Terminal, Media, PDF Viewer and the five local games (Chess, Checkers,
   Sudoku, Klondike, Backgammon).
-- **92 streamed arcade games** — the 19 Proton Arcade titles, the 68 Gams
-  Offline titles and the five local games above, all catalogued in
-  `data/applications.js`. Removed with them: `assets/game-host.js` (the shared
+- **92 game entries from the older build** — the 19 Proton Arcade titles,
+  68 Gams Offline titles and the five local games above (the local five were
+  not streamed), catalogued in `data/applications.js` before trimming.
+  Removed with them: `assets/game-host.js` (the shared
   frame host), `assets/game-icons.js` (their hand-drawn monochrome SVG glyphs),
   the `.arcade-*` styles, and the two Gams builds that had been copied into
   this repository under `games/gams/g/g/` (*A Dance of Fire and Ice*,
-  *Grey Box Testing*) — no third-party game byte is stored, streamed or
-  referenced here any more.
+  *Grey Box Testing*) — none of those game builds or the old streamed catalog
+  are bundled here. The two live Pages URLs used by the new wrappers are
+  listed below.
 - **5 of the 6 built-in websites** — Guide, World History, Maths Resources,
   proton Daily and the Digital Logic Sim web edition (an independent
   re-implementation inspired by Sebastian Lague's MIT-licensed Digital Logic
   Sim, which also carried upstream's JetBrains Mono NL fonts under SIL OFL
   1.1). **Test Page** was kept and rewritten as this build's smoke test, so
-  `websites/` still exists with that one site (plus `_template/`) and
+  `websites/` still exists with that one site (plus `_template/` and `_embed/`) and
   `data/websites.js` still holds one `[website]` block; the Browser also copes
   with an empty catalog if it is removed.
 - **The styles, icons and tests that only those apps used** —
-  `assets/styles.css` now carries the shell's chrome plus the classes the five
-  remaining apps use, and `tests/` is a single suite for the trimmed build.
+  `assets/styles.css` carries the shell's chrome plus the classes used by the
+  six shipped app wrappers, and `tests/` is a single suite for this trimmed build.
 
 Nothing in the desktop shell was removed: accounts, the window manager, the
 panel and start menu, per-account desktop shortcuts, the customisation layer,
@@ -85,7 +88,19 @@ boards), so an older backup still imports and any of these apps can be added
 back with a folder under `apps/` and one catalog block.
 
 The provenance table above and the sections that used to follow it (Digital
-Logic Sim, the streamed Proton Arcade and Gams Offline catalogs) described
-code that is no longer in this repository; the upstream projects' own licences
-and copyrights are unaffected by its removal, and this repository now grants
-no rights in — and makes no reference to — any third-party game build.
+Logic Sim, the streamed Proton Arcade and Gams Offline catalogs) are historical:
+those builds are no longer bundled here. Their upstream projects' licences and
+copyrights are unaffected, and this repository grants no rights in their game
+content.
+
+## Live embedded game page
+
+The Celeste app folder contains only proton's iframe wrapper. The page loads
+directly from the existing GitHub Pages deployment, and the wrapper provides
+an **Open in new tab** link:
+
+- Celeste Classic — [GitHub Pages](https://math-halper.github.io/Celeste/1/index.html) · [source repository](https://github.com/Math-halper/Celeste)
+
+The frames are sandboxed without `allow-same-origin`, keeping embedded content
+away from proton's local account storage. No games or game assets are copied
+into this repository.

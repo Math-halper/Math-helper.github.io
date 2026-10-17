@@ -82,7 +82,7 @@ const MH = {
       desktopIcons: MH.defaultDesktopIcons(),
       notes: [{
         id: MH.uid(), title: 'Welcome to proton',
-        html: `<p>This desktop is a <b>static clone of Mixt</b> (from <i>proton-arcade/mlp</i>), rebranded and rebuilt to run with <b>no server at all</b>.</p><h2><span style="font-size:19px">Things to try</span></h2><ul><li>This build ships its <b>System apps only</b>: App Center, Customize, Settings, About and the Browser</li><li>Everything you type here is <b>saved on this device</b>, under your account</li><li>Drag windows, pin apps to the panel, change the wallpaper in Settings</li></ul><p>Have fun!</p>`,
+        html: `<p>This desktop is a <b>static clone of Mixt</b> (from <i>proton-arcade/mlp</i>), rebranded and rebuilt to run with <b>no server at all</b>.</p><h2><span style="font-size:19px">Things to try</span></h2><ul><li>The five core System apps are joined by one sandboxed GitHub Pages embed: Celeste Classic. No game files are copied here.</li><li>Everything you type here is <b>saved on this device</b>, under your account</li><li>Drag windows, pin apps to the panel, change the wallpaper in Settings</li></ul><p>Have fun!</p>`,
         updated: Date.now(),
       }],
       events: [{ id: MH.uid(), date: today, time: '09:00', title: 'First day on proton', notes: 'Created my account today.' }],
@@ -95,7 +95,7 @@ const MH = {
        * /home/<user> is the read-only system tree. */
       dirs: [home + '/Desktop', home + '/Documents', home + '/Pictures', home + '/Downloads'],
       files: [
-        { path: home + '/Documents/Welcome.txt', content: 'Welcome to proton!\n\nThis build ships its System apps only: App Center, Customize,\nSettings, About and the Browser. Your account still has a real\nvirtual file system rooted at / :\n- /  holds every single file of the proton system (read-only)\n- /home/<you>  is yours\n\nThe Browser can open any HTML file in it, and Settings exports\nyour whole account as a backup.', updated: Date.now() },
+        { path: home + '/Documents/Welcome.txt', content: 'Welcome to proton!\n\nThe five core System apps are joined by Celeste Classic, embedded from its\nexternal GitHub Pages site. No game files or assets are copied into this\nproject. Your account still has a virtual file system rooted at / :\n- /  holds every single file of the proton system (read-only)\n- /home/<you>  is yours\n\nThe Browser can open any HTML file in it, and Settings exports\nyour whole account as a backup.', updated: Date.now() },
         { path: home + '/Documents/Ideas.txt', content: 'Ideas:\n- Try a new wallpaper in Settings\n- Rename an app in Customize\n- ', updated: Date.now() },
         { path: home + '/README.txt', content: 'proton — static clone of Mixt (proton-arcade/mlp @ arena/170861f7-mlp), rebranded.\nLicensed AGPL-3.0-only. See CREDITS.md in the project repo.', updated: Date.now() },
       ],

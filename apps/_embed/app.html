@@ -25,6 +25,7 @@ loader (assets/html-loader.js) at boot.</p>
             name=My App
             path=apps/my-app/app.html
             icon=globe
+            svg-icon=true
             cat=System
             desc=Frames https://example.com
             w=980
@@ -43,6 +44,7 @@ loader (assets/html-loader.js) at boot.</p>
      third-party page must not reach proton's localStorage, where the
      accounts live. -->
 <script data-proton-app>
+(() => {
 /* proton app module: embedded page — edit this file to change this app.
  * Loaded by index.html; calls registerApp() (see apps/README.md).
  * Metadata (name, icon, cat, desc, w, h) lives in data/applications.js. */
@@ -69,6 +71,7 @@ registerApp({
     body.querySelector('[data-e="ext"]').onclick = () => window.open(EMBED_URL, '_blank', 'noopener');
   },
 });
+})();
 </script>
 <style>
 /* The toolbar address, truncated like the Browser's. */

@@ -53,14 +53,14 @@ registerApp({
       main.innerHTML = `<div class="pad"><h2>Welcome to the (tiny) proton web</h2>
       <p class="muted">This static site has no server, so the Browser only shows what this repository ships. Real websites can be opened from the address bar too, though many refuse to be embedded.</p>
       <h3>${iconSvg('book')} Built-in websites</h3>${siteList.length ? `<div class="grid-cards">
-      ${siteList.map((s) => `<div class="card"><div class="card-ic" style="font-size:24px">${iconFor(s.icon, 'globe')}</div><h3 style="margin:5px 0 3px">${MH.esc(s.name)}</h3><p class="muted">${MH.esc(s.desc || '')}</p><button class="btn primary" data-site="${s.id}">Visit</button></div>`).join('')}
+      ${siteList.map((s) => `<div class="card"><div class="card-ic" style="font-size:24px">${catalogIconFor(s.icon, s.svgIcon !== false, 'globe')}</div><h3 style="margin:5px 0 3px">${MH.esc(s.name)}</h3><p class="muted">${MH.esc(s.desc || '')}</p><button class="btn primary" data-site="${s.id}">Visit</button></div>`).join('')}
       </div>` : '<p class="muted">No built-in websites are catalogued right now. Add a page under <span class="kbd">websites/&lt;name&gt;/site.html</span> plus one <span class="kbd">[website]</span> block in <span class="kbd">data/websites.js</span> and it appears here.</p>'}
       <h3 style="margin-top:20px">${iconSvg('globe')} Your websites</h3><div class="grid-cards" id="b-sites"></div>
       <p class="muted" style="margin-top:14px">Adding websites is disabled. Type any address in the bar above to visit it without saving it, or open an HTML file from the virtual file system with <span class="kbd">file:///path/to/page.html</span>.</p></div>`;
       main.querySelectorAll('[data-site]').forEach((b) => b.onclick = () => showSite(b.dataset.site));
       const sitesBox = main.querySelector('#b-sites');
       sitesBox.innerHTML = userData.websites.length ? userData.websites.map((s) => `
-        <div class="card"><div class="card-ic" style="font-size:24px">${iconFor(s.icon, 'globe')}</div><h3 style="margin:5px 0 3px">${MH.esc(s.name)}</h3>
+        <div class="card"><div class="card-ic" style="font-size:24px">${catalogIconFor(s.icon, s.svgIcon !== false, 'globe')}</div><h3 style="margin:5px 0 3px">${MH.esc(s.name)}</h3>
         <p class="muted site-url">${MH.esc(s.url)}</p><button class="btn sm primary" data-open="${s.id}">Open</button>
         <button class="btn sm" data-del="${s.id}">Remove</button></div>`).join('')
         : '<p class="muted">No websites saved on this account. Adding websites is disabled.</p>';

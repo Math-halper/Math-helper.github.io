@@ -1,10 +1,6 @@
-/* proton — SVG icon set.
- * Every app, website and button icon on the desktop is one of these named
- * vector icons (drawn on a 24x24 grid, stroke = currentColor), never an
- * emoji. Apps refer to icons by name, e.g.  icon: 'folder'  and the shell
- * renders them with iconFor(app.icon). Add your own by adding a line to
- * ICON_PATHS below — the name instantly works in every app, in the
- * Customize app and in the App Center icon pickers. */
+/* proton — SVG icon set and safe rendering for catalog and per-account image icons.
+ * Catalogs may use local raster paths or named vectors; per-account uploads
+ * can override those defaults from Customize. */
 'use strict';
 
 const ICON_PATHS = {
@@ -141,6 +137,10 @@ const LEGACY_ICONS = {
   '\uff0b': 'plus',
 };
 
+function isSvgIconName(name) {
+  return typeof name === 'string' && Object.prototype.hasOwnProperty.call(ICON_PATHS, name);
+}
+
 /* Resolve any stored icon value (icon name, legacy emoji, or empty) to a
  * known icon name. Unknown values fall back so the UI never prints raw
  * emoji or markup from user data. */
@@ -148,7 +148,7 @@ function iconNameFrom(value, fallback = 'grid') {
   const raw = String(value == null ? '' : value).trim();
   if (!raw) return fallback;
   const clean = raw.replace(/[\uFE0E\uFE0F]/g, '');
-  if (ICON_PATHS[clean]) return clean;
+  if (isSvgIconName(clean)) return clean;
   if (LEGACY_ICONS[raw]) return LEGACY_ICONS[raw];
   if (LEGACY_ICONS[clean]) return LEGACY_ICONS[clean];
   return fallback;
@@ -157,18 +157,108 @@ function iconNameFrom(value, fallback = 'grid') {
 /* Inline SVG markup for an icon. Size follows the surrounding font-size
  * (1em), so existing layout sizing keeps working; add a class for extras. */
 function iconSvg(name, cls = '') {
-  const n = ICON_PATHS[name] ? name : 'grid';
+  const n = isSvgIconName(name) ? name : 'grid';
   return `<svg class="icn ${cls}" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false">${ICON_PATHS[n]}</svg>`;
 }
 
-/* Render any stored icon value (new name or legacy emoji) as an SVG icon. */
+/* Uploaded icons are normalized to tiny raster data URLs before being saved
+ * in the account record. Accept only known raster MIME types and base64 so
+ * account backups cannot inject markup or remote URLs into the UI. */
+const ICON_IMAGE_DATA_MAX = 180_000;
+const ICON_IMAGE_DATA_RE = /^data:image\/(?:png|jpeg|webp);base64,[A-Za-z0-9+/]+={0,2}$/;
+function isIconImageData(value) {
+  return typeof value === 'string' && value.length <= ICON_IMAGE_DATA_MAX && ICON_IMAGE_DATA_RE.test(value);
+}
+
+/* Read, downscale and re-encode a chosen raster image. Keeping a 128px copy
+ * makes it sharp in the desktop while avoiding large localStorage backups. */
+function iconImageFromFile(file) {
+  return new Promise((resolve, reject) => {
+    if (!file || !/^image\/(?:png|jpe?g|webp|gif|bmp|avif)$/i.test(file.type || '')) {
+      reject(new Error('Choose a PNG, JPG, WebP, GIF, BMP, or AVIF image.'));
+      return;
+    }
+    if (file.size > 8 * 1024 * 1024) {
+      reject(new Error('Choose an image that is 8 MB or smaller.'));
+      return;
+    }
+
+    let objectUrl;
+    try { objectUrl = URL.createObjectURL(file); }
+    catch { reject(new Error('This browser could not read that image.')); return; }
+    const image = new Image();
+    const release = () => { if (objectUrl) URL.revokeObjectURL(objectUrl); objectUrl = ''; };
+    image.onerror = () => { release(); reject(new Error('That image could not be decoded.')); };
+    image.onload = () => {
+      release();
+      const sourceWidth = image.naturalWidth || image.width;
+      const sourceHeight = image.naturalHeight || image.height;
+      if (!sourceWidth || !sourceHeight || sourceWidth * sourceHeight > 32_000_000) {
+        reject(new Error('That image has invalid or excessively large dimensions.'));
+        return;
+      }
+      const scale = Math.min(1, 128 / Math.max(sourceWidth, sourceHeight));
+      const canvas = document.createElement('canvas');
+      canvas.width = Math.max(1, Math.round(sourceWidth * scale));
+      canvas.height = Math.max(1, Math.round(sourceHeight * scale));
+      try {
+        const context = canvas.getContext('2d');
+        if (!context) throw new Error('Canvas is unavailable.');
+        context.clearRect(0, 0, canvas.width, canvas.height);
+        context.drawImage(image, 0, 0, canvas.width, canvas.height);
+        const data = canvas.toDataURL('image/webp', 0.86);
+        if (!isIconImageData(data)) throw new Error('That image could not be saved as an app icon.');
+        resolve(data);
+      } catch (error) {
+        reject(error instanceof Error ? error : new Error('That image could not be saved as an app icon.'));
+      }
+    };
+    try { image.src = objectUrl; }
+    catch { release(); reject(new Error('That image could not be decoded.')); }
+  });
+}
+
+/* Render an uploaded image or a named/legacy icon. */
 function iconFor(value, fallback = 'grid') {
+  if (isIconImageData(value)) {
+    return `<img class="icn app-icon-image" src="${value}" alt="" aria-hidden="true" draggable="false">`;
+  }
   return iconSvg(iconNameFrom(value, fallback));
 }
 
+/* Default catalog images are local raster files under data/icons/. Keeping
+ * the path grammar narrow prevents a catalog value becoming HTML or a remote
+ * URL when it is placed in an img src attribute. */
+const ICON_ASSET_PATH_RE = /^data\/icons\/[A-Za-z0-9][A-Za-z0-9._-]{0,119}\.(?:png|jpe?g|webp|gif|bmp|avif)$/i;
+function isIconAssetPath(value) {
+  return typeof value === 'string' && value.length <= 160 && ICON_ASSET_PATH_RE.test(value);
+}
+
+/* Catalog icons either name one of proton's inline SVGs or point at a local
+ * raster image. svgIcon is true for the former and false for the latter. */
+function catalogIconFor(value, svgIcon = true, fallback = 'grid') {
+  if (svgIcon === false) {
+    if (isIconAssetPath(value)) {
+      return `<img class="icn app-icon-image" src="${value}" alt="" aria-hidden="true" draggable="false">`;
+    }
+    return iconSvg(fallback);
+  }
+  return iconSvg(iconNameFrom(value, fallback));
+}
+
+/* An account-uploaded image overrides the catalog default; clearing it falls
+ * back to either the catalog's raster path or its named inline SVG. */
+function appIcon(app, fallback = 'grid') {
+  if (app && isIconImageData(app.iconImage)) return iconFor(app.iconImage, fallback);
+  return catalogIconFor(app?.icon, app?.svgIcon !== false, fallback);
+}
+
 /* <option> list for icon picker <select>s, with `selected` pre-chosen. */
-function iconOptions(selected) {
-  const cur = iconNameFrom(selected, 'grid');
+function iconOptions(selected, includeCatalogDefault = false) {
+  const catalogDefault = selected === '__catalog__';
+  const cur = catalogDefault ? '' : iconNameFrom(selected, 'grid');
   const option = (name, label) => `<option value="${name}" ${name === cur ? 'selected' : ''}>${MH.esc(label)}</option>`;
-  return ICON_CHOICES.map(([name, label]) => option(name, label)).join('');
+  const defaultOption = includeCatalogDefault
+    ? `<option value="__catalog__" ${catalogDefault ? 'selected' : ''}>Default icon from the catalog</option>` : '';
+  return defaultOption + ICON_CHOICES.map(([name, label]) => option(name, label)).join('');
 }

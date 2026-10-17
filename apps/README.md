@@ -16,14 +16,23 @@ appears in the proton menu, App Center and Customize.
 > web-address apps — everything is part of this static website. "Add your own
 > app" below is the *developer* workflow for changing the site's code.
 
-This build ships **its System apps only**. The 19 other bundled apps (Files,
-Text Editor, Notes, Calendar, Contacts, Calculator, Spreadsheet, Presentation,
-Whiteboard, Logic Sim, Terminal, Media, PDF Viewer, Image Viewer and the five
-board games) and all 92 streamed arcade games were removed, along with
-`assets/game-host.js`, `assets/game-icons.js` and the copied game builds under
-`games/`. Every built-in website went too except **Test Page** — the one entry
-left in `data/websites.js` (see
+The current base keeps its five core System apps. Celeste Classic is added as
+a small wrapper around its existing GitHub Pages site, loaded live in a
+sandboxed iframe. This repository does not contain its game code, assets or
+copies of the source repository.
+The previously bundled apps and game catalogs remain removed. The only
+built-in website is **Test Page** (the one entry in `data/websites.js`; see
 [`websites/README.md`](../websites/README.md)).
+
+In **Customize → App modules**, choose a named vector icon or upload a PNG,
+JPG, WebP, GIF, BMP or AVIF image. Images are resized to at most 128 pixels,
+stored per account, and displayed in the menu, panel, app windows and desktop
+shortcuts. Existing custom web apps can use the same image control.
+
+For a site-wide default icon, put the raster file in `data/icons/` and set
+`icon=data/icons/my-app.png` and `svg-icon=false` in `data/applications.js`.
+Use `icon=globe` and `svg-icon=true` for one of the built-in inline SVG icons;
+see [`data/icons/README.md`](../data/icons/README.md).
 
 ## Add your own app (developer workflow)
 
@@ -73,10 +82,11 @@ exactly where the old one left off.
 | Folder | App (id) |
 | --- | --- |
 | `app-center/` | App Center (`appcenter`) — hide/restore built-ins, manage the account's saved apps & websites |
-| `customize/` | Customize (`customize`) — app modules, themes, wallpapers, desktop parts, reset |
+| `customize/` | Customize (`customize`) — app modules, vector or uploaded image icons, themes, wallpapers, desktop parts, reset |
 | `settings/` | Settings (`settings`) — account, wallpaper & accent, password, backup, accounts on this device |
 | `about/` | About (`about`) — provenance, licence, what's inside |
-| `browser/` | Browser (`browser`) — built-in websites (none right now), saved websites, external addresses and VFS HTML files |
+| `browser/` | Browser (`browser`) — Test Page, saved websites, external addresses and VFS HTML files |
+| `celeste-classic/` | Celeste Classic (`celeste-classic`) — [hosted game page](https://math-halper.github.io/Celeste/1/index.html), embedded with the shared safe iframe wrapper |
 | `_template/` | not an app — the starting point for a new one |
 | `_embed/` | not an app — the starting point for one that is only a framed page (`EMBED_URL`) |
 
@@ -116,7 +126,7 @@ repository — the `/` tree of the virtual file system; refresh it with
 `assets/fs-archive.js` (ZIP downloads), `assets/config-loader.js` (parses both
 catalogs), `assets/store.js` (accounts/storage and the per-account defaults),
 `assets/core.js` (desktop, windows, registries), `assets/desktop-icons.js`
-(shortcuts), `assets/icons.js` (the SVG icon set), `assets/styles.css`,
+(shortcuts), `assets/icons.js` (the SVG set and safe image-icon renderer), `assets/styles.css`,
 `assets/html-loader.js` (loads the HTML modules) and `assets/boot.js` (loaded
 last). Note: because the loader fetches files over HTTP, proton must be served
 over HTTP(S) — GitHub Pages or `python3 -m http.server` — not opened as a

@@ -228,6 +228,7 @@ details.help summary{color:#ffffff}
 
 /* ---- SVG icons (assets/icons.js) — real vector icons, sized by context ---- */
 .icn{width:1em;height:1em;display:inline-block;vertical-align:-.13em;flex:none}
+.app-icon-image{object-fit:contain;border-radius:3px}
 .btn .icn,.chip .icn{width:1.05em;height:1.05em}
 .menu-btn .lg .icn{width:15px;height:15px;color:var(--accent-ink)}
 .auth-logo .icn{width:32px;height:32px;color:var(--accent-ink)}

@@ -1,11 +1,8 @@
-/* proton ships its System apps only (App Center, Customize, Settings, About
- * and the Browser): every other app, the streamed arcade games, the copied
- * game builds and the built-in websites were removed; the one site that
- * ships is Test Page, the built-in smoke test for the Browser. These tests
- * keep that trimmed build honest — the catalogs parse, every catalogued
- * module and site page is real, the generated file-system manifest still
- * matches the repository, the desktop boots and opens each app, and the test
- * site's own checks pass. */
+/* The current build keeps its five core System apps, plus Celeste Classic
+ * as a sandboxed embed of its existing GitHub Pages site. No game content is
+ * copied here. The one built-in website is Test Page, the Browser smoke
+ * test. These tests keep the catalog, wrapper, generated file-system
+ * manifest and running desktop in sync. */
 const { test } = require('node:test');
 const assert = require('node:assert/strict');
 const fs = require('node:fs');
@@ -15,7 +12,10 @@ const { JSDOM, VirtualConsole } = require('jsdom');
 
 const ROOT = path.resolve(__dirname, '..');
 const source = (p) => fs.readFileSync(path.join(ROOT, p), 'utf8');
-const SYSTEM_APPS = ['appcenter', 'customize', 'settings', 'about', 'browser'];
+const SYSTEM_APPS = ['appcenter', 'customize', 'settings', 'about', 'browser', 'celeste-classic'];
+const EMBED_URLS = {
+  'celeste-classic': 'https://math-halper.github.io/Celeste/1/index.html',
+};
 /* Every script index.html loads, in order, minus boot.js (which starts the
  * auth flow and needs a served page). */
 const SHELL = ['assets/store.js', 'assets/icons.js', 'data/fs-manifest.js', 'assets/fs.js',
@@ -38,31 +38,42 @@ function catalog() {
     warnings: ctx.window.PROTON_CATALOG_WARNINGS,
     icons: vm.runInContext('ICON_PATHS', ctx),
     render: vm.runInContext('iconSvg', ctx),
+    renderIcon: vm.runInContext('iconFor', ctx),
+    renderCatalogIcon: vm.runInContext('catalogIconFor', ctx),
+    validIconPath: vm.runInContext('isIconAssetPath', ctx),
+    loadImageIcon: vm.runInContext('iconImageFromFile', ctx),
   };
 }
 
-test('the catalog is the five System apps plus the one built-in test site', () => {
-  const { apps, sites, warnings, icons, render } = catalog();
+test('the catalog is five core apps, one embedded game and the built-in test site', () => {
+  const { apps, sites, warnings, icons, render, renderCatalogIcon, validIconPath } = catalog();
   assert.deepEqual(Array.from(warnings), [], 'catalog parses without warnings');
   /* Array.from everywhere: the catalogs come from a vm context, so their
    * arrays are not reference-equal to this realm's. */
   assert.deepEqual(Array.from(apps, (a) => a.id), SYSTEM_APPS);
   assert.deepEqual(Array.from(apps, (a) => a.cat), SYSTEM_APPS.map(() => 'System'));
+  assert.deepEqual(Array.from(apps, (a) => a.svgIcon), SYSTEM_APPS.map(() => true));
   assert.deepEqual(Array.from(sites, (s) => s.id), ['test-page']);
   const page = { ...sites[0] };
   assert.equal(page.name, 'Test Page');
   assert.equal(page.path, 'websites/test-page/site.html');
   assert.equal(page.icon, 'flask');
   assert.ok(page.desc.includes('TEST SITE'), 'the test site should say what it is');
-  assert.ok(icons[page.icon], `test site uses unknown icon "${page.icon}"`);
+  if (page.svgIcon) assert.ok(icons[page.icon], `test site uses unknown SVG icon "${page.icon}"`);
+  else assert.ok(validIconPath(page.icon), 'test site has an unsafe default image path');
   assert.ok(fs.existsSync(path.join(ROOT, page.path)), `Missing site page: ${page.path}`);
   for (const app of apps) {
     assert.ok(app.name && app.path && app.desc, `${app.id} is missing metadata`);
     assert.ok(app.w >= 300 && app.h >= 200, `${app.id} has no usable window size`);
-    assert.ok(icons[app.icon], `${app.id} uses unknown icon "${app.icon}"`);
-    const svg = render(app.icon);
-    assert.match(svg, /^<svg[\s\S]*currentColor[\s\S]*<\/svg>$/, `${app.id} icon is not a themed SVG`);
-    assert.ok(!svg.includes('<image'), `${app.id} icon embeds a raster image`);
+    if (app.svgIcon) {
+      assert.ok(icons[app.icon], `${app.id} uses unknown SVG icon "${app.icon}"`);
+      const svg = render(app.icon);
+      assert.match(svg, /^<svg[\s\S]*currentColor[\s\S]*<\/svg>$/, `${app.id} icon is not a themed SVG`);
+      assert.ok(!svg.includes('<image'), `${app.id} icon embeds a raster image`);
+    } else {
+      assert.ok(validIconPath(app.icon), `${app.id} has an unsafe default image path`);
+      assert.match(renderCatalogIcon(app.icon, false), /^<img class="icn app-icon-image" src="data\/icons\//);
+    }
   }
   /* Nothing left in the repository should reference the removed layers. */
   for (const gone of ['assets/game-icons.js', 'assets/game-host.js', 'games']) {
@@ -76,6 +87,45 @@ test('the catalog is the five System apps plus the one built-in test site', () =
   assert.ok(!index.includes('game-icons.js') && !index.includes('game-host.js'));
 });
 
+test('uploaded icon data renders only as a small, safe raster image', () => {
+  const { renderIcon } = catalog();
+  const image = 'data:image/png;base64,AQID';
+  assert.equal(renderIcon(image), `<img class="icn app-icon-image" src="${image}" alt="" aria-hidden="true" draggable="false">`);
+  assert.match(renderIcon('data:image/svg+xml;base64,PHN2Zz48L3N2Zz4='), /^<svg/);
+  assert.match(renderIcon('https://example.com/icon.png'), /^<svg/);
+  assert.match(renderIcon(`data:image/png;base64,${'A'.repeat(180_001)}`), /^<svg/);
+});
+
+test('catalog icons accept local image paths or named inline SVG defaults', () => {
+  const ctx = vm.createContext({ window: {}, console });
+  vm.runInContext(source('assets/icons.js'), ctx);
+  ctx.window.PROTON_APPLICATIONS_TEXT = [
+    '[application]', 'id=image-app', 'name=Image App', 'path=apps/image/app.html',
+    'icon=data/icons/app-logo.png', 'svg-icon=false',
+    '[application]', 'id=vector-app', 'name=Vector App', 'path=apps/vector/app.html',
+    'icon=globe', 'svg-icon=true',
+    '[application]', 'id=legacy-app', 'name=Legacy App', 'path=apps/legacy/app.html', 'icon=grid',
+  ].join('\n');
+  ctx.window.PROTON_WEBSITES_TEXT = '';
+  vm.runInContext(source('assets/config-loader.js'), ctx);
+  const apps = Array.from(ctx.window.PROTON_APPLICATIONS);
+  assert.deepEqual(apps.map((app) => [app.icon, app.svgIcon]), [
+    ['data/icons/app-logo.png', false], ['globe', true], ['grid', true],
+  ]);
+  assert.deepEqual(Array.from(ctx.window.PROTON_CATALOG_WARNINGS), []);
+  assert.equal(vm.runInContext('appIcon(window.PROTON_APPLICATIONS[0])', ctx),
+    '<img class="icn app-icon-image" src="data/icons/app-logo.png" alt="" aria-hidden="true" draggable="false">');
+  assert.match(vm.runInContext('appIcon(window.PROTON_APPLICATIONS[1])', ctx), /^<svg/);
+  assert.equal(vm.runInContext('isIconAssetPath("data/icons/app-logo.webp")', ctx), true);
+  assert.equal(vm.runInContext('isIconAssetPath("data/icons/../app-logo.png")', ctx), false);
+});
+
+test('uploaded icon files reject unsafe formats and files over the size limit', async () => {
+  const { loadImageIcon } = catalog();
+  await assert.rejects(loadImageIcon({ type: 'image/svg+xml', size: 128 }), /PNG, JPG, WebP, GIF, BMP, or AVIF/);
+  await assert.rejects(loadImageIcon({ type: 'image/png', size: 8 * 1024 * 1024 + 1 }), /8 MB or smaller/);
+});
+
 test('every catalog entry points at a real, syntactically valid app module', () => {
   const { apps } = catalog();
   for (const app of apps) {
@@ -86,10 +136,22 @@ test('every catalog entry points at a real, syntactically valid app module', () 
     assert.match(script[1], /registerApp\(/, `${app.id} never registers itself`);
     assert.equal(app.streamed, undefined, `${app.id} should load at boot, not lazily`);
   }
-  /* apps/ holds only the shipped apps plus the developer template + guide. */
+  /* The game addition is a wrapper only: no game code, assets or repo files
+   * are copied into its app folder. */
+  for (const [id, url] of Object.entries(EMBED_URLS)) {
+    const app = apps.find((entry) => entry.id === id);
+    assert.ok(app, `Missing catalog entry for ${id}`);
+    const html = source(app.path);
+    assert.ok(html.includes(`const EMBED_URL = '${url}';`), `${id} points at the wrong hosted page`);
+    assert.match(html, /sandbox="[^"]*allow-scripts[^"]*"/);
+    assert.ok(!/sandbox="[^"]*allow-same-origin/.test(html));
+    assert.deepEqual(fs.readdirSync(path.dirname(path.join(ROOT, app.path))).sort(), ['app.html']);
+  }
+
+  /* apps/ holds only the shipped apps plus the developer templates. */
   const folders = fs.readdirSync(path.join(ROOT, 'apps'), { withFileTypes: true })
     .filter((e) => e.isDirectory()).map((e) => e.name).sort();
-  assert.deepEqual(folders, ['_embed', '_template', 'about', 'app-center', 'browser', 'customize', 'settings']);
+  assert.deepEqual(folders, ['_embed', '_template', 'about', 'app-center', 'browser', 'celeste-classic', 'customize', 'settings']);
 });
 
 test('the system manifest still matches the repository exactly', () => {
@@ -130,7 +192,7 @@ test('the system manifest still matches the repository exactly', () => {
     'Manifest and repository disagree — re-run python3 tools/gen-fs-manifest.py');
 });
 
-test('the desktop boots, lists the System apps and opens every one of them', async () => {
+test('the desktop boots, lists and opens all six catalogued apps', async () => {
   const virtualConsole = new VirtualConsole(), errors = [];
   virtualConsole.on('jsdomError', (err) => errors.push(err.message));
   const dom = new JSDOM('<!doctype html><main id="auth" hidden></main><div id="desktop" hidden></div><div id="toasts"></div>', {
@@ -162,7 +224,7 @@ test('the desktop boots, lists the System apps and opens every one of them', asy
     assert.deepEqual(shortcuts.map((s) => s.target), ['settings', 'browser']);
     for (const s of shortcuts) assert.ok(APPS[s.target], `default shortcut to a removed app: ${s.target}`);
 
-    // The start menu shows one System section holding all five apps.
+    // The start menu shows one System section holding all six apps.
     const menu = w.document.querySelector('#startmenu');
     assert.deepEqual([...menu.querySelectorAll('.sm-cat')].map((e) => e.textContent), ['System']);
     assert.deepEqual([...menu.querySelectorAll('.sm-item')].map((e) => e.dataset.app), SYSTEM_APPS);
@@ -176,6 +238,13 @@ test('the desktop boots, lists the System apps and opens every one of them', asy
       const text = body?.textContent || '';
       assert.ok(body && body.innerHTML.length > 100, `${id} rendered nothing`);
       assert.ok(!/hit a snag|Could not load/i.test(text), `${id} reported an error: ${text.slice(0, 140)}`);
+      if (EMBED_URLS[id]) {
+        const frame = body.querySelector('iframe.site-frame');
+        assert.ok(frame, `${id} did not render its hosted page`);
+        assert.equal(frame.getAttribute('src'), EMBED_URLS[id]);
+        assert.ok(!frame.getAttribute('sandbox').includes('allow-same-origin'), `${id} frame can access proton storage`);
+        assert.ok(body.querySelector('[data-e="ext"]'), `${id} has no direct-link escape hatch`);
+      }
       w.closeWin(id, true);
     }
 
@@ -203,23 +272,102 @@ test('the desktop boots, lists the System apps and opens every one of them', asy
   } finally { dom.window.close(); }
 });
 
-test('Customize still resets to defaults that exist', async () => {
+test('Customize saves, displays and resets uploaded app icon images', async () => {
   const { window: w } = new JSDOM('<!doctype html><main id="auth" hidden></main><div id="desktop" hidden></div><div id="toasts"></div>', {
     url: 'https://math-halper.github.io/math-halper.github.io/', runScripts: 'dangerously', pretendToBeVisual: true,
   });
+  const storedImage = 'data:image/webp;base64,AQID';
+  w.URL.createObjectURL = () => 'blob:icon-upload';
+  w.URL.revokeObjectURL = () => {};
+  w.Image = class {
+    constructor() { this.naturalWidth = 256; this.naturalHeight = 128; }
+    set src(_value) { queueMicrotask(() => this.onload?.()); }
+  };
+  w.HTMLCanvasElement.prototype.getContext = () => ({ clearRect() {}, drawImage() {} });
+  w.HTMLCanvasElement.prototype.toDataURL = () => storedImage;
   const run = (text) => { const s = w.document.createElement('script'); s.textContent = text; w.document.body.appendChild(s); s.remove(); };
   try {
     for (const p of SHELL) run(source(p));
     w.fetchText = async (p) => source(p);
     await w.loadHtmlModules();
-    w.eval("currentUser = {username:'Ada',usernameLower:'ada',displayName:'Ada',createdAt:Date.now()}; userData = MH.defaultData('Ada','ada'); enterDesktop();");
+    w.eval("APPS.browser.icon = 'data/icons/catalog-browser.png'; APPS.browser.svgIcon = false; currentUser = {username:'Ada',usernameLower:'ada',displayName:'Ada',createdAt:Date.now()}; userData = MH.defaultData('Ada','ada'); userData.customApps.push({id:'legacy-image-app',name:'Saved App',url:'https://example.org/',icon:'globe',desc:'Saved app'}); enterDesktop();");
     w.eval("window.confirm = () => true;");
+    assert.equal(w.document.querySelector('#startmenu .sm-item[data-app="browser"] img.app-icon-image')?.getAttribute('src'),
+      'data/icons/catalog-browser.png', 'catalog image paths are the default for all users');
+    assert.equal(w.document.querySelector('#panelapps .pitem[data-app="browser"] img.app-icon-image')?.getAttribute('src'),
+      'data/icons/catalog-browser.png');
+    assert.equal(w.document.querySelector('.desktop-icon[data-shortcut="desktop-browser"] img.app-icon-image')?.getAttribute('src'),
+      'data/icons/catalog-browser.png');
     w.openApp('customize');
     const body = w.eval('wins').get('customize').body;
+    assert.equal(body.querySelector('[data-micon="browser"]').value, '__catalog__');
+    let iconSelect = body.querySelector('[data-micon="browser"]');
+    iconSelect.value = 'globe';
+    body.querySelector('[data-msave="browser"]').click();
+    assert.equal(w.eval('APPS.browser.icon'), 'globe');
+    assert.equal(w.eval('APPS.browser.svgIcon'), true, 'a selected vector icon overrides the catalog image');
+    iconSelect = body.querySelector('[data-micon="browser"]');
+    assert.ok(iconSelect.querySelector('option[value="__catalog__"]'), 'image defaults remain available after selecting a vector');
+    iconSelect.value = '__catalog__';
+    body.querySelector('[data-msave="browser"]').click();
+    assert.equal(w.eval('APPS.browser.icon'), 'data/icons/catalog-browser.png');
+    assert.equal(w.eval('APPS.browser.svgIcon'), false, 'the catalog image can be restored');
+    w.openApp('browser');
+    const browserWindow = w.eval('wins').get('browser');
     assert.equal(body.querySelector('#cust-files-shortcut'), null, 'Customize still offers a Files shortcut');
     assert.deepEqual([...body.querySelectorAll('#cust-modlist .card b')].map((b) => b.textContent).slice(0, SYSTEM_APPS.length),
-      ['App Center', 'Customize', 'Settings', 'About', 'Browser']);
+      ['App Center', 'Customize', 'Settings', 'About', 'Browser', 'Celeste Classic']);
+
+    const uploadBrowserIcon = async () => {
+      const input = body.querySelector('[data-micon-file="browser"]');
+      assert.ok(input, 'Customize should offer an image picker for app icons');
+      Object.defineProperty(input, 'files', { configurable: true, value: [{ type: 'image/png', size: 1024 }] });
+      await input.onchange();
+    };
+    await uploadBrowserIcon();
+    assert.equal(w.eval('APPS.browser.iconImage'), storedImage);
+    assert.equal(JSON.parse(w.localStorage.getItem('mhOS.user.ada.v1')).moduleOverrides.browser.iconImage, storedImage,
+      'the resized image is saved in this account data');
+    assert.ok(w.document.querySelector('#startmenu .sm-item[data-app="browser"] img.app-icon-image'));
+    assert.ok(w.document.querySelector('#panelapps .pitem[data-app="browser"] img.app-icon-image'));
+    assert.ok(w.document.querySelector('.desktop-icon[data-shortcut="desktop-browser"] img.app-icon-image'));
+    assert.ok(browserWindow.el.querySelector('.wic img.app-icon-image'), 'an already-open window title updates live');
+    w.openApp('appcenter');
+    const center = w.eval('wins').get('appcenter').body;
+    const browserCard = [...center.querySelectorAll('#ac-grid .card')].find((card) => card.querySelector('h3')?.textContent === 'Browser');
+    assert.ok(browserCard?.querySelector('.card-ic img.app-icon-image'), 'App Center listings use the uploaded image');
+    w.closeWin('appcenter', true);
+    w.openApp('about');
+    assert.ok(w.eval('wins').get('about').body.querySelector('.app-main p img.app-icon-image'), 'About lists use the uploaded image');
+    w.closeWin('about', true);
+
+    body.querySelector('[data-micon-clear="browser"]').click();
+    assert.equal(w.eval('APPS.browser.iconImage'), '', 'the clear button removes the account image override');
+    assert.equal(w.document.querySelector('#startmenu .sm-item[data-app="browser"] img.app-icon-image')?.getAttribute('src'),
+      'data/icons/catalog-browser.png', 'clearing restores the catalog path icon');
+    assert.equal(browserWindow.el.querySelector('.wic img.app-icon-image')?.getAttribute('src'),
+      'data/icons/catalog-browser.png', 'open window titles restore the catalog path icon');
+    w.closeWin('browser', true);
+
+    const customInput = body.querySelector('[data-cicon-file="legacy-image-app"]');
+    assert.ok(customInput, 'saved custom apps should also have image icon controls');
+    Object.defineProperty(customInput, 'files', { configurable: true, value: [{ type: 'image/png', size: 1024 }] });
+    await customInput.onchange();
+    assert.equal(w.eval("APPS['legacy-image-app'].iconImage"), storedImage);
+    assert.equal(JSON.parse(w.localStorage.getItem('mhOS.user.ada.v1')).customApps[0].iconImage, storedImage);
+    w.openApp('appcenter');
+    const customCard = [...w.eval('wins').get('appcenter').body.querySelectorAll('#ac-custom .card')]
+      .find((card) => card.querySelector('h3')?.textContent === 'Saved App');
+    assert.ok(customCard?.querySelector('.card-ic img.app-icon-image'), 'saved custom app listings use the uploaded image');
+    w.closeWin('appcenter', true);
+    body.querySelector('[data-cicon-clear="legacy-image-app"]').click();
+    assert.equal(w.eval("APPS['legacy-image-app'].iconImage"), '');
+
+    await uploadBrowserIcon();
     body.querySelector('#cust-reset').click();
+    assert.equal(w.eval('APPS.browser.iconImage'), '', 'Reset customisations also clears uploaded icons');
+    assert.equal(w.document.querySelector('#startmenu .sm-item[data-app="browser"] img.app-icon-image')?.getAttribute('src'),
+      'data/icons/catalog-browser.png', 'reset returns to the configured default icon');
     assert.deepEqual(Array.from(w.eval('userData.settings.pinned')), ['settings', 'appcenter', 'browser']);
     assert.deepEqual(Array.from(w.eval('userData.desktopIcons'), (s) => s.target), ['settings', 'browser']);
   } finally { w.close(); }

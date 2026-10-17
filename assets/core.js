@@ -2,10 +2,10 @@
  * Every app lives in its own apps/<name>/app.html module (loaded via
  * assets/html-loader.js); the list of apps and all their metadata (name,
  * icon, category, description, window size) live in the catalog
- * data/applications.js, parsed by assets/config-loader.js. proton ships its
- * System apps only (App Center, Customize, Settings, About, Browser).
+ * data/applications.js, parsed by assets/config-loader.js. proton ships five
+ * core System apps and one sandboxed GitHub Pages game embed.
  * Built-in websites use the same catalog system (data/websites.js) and are
- * framed by the Browser app; that catalog is empty right now.
+ * framed by the Browser app (Test Page is the only built-in site).
  * Window chrome/panel styling follows Mixt's Mint-Y theme.
  */
 'use strict';
@@ -15,8 +15,8 @@ const APPS = {};
 /* registerApp() is called by each app.html with just its render() code.
  * When the HTML loader runs that script it parks the catalog entry for the
  * app in window.__protonPendingApp, and the catalog entry — name, icon,
- * cat, desc, w, h — wins, so data/applications.js is the single place to
- * rename an app, change its icon/category or resize its window. */
+ * svgIcon mode, cat, desc, w, h — wins, so data/applications.js is the single
+ * place to set default icons, rename apps, change categories or resize windows. */
 function registerApp(def) {
   const catalog = window.__protonPendingApp;
   if (catalog) {
@@ -69,7 +69,7 @@ function normalizeUserData() {
     return [{ id, kind: entry.kind, target, col: coord(entry.col), row: coord(entry.row) }];
   });
   /* --- modular customisation state --- */
-  userData.moduleOverrides ||= {};   // appId -> {name, icon, cat, desc, order}
+  userData.moduleOverrides ||= {};   // appId -> {name, icon, svgIcon, iconImage, cat, desc, order}
   userData.customThemes ||= [];      // {id, name, accent, wallpaper}
   userData.customWallpapers ||= [];  // {id, name, from, to}
   if (!userData.settings.activeThemeId) userData.settings.activeThemeId = 'proton-dark';
@@ -102,7 +102,7 @@ function syncCustomApps() {
   applyModuleOverrides();
   for (const def of userData.customApps) {
     APPS[def.id] = {
-      id: def.id, name: def.name, icon: def.icon || 'grid', cat: 'My Apps',
+      id: def.id, name: def.name, icon: def.icon || 'grid', svgIcon: true, iconImage: def.iconImage || '', cat: 'My Apps',
       desc: def.desc || def.url, w: 980, h: 620,
       render(body) {
         body.innerHTML = `${bar(def.name, `<span class="muted" style="max-width:340px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${MH.esc(def.url)}</span><button class="btn sm" data-w="reload">${iconSvg('refresh')} Reload</button><button class="btn sm primary" data-w="ext">${iconSvg('external')} Open in new tab</button>`)}
@@ -116,7 +116,15 @@ function syncCustomApps() {
   }
   applyModuleOverrides();
 }
-function refreshChrome() { renderStartMenu(''); renderPanelApps(); DesktopIcons.render(); }
+function refreshChrome() {
+  renderStartMenu(''); renderPanelApps(); DesktopIcons.render();
+  for (const [id, win] of wins) {
+    const app = APPS[id]; if (!app) continue;
+    const title = win.el.querySelector('.wt'), icon = win.el.querySelector('.wic');
+    if (title) title.textContent = app.name;
+    if (icon) icon.innerHTML = appIcon(app);
+  }
+}
 
 /* Every built-in module's factory metadata, captured once, so user edits
  * (rename, re-icon, re-categorise, reorder) can always be reset. */
@@ -124,7 +132,7 @@ const BASE_MODULES = {};
 function snapshotModules() {
   Object.values(APPS).forEach((a, i) => {
     if (dynamicAppIds.has(a.id) || BASE_MODULES[a.id]) return;
-    BASE_MODULES[a.id] = { name: a.name, icon: a.icon, cat: a.cat, desc: a.desc, index: i };
+    BASE_MODULES[a.id] = { name: a.name, icon: a.icon, svgIcon: a.svgIcon !== false, iconImage: a.iconImage || '', cat: a.cat, desc: a.desc, index: i };
   });
 }
 function applyModuleOverrides() {
@@ -133,12 +141,17 @@ function applyModuleOverrides() {
   for (const a of Object.values(APPS)) {
     if (dynamicAppIds.has(a.id)) continue;
     const base = BASE_MODULES[a.id]; if (!base) continue;
-    a.name = base.name; a.icon = base.icon; a.cat = base.cat; a.desc = base.desc;
+    a.name = base.name; a.icon = base.icon; a.svgIcon = base.svgIcon !== false; a.iconImage = base.iconImage || ''; a.cat = base.cat; a.desc = base.desc;
     a.baseIndex = base.index; delete a.sortOrder;
     const o = userData.moduleOverrides[a.id];
     if (o) {
       if (o.name) a.name = o.name;
-      if (o.icon) a.icon = o.icon;
+      if (o.icon) {
+        a.icon = o.icon;
+        if (o.svgIcon === undefined) a.svgIcon = isSvgIconName(o.icon);
+      }
+      if (o.svgIcon !== undefined) a.svgIcon = o.svgIcon === true || String(o.svgIcon).toLowerCase() === 'true';
+      if (isIconImageData(o.iconImage)) a.iconImage = o.iconImage;
       if (o.cat) a.cat = o.cat;
       if (o.desc !== undefined) a.desc = o.desc;
       if (o.order !== undefined && o.order !== '') a.sortOrder = Number(o.order);
@@ -290,7 +303,7 @@ function openApp(id, options = {}) {
   if (mobile) el.classList.add('max');
   el.innerHTML = `
     <header class="win-head">
-      <span class="wic">${iconFor(app.icon)}</span><span class="wt">${MH.esc(app.name)}</span>
+      <span class="wic">${appIcon(app)}</span><span class="wt">${MH.esc(app.name)}</span>
       <button class="wbtn" data-act="min" title="Minimise">—</button>
       <button class="wbtn" data-act="max" title="Maximise">${iconSvg('square')}</button>
       <button class="wbtn close" data-act="close" title="Close">${iconSvg('x')}</button>
@@ -432,7 +445,7 @@ function renderPanelApps() {
   const ids = [...new Set([...pinned, ...wins.keys()])].filter((id) => !(userData.hiddenApps || []).includes(id));
   box.innerHTML = ids.filter((id) => APPS[id]).map((id) => {
     const a = APPS[id], run = wins.has(id), act = activeApp === id;
-    return `<button class="pitem ${run ? 'running' : ''} ${act ? 'active' : ''}" data-app="${id}" title="${MH.esc(a.name)}${run ? ' (open)' : ''}"><span>${iconFor(a.icon)}</span>${(pinned.includes(id) && !(userData.settings.components || {}).panelLabels) ? '' : `<span class="pl">${MH.esc(a.name)}</span>`}</button>`;
+    return `<button class="pitem ${run ? 'running' : ''} ${act ? 'active' : ''}" data-app="${id}" title="${MH.esc(a.name)}${run ? ' (open)' : ''}"><span>${appIcon(a)}</span>${(pinned.includes(id) && !(userData.settings.components || {}).panelLabels) ? '' : `<span class="pl">${MH.esc(a.name)}</span>`}</button>`;
   }).join('');
   box.querySelectorAll('.pitem').forEach((b) => b.onclick = () => {
     const id = b.dataset.app;
@@ -453,7 +466,7 @@ function renderStartMenu(q) {
     const inCat = list.filter((a) => a.cat === cat)
       .sort((x, y) => (x.sortOrder ?? x.baseIndex ?? 999) - (y.sortOrder ?? y.baseIndex ?? 999));
     if (!inCat.length) continue;
-    html += `<div class="sm-cat">${MH.esc(cat)}</div>` + inCat.map((a) => `<button class="sm-item" data-app="${MH.esc(a.id)}" draggable="true" title="Open ${MH.esc(a.name)} · drag to desktop to add a shortcut"><span class="ic">${iconFor(a.icon)}</span>${MH.esc(a.name)}</button>`).join('');
+    html += `<div class="sm-cat">${MH.esc(cat)}</div>` + inCat.map((a) => `<button class="sm-item" data-app="${MH.esc(a.id)}" draggable="true" title="Open ${MH.esc(a.name)} · drag to desktop to add a shortcut"><span class="ic">${appIcon(a)}</span>${MH.esc(a.name)}</button>`).join('');
   }
   if (!list.length) html += `<p style="grid-column:1/-1;opacity:.7;padding:10px 4px">No apps match “${MH.esc(query)}”.</p>`;
   html += `</div>

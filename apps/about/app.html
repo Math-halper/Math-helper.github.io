@@ -28,8 +28,8 @@ registerApp({
       <h3>Your account</h3>
       <p>On first launch you created an account that lives <b>only in this browser</b> (localStorage). Passwords are salted SHA-256 hashes — never plain text, never sent anywhere. Refreshing the page signs you out and asks for your password again, just like signing out; every app saves per-account, automatically.</p>
       <h3>What's inside</h3>
-      <p>${Object.values(APPS).map((a) => `${iconFor(a.icon)} ${MH.esc(a.name)}`).join(' · ')}</p>
-      <p class="muted">This build ships its <b>System apps only</b> — the productivity, media, create and arcade-game apps that proton used to bundle have all been removed. Apps are catalog entries, so each one can be added back with a folder under <span class="kbd">apps/</span> and one block in <span class="kbd">data/applications.js</span>.</p>
+      <p>${Object.values(APPS).map((a) => `${appIcon(a)} ${MH.esc(a.name)}`).join(' · ')}</p>
+      <p class="muted">This build keeps the five core System apps and adds Celeste Classic as a sandboxed embed of its existing GitHub Pages site. Its app folder contains a wrapper only; no game content is copied here. The older productivity, media, create and arcade-game bundles remain removed.</p>
       <h3>Credits &amp; licence</h3>
       <p class="muted">Mixt / this clone: GNU AGPL-3.0-only. Contains design and app concepts derived from Puter (© Puter Technologies Inc., AGPL-3.0). Not affiliated with Linux Mint, Cinnamon, Puter, or the original authors. Full notes in <span class="kbd">CREDITS.md</span> and <span class="kbd">LICENSE.txt</span> in this repository.</p>
       <button class="btn primary" onclick="window.open('https://github.com/proton-arcade/mlp/tree/arena/170861f7-mlp','_blank')">${iconSvg('external')} View the original project</button>

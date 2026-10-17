@@ -27,7 +27,7 @@ registerApp({
     const WP_BUILTINS = [['mint', 'Charcoal'], ['ocean', 'Smoke'], ['sunset', 'Ash'], ['grape', 'Graphite'], ['slate', 'Slate'], ['rose', 'Silver']];
     body.innerHTML = `${bar('Customize — everything is a module')}
     <div class="app-main pad">
-    <p class="muted" style="margin-top:0">Rename apps, change their icons, move them between categories, reorder them, hide or restore them — then invent your own themes and wallpapers. Everything here is saved per account, and <b>Reset customisations</b> at the bottom undoes it all without touching your saved content.</p>
+    <p class="muted" style="margin-top:0">Rename apps, change their vector icons or upload your own image icons, move them between categories, reorder them, hide or restore them — then invent your own themes and wallpapers. Everything here is saved per account, and <b>Reset customisations</b> at the bottom undoes it all without touching your saved content.</p>
     <div style="display:flex;gap:7px;flex-wrap:wrap;margin-bottom:6px">
       <a class="btn sm" href="#cust-apps" data-jump="cust-apps">${iconSvg('grid')} Apps</a><a class="btn sm" href="#cust-themes" data-jump="cust-themes">${iconSvg('palette')} Themes</a><a class="btn sm" href="#cust-walls" data-jump="cust-walls">${iconSvg('image')} Wallpapers</a><a class="btn sm" href="#cust-desktop" data-jump="cust-desktop">${iconSvg('monitor')} Desktop parts</a>
       <button class="btn sm" id="cust-goto-appcenter">${iconSvg('grid')} Manage apps in App Center</button>
@@ -77,6 +77,36 @@ registerApp({
     const wpOptions = (selected) => [...WP_BUILTINS.map(([id, n]) => `<option value="${id}" ${selected === id ? 'selected' : ''}>${n} (built-in)</option>`),
       ...userData.customWallpapers.map((w) => `<option value="${w.id}" ${selected === w.id ? 'selected' : ''}>${MH.esc(w.name)} (mine)</option>`)].join('');
 
+    function saveModuleIconImage(id, image) {
+      const previous = userData.moduleOverrides[id] ? { ...userData.moduleOverrides[id] } : null;
+      const next = { ...(previous || {}) };
+      if (image) next.iconImage = image; else delete next.iconImage;
+      if (Object.keys(next).length) userData.moduleOverrides[id] = next;
+      else delete userData.moduleOverrides[id];
+      applyModuleOverrides();
+      if (!saveDataNow()) {
+        if (previous) userData.moduleOverrides[id] = previous; else delete userData.moduleOverrides[id];
+        applyModuleOverrides(); refreshChrome(); drawModules();
+        return false;
+      }
+      refreshChrome(); drawModules();
+      return true;
+    }
+
+    function saveCustomAppIconImage(id, image) {
+      const app = userData.customApps.find((entry) => entry.id === id); if (!app) return false;
+      const previous = app.iconImage;
+      if (image) app.iconImage = image; else delete app.iconImage;
+      syncCustomApps();
+      if (!saveDataNow()) {
+        if (previous) app.iconImage = previous; else delete app.iconImage;
+        syncCustomApps(); refreshChrome(); drawModules();
+        return false;
+      }
+      refreshChrome(); drawModules();
+      return true;
+    }
+
     function drawModules() {
       const q = body.querySelector('#cust-q').value.trim().toLowerCase();
       const builtins = Object.values(APPS).filter((a) => !dynamicAppIds.has(a.id))
@@ -88,15 +118,18 @@ registerApp({
           const removed = userData.hiddenApps.includes(a.id), edited = !!userData.moduleOverrides[a.id];
           return `<div class="card" style="margin-bottom:9px;${removed ? 'opacity:.62' : ''}">
           <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center">
-            <span style="font-size:23px">${iconFor(a.icon)}</span><b>${MH.esc(a.name)}</b>
+            <span style="font-size:23px">${appIcon(a)}</span><b>${MH.esc(a.name)}</b>
             <span class="chip">${MH.esc(a.cat)}</span><span class="muted">${a.id}</span>
             ${edited ? '<span class="chip">Edited</span>' : ''}${removed ? '<span class="chip" style="background:#4a1713;color:#ffb4ab">Removed</span>' : ''}
             <span style="margin-left:auto;display:flex;gap:6px;flex-wrap:wrap">
               ${removed ? `<button class="btn sm primary" data-mrestore="${a.id}">${iconSvg('plus')} Add back</button>` : `<button class="btn sm primary" data-mopen="${a.id}">Open</button><button class="btn sm" data-mpin="${a.id}">${userData.settings.pinned.includes(a.id) ? 'Unpin' : iconSvg('pin') + ' Pin'}</button>${PROTECTED.includes(a.id) ? '' : `<button class="btn sm" data-mhide="${a.id}">Remove</button>`}`}
               ${edited ? `<button class="btn sm" data-mreset="${a.id}">Reset</button>` : ''}
             </span></div>
-          <div class="add-form" style="margin-top:9px;grid-template-columns:150px 1.5fr 1.2fr 70px 2fr">
-            <div class="field"><label>Icon</label><select data-micon="${a.id}">${iconOptions(a.icon)}</select></div>
+          <div class="add-form" style="margin-top:9px;grid-template-columns:minmax(170px,1fr) 1.5fr 1.2fr 70px 2fr">
+            <div class="field"><label>Icon</label><select data-micon="${a.id}">${iconOptions(a.svgIcon === false ? '__catalog__' : a.icon, BASE_MODULES[a.id]?.svgIcon === false)}</select>
+              <label class="btn sm" style="margin-top:5px">${a.iconImage ? 'Replace image…' : 'Set image…'}<input data-micon-file="${a.id}" type="file" accept="image/png,image/jpeg,image/webp,image/gif,image/bmp,image/avif" aria-label="Choose image icon for ${MH.esc(a.name)}" hidden></label>
+              ${a.iconImage ? `<button class="btn sm" type="button" data-micon-clear="${a.id}" style="margin-top:5px">${a.svgIcon === false ? 'Use catalog icon' : 'Use vector icon'}</button>` : '<small class="muted">Raster image, up to 8 MB.</small>'}
+            </div>
             <div class="field"><label>Name</label><input data-mname="${a.id}" value="${MH.esc(a.name)}" maxlength="40"></div>
             <div class="field"><label>Category</label><input data-mcat="${a.id}" value="${MH.esc(a.cat)}" list="cust-cats" maxlength="24"></div>
             <div class="field"><label>Order</label><input data-morder="${a.id}" type="number" value="${userData.moduleOverrides[a.id]?.order ?? ''}" placeholder="auto"></div>
@@ -105,11 +138,37 @@ registerApp({
           <button class="btn sm" data-msave="${a.id}" style="margin-top:8px">Save changes</button>
           <span class="muted">Tip: give several apps the same new category name to create your own menu section.</span></div>`;
         }).join('') +
-        (customs.length ? customs.map((a) => `<div class="card" style="margin-bottom:9px"><span style="font-size:23px">${iconFor(a.icon, 'grid')}</span> <b>${MH.esc(a.name)}</b> <span class="chip">My Apps</span> <span class="muted site-url">${MH.esc(a.url)}</span>
-          <span style="margin-left:8px"></span><button class="btn sm primary" data-copen="${a.id}">Open</button> <button class="btn sm" data-cmanage="${a.id}">Edit / remove in App Center</button></div>`).join('') : '');
+        (customs.length ? customs.map((a) => `<div class="card" style="margin-bottom:9px"><span style="font-size:23px">${appIcon(a, 'grid')}</span> <b>${MH.esc(a.name)}</b> <span class="chip">My Apps</span> <span class="muted site-url">${MH.esc(a.url)}</span>
+          <div style="display:flex;gap:6px;flex-wrap:wrap;margin-top:8px">
+            <label class="btn sm">${a.iconImage ? 'Replace image…' : 'Set image…'}<input data-cicon-file="${a.id}" type="file" accept="image/png,image/jpeg,image/webp,image/gif,image/bmp,image/avif" aria-label="Choose image icon for ${MH.esc(a.name)}" hidden></label>
+            ${a.iconImage ? `<button class="btn sm" type="button" data-cicon-clear="${a.id}">Use named icon</button>` : ''}
+            <button class="btn sm primary" data-copen="${a.id}">Open</button><button class="btn sm" data-cmanage="${a.id}">Edit / remove in App Center</button>
+          </div></div>`).join('') : '');
       body.querySelectorAll('[data-mopen]').forEach((b) => b.onclick = () => openApp(b.dataset.mopen));
       body.querySelectorAll('[data-copen]').forEach((b) => b.onclick = () => openApp(b.dataset.copen));
       body.querySelectorAll('[data-cmanage]').forEach((b) => b.onclick = () => openApp('appcenter'));
+      const uploadImage = async (input, id, saveImage) => {
+        const file = input.files?.[0]; input.value = '';
+        if (!file) return;
+        try {
+          const image = await iconImageFromFile(file);
+          if (saveImage(id, image)) MH.toast('Image icon saved to this account.');
+        } catch (error) { MH.toast(error?.message || 'That image could not be used as an icon.'); }
+      };
+      body.querySelectorAll('[data-micon-file]').forEach((input) => {
+        const id = input.dataset.miconFile;
+        input.onchange = () => uploadImage(input, id, saveModuleIconImage);
+      });
+      body.querySelectorAll('[data-micon-clear]').forEach((b) => b.onclick = () => {
+        if (saveModuleIconImage(b.dataset.miconClear, '')) MH.toast('Using the vector icon again.');
+      });
+      body.querySelectorAll('[data-cicon-file]').forEach((input) => {
+        const id = input.dataset.ciconFile;
+        input.onchange = () => uploadImage(input, id, saveCustomAppIconImage);
+      });
+      body.querySelectorAll('[data-cicon-clear]').forEach((b) => b.onclick = () => {
+        if (saveCustomAppIconImage(b.dataset.ciconClear, '')) MH.toast('Using the named icon again.');
+      });
       body.querySelectorAll('[data-mpin]').forEach((b) => b.onclick = () => {
         const id = b.dataset.mpin, p = userData.settings.pinned;
         userData.settings.pinned = p.includes(id) ? p.filter((x) => x !== id) : [...p, id];
@@ -135,9 +194,13 @@ registerApp({
       body.querySelectorAll('[data-msave]').forEach((b) => b.onclick = () => {
         const id = b.dataset.msave, base = BASE_MODULES[id], a = APPS[id]; if (!base || !a) return;
         const val = (attr) => body.querySelector(`[data-${attr}="${id}"]`).value.trim();
-        const o = {};
+        const o = {}, existing = userData.moduleOverrides[id] || {}, selectedIcon = val('micon');
+        const currentIconSelection = a.svgIcon === false ? '__catalog__' : a.icon;
         if (val('mname') && val('mname') !== base.name) o.name = val('mname');
-        if (val('micon') && val('micon') !== base.icon) o.icon = val('micon');
+        if (selectedIcon !== '__catalog__' && (!base.svgIcon || selectedIcon !== base.icon)) {
+          o.icon = selectedIcon; o.svgIcon = true;
+        }
+        if (isIconImageData(existing.iconImage) && selectedIcon === currentIconSelection) o.iconImage = existing.iconImage;
         if (val('mcat') && val('mcat') !== base.cat) o.cat = val('mcat');
         if (val('mdesc') !== base.desc) o.desc = val('mdesc');
         const ord = body.querySelector(`[data-morder="${id}"]`).value;
@@ -251,8 +314,9 @@ registerApp({
         const app = entry.kind === 'app' ? APPS[entry.target] : null;
         const st = entry.kind === 'path' ? FS.stat(entry.target) : null;
         const name = app?.name || (st?.path === FS.home() ? 'Home' : st?.name) || (entry.kind === 'path' ? FS.basename(entry.target) : entry.target);
-        const glyph = app?.icon || (st?.type === 'dir' ? 'folder' : st ? 'file' : 'alert');
-        return `<div class="rowitem" style="display:flex;align-items:center;gap:10px;padding:8px 0"><span style="font-size:21px">${iconFor(glyph)}</span><span style="flex:1;min-width:0;overflow-wrap:anywhere"><b>${MH.esc(name)}</b> <small class="muted">${entry.kind === 'app' ? 'App' : 'File / folder'}${entry.kind === 'path' && !st ? ' · missing' : ''}</small></span><button class="btn sm" data-shortcut-remove="${MH.esc(entry.id)}">Remove icon</button></div>`;
+        const glyph = st?.type === 'dir' ? 'folder' : st ? 'file' : 'alert';
+        const iconHtml = app ? appIcon(app) : iconFor(glyph);
+        return `<div class="rowitem" style="display:flex;align-items:center;gap:10px;padding:8px 0"><span style="font-size:21px">${iconHtml}</span><span style="flex:1;min-width:0;overflow-wrap:anywhere"><b>${MH.esc(name)}</b> <small class="muted">${entry.kind === 'app' ? 'App' : 'File / folder'}${entry.kind === 'path' && !st ? ' · missing' : ''}</small></span><button class="btn sm" data-shortcut-remove="${MH.esc(entry.id)}">Remove icon</button></div>`;
       }).join('') : '<p class="muted">No icons yet. Add an application below.</p>';
       box.querySelectorAll('[data-shortcut-remove]').forEach((b) => b.onclick = () => DesktopIcons.remove(b.dataset.shortcutRemove));
     }
