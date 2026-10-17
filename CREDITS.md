@@ -20,15 +20,15 @@ and look wherever a browser-only equivalent exists:
 | Mint-Y theme `src/gui/src/css/mixt.css` (accent `#68b723`, light gradient title bars, dark bottom panel) | Panel layout/chrome reimplemented in `assets/styles.css`, with the palette changed to black-and-white for proton |
 | Server accounts, `admin` first sign-in, whitelist | First-launch account creation stored **only in this browser** (localStorage), salted password hash, sign-in on every refresh, lock screen |
 | IndexedDB app storage (`src/apps/shared/localdb.js`) | Per-account localStorage state, export/import backup in Settings |
-| `src/apps/notes`, `calendar`, `spreadsheet`, `whiteboard`, `presentation`, `terminal`, `pdf-editor`, `media`, `mail`, `contacts` | Browser-only rewrites with the same core behaviour |
-| `src/apps/sudoku/logic.js`, `checkers`, `chess`, `klondike`, `backgammon` | Sudoku generator/checker adapted from the original pure-logic file; other games reimplemented to the same rules |
-| `src/apps/team-chat`, `g-talk`, `meetings` | On-device channels/direct chat with a local helper bot; meeting planner (real calls need a server) |
-| `src/apps/admin-vault`, dashboard Admin tab | Vault app that re-checks your account password; account/device stats in Settings |
-| `src/app-center`, Files/dashboard | App Center + virtual Files drive; App Center can hide/restore built-ins; previously saved user apps and sites remain openable/removable per account (the add-from-URL flow is disabled) |
+| `src/apps/notes`, `calendar`, `spreadsheet`, `whiteboard`, `presentation`, `terminal`, `pdf-editor`, `media`, `mail`, `contacts` | Were browser-only rewrites with the same core behaviour — **removed**; see below |
+| `src/apps/sudoku/logic.js`, `checkers`, `chess`, `klondike`, `backgammon` | Sudoku generator/checker was adapted from the original pure-logic file, the other games reimplemented to the same rules — **removed** |
+| `src/apps/team-chat`, `g-talk`, `meetings` | On-device channels/direct chat with a local helper bot; meeting planner — removed earlier (real calls need a server) |
+| `src/apps/admin-vault`, dashboard Admin tab | Vault app that re-checked your account password (removed earlier); account/device stats survive in **Settings** |
+| `src/app-center`, Files/dashboard | **App Center** (hide/restore built-ins; previously saved user apps and sites remain openable/removable per account, the add-from-URL flow is disabled). The virtual Files drive is gone — the file system (`assets/fs.js`) stays, but no app ships to browse it |
 | — (modular layer) | **Customize** app: every built-in module's name/icon/category/order is editable and resettable, custom themes & wallpapers can be added/edited/removed/applied, and desktop parts (clock, hint, tray buttons, menu search, panel labels) toggle live — all per-account state with migration |
-| `internet/*` sites | Built-in websites as separate modules: `websites/<name>/site.html`, loaded into the Browser's SITES registry |
-| `internet/world-history`, `internet/mixt-guide` | Built-in Browser pages |
-| — (new in this rebrand) | **New:** Calculator — calculator, linear/quadratic solver, percentage & Pythagoras, formula cards, function graph plotter |
+| `internet/*` sites | Built-in websites as separate modules loaded into the Browser's SITES registry — **removed** except Test Page, the one entry left in `data/websites.js` |
+| `internet/world-history`, `internet/mixt-guide` | Built-in Browser pages — **removed** with the other websites |
+| — (new in this rebrand) | Calculator (solver, graph plotter, formula cards) was new in this rebrand — **removed** |
 
 Things that fundamentally need a server were replaced with honest on-device
 equivalents and are labelled as such in-app: real e-mail/chat/video transport,
@@ -45,143 +45,64 @@ source files remain theirs.
 Not affiliated with Linux Mint, Cinnamon, Puter Technologies, or the Mixt
 authors.
 
-## Digital Logic Sim — web edition (`websites/logic-sim/`, `apps/logic-sim/`)
+## What this build ships
 
-Added later: a circuit design & simulation module inspired by **Sebastian
-Lague's Digital Logic Sim** (<https://github.com/SebLague/Digital-Logic-Sim>,
-MIT licence) and his video series *Exploring How Computers Work*. This is an
-**independent re-implementation for the web** — the simulator engine was
-written from scratch. The editor now visually follows the original's layout,
-colours and drawing conventions, referenced from upstream commit
-`7aeb66ddff44f916ff7fafb043ab4476ef4409fe`. Its MIT notice is retained in
-`websites/logic-sim/UPSTREAM-LICENSE.txt`. The bundled JetBrains Mono NL fonts
-are from upstream's resources and are licensed under SIL OFL 1.1 (see
-`websites/logic-sim/fonts/OFL.txt`). The same modules run as a built-in website
-(`proton://logic-sim`) and as the **Logic Sim** desktop app. S. Lague's
-project covers much more (GPU-accelerated big-circuit editing, busses,
-displays); this port focuses on the core experience: gates, input/output
-pins, clocks, D flip-flops, seven-segment displays, saving circuits as chips
-and nesting chips inside chips.
+Everything above describes how proton was built. The current base is trimmed
+to five core System apps: App Center, Customize, Settings, About and Browser.
+Celeste Classic and Mario Collection are added as iframe-only wrappers around
+their separately hosted Math-halper GitHub Pages; no game content is copied
+into this repository. The older bundled apps and game catalogs remain removed:
 
-## Streamed arcade games
+- **19 bundled apps** — Files, Text Editor, Image Viewer, Notes, Calendar,
+  Contacts, Calculator, Spreadsheet, Presentation, Whiteboard, Logic Sim,
+  Terminal, Media, PDF Viewer and the five local games (Chess, Checkers,
+  Sudoku, Klondike, Backgammon).
+- **92 game entries from the older build** — the 19 Proton Arcade titles,
+  68 Gams Offline titles and the five local games above (the local five were
+  not streamed), catalogued in `data/applications.js` before trimming.
+  Removed with them: `assets/game-host.js` (the shared
+  frame host), `assets/game-icons.js` (their hand-drawn monochrome SVG glyphs),
+  the `.arcade-*` styles, and the two Gams builds that had been copied into
+  this repository under `games/gams/g/g/` (*A Dance of Fire and Ice*,
+  *Grey Box Testing*) — none of those game builds or the old streamed catalog
+  are bundled here. The two live Pages URLs used by the new wrappers are
+  listed below.
+- **5 of the 6 built-in websites** — Guide, World History, Maths Resources,
+  proton Daily and the Digital Logic Sim web edition (an independent
+  re-implementation inspired by Sebastian Lague's MIT-licensed Digital Logic
+  Sim, which also carried upstream's JetBrains Mono NL fonts under SIL OFL
+  1.1). **Test Page** was kept and rewritten as this build's smoke test, so
+  `websites/` still exists with that one site (plus `_template/` and `_embed/`) and
+  `data/websites.js` still holds one `[website]` block; the Browser also copes
+  with an empty catalog if it is removed.
+- **The styles, icons and tests that only those apps used** —
+  `assets/styles.css` carries the shell's chrome plus the classes used by the
+  seven shipped app wrappers, and `tests/` is a single suite for this trimmed build.
 
-The Games menu includes **19 Proton Arcade titles, two Math-halper GitHub
-Pages entries, and 68 Gams Offline entries**, in addition to proton's five
-locally implemented board games. The 89 game modules are small wrappers for
-the shared host (`assets/game-host.js`): 87 pages are loaded from their
-existing Pages origins, while A Dance of Fire and Ice and Grey Box Testing
-have local Gams builds under `games/gams/`. The two Math-halper game builds
-are not copied into this repository. The artwork for every menu icon is an
-original, single-color inline SVG in `assets/game-icons.js` (no upstream
-thumbnail or logo files are copied).
+Nothing in the desktop shell was removed: accounts, the window manager, the
+panel and start menu, per-account desktop shortcuts, the customisation layer,
+the virtual file system (`assets/fs.js`, `data/fs-manifest.js`,
+`assets/fs-archive.js`) and the Browser's ability to open an HTML page from it
+all still work, and the account data model in `assets/store.js` still carries
+the removed apps' data (notes, files, events, contacts, sheets, slides,
+boards), so an older backup still imports and any of these apps can be added
+back with a folder under `apps/` and one catalog block.
 
-### Math-halper GitHub Pages games (2)
+The provenance table above and the sections that used to follow it (Digital
+Logic Sim, the streamed Proton Arcade and Gams Offline catalogs) are historical:
+those builds are no longer bundled here. Their upstream projects' licences and
+copyrights are unaffected, and this repository grants no rights in their game
+content.
 
-| App id | Page embedded in proton | Repo |
-| --- | --- | --- |
-| `celeste-classic` | <https://math-halper.github.io/Celeste/1/> | <https://github.com/Math-halper/Celeste> |
-| `mario-collection` | <https://math-halper.github.io/Mario/> | <https://github.com/Math-halper/Mario> |
+## Live embedded game pages
 
-**Celeste Classic** opens the PICO-8 game in the `Celeste` repository's `1/`
-folder (the repository also has a `2/` game page). The existing Gams Offline
-Celeste entry remains separate. **Mario Collection** opens the `Mario`
-repository's landing page, which offers Super Mario 64 and Mari0. Proton
-stores only these two small app wrappers and their original SVG icons; it does
-not copy the games or their assets. Refer to the linked repositories for
-credits and licensing terms.
+These two app folders contain only proton's iframe wrappers. The pages load
+directly from the existing GitHub Pages deployments, and each wrapper provides
+an **Open in new tab** link:
 
-Both Pages sites use the same `math-halper.github.io` origin as proton. The
-shared game host detects that and omits `allow-same-origin`, so game scripts
-cannot read proton's account data. This isolated frame cannot use normal
-page-origin storage; the game window provides **Open in new tab** for playing
-directly on the Pages site.
+- Celeste Classic — [GitHub Pages](https://math-halper.github.io/Celeste/1/index.html) · [source repository](https://github.com/Math-halper/Celeste)
+- Mario Collection — [GitHub Pages](https://math-halper.github.io/Mario/index.html) · [source repository](https://github.com/Math-halper/Mario)
 
-### Proton Arcade (19 titles)
-
-- Source: <https://github.com/proton-arcade/proton-arcade.github.io/tree/main/website/games>
-- Served from: <https://proton-arcade.github.io/website/games/…>
-
-**Why they stream instead of being committed.** Those builds are single
-self-contained `.html` files with their whole payload inlined as base64 — five
-of them are 20-56 MB, and the set totals roughly **half a gigabyte**. Vendoring
-them would put that weight in every clone, every GitHub Pages deploy and every
-version in git history permanently (GitHub warns above 50 MB per file and
-rejects files over 100 MB), and they would need `.gitattributes` `-text -diff`
-rules because a line-ending normalisation silently corrupts an inlined payload.
-A streamed game costs this repository one small module instead, and no game
-bytes are ever committed: every game app folder contains its module and
-nothing else, and nothing over 1 MB belongs anywhere under `apps/`.
-
-**What this means at runtime.** The player's browser downloads the build
-straight from the publisher's GitHub Pages origin. proton never proxies,
-caches or stores it; game saves belong to the publisher's origin, not the
-proton account (frames run cross-origin). Every game window shows the source
-address and offers **Open in new tab** for builds that refuse to be framed.
-If the publisher is offline, changes a path or removes a title, that game
-stops working here — the local desktop and other games still work.
-
-**Licence — read this before redistributing.** proton itself is AGPL-3.0-only,
-but that licence covers *proton's* code: the host, modules, SVG glyphs and
-catalog entries. **It does not cover the games, and this repository grants no
-rights in them.** No game build is stored or redistributed here; only public
-addresses are referenced. Most titles are commercial works whose copyright
-belongs to their authors; Proton Arcade publishes them **without a licence**.
-Whether any title may be hosted publicly is a question for whoever hosts it —
-this project does not make the builds available itself. The streamed game
-apps are links to third-party sites: removing their catalog blocks from
-`data/applications.js` removes them cleanly.
-
-| App id | Title | Provenance as published by Proton Arcade |
-| --- | --- | --- |
-| `ampler-launcher` | Ampler Launcher | Vendored there from <https://github.com/proton-arcade/AmplerLauncher>; a browser Minecraft (Eaglercraft-style) launcher — the launcher is small, each version it offers then streams separately |
-| `fnaf-1` … `fnaf-4`, `fnaf-sister-location` | Five Nights at Freddy's 1-4, Sister Location | Commercial horror titles by Scott Cawthon |
-| `granny` | Granny | Commercial horror title by DVloper. Present as a build upstream but missing from Proton Arcade's own catalog; metadata here was written for it |
-| `baldis-basics` | Baldi's Basics | Commercial title by mystman12. **Placeholder** — upstream ships a page saying the build is not included yet |
-| `geometry-dash-lite` | Geometry Dash Lite | Commercial title by RobTop Games |
-| `backrooms`, `bloxorz`, `drift-boss`, `kart-bros`, `football-bros`, `retro-bowl`, `pac-man`, `flappy-bird`, `minesweeper` | — | Upstream groups these as its "Offline games pack" ports of well-known browser/arcade titles; Pac-Man (Namco), Geometry Dash, Retro Bowl and the others remain their authors' works |
-| `spacebar-clicker` | Spacebar Clicker | A working idle clicker, credited on its own page to **CrociDB** |
-
-**Not included**, deliberately: upstream's `Pong/` (its `index.html` references a
-`style.css` and `script.js` that do not exist in that repository, so it cannot
-run) and `gam temp/` (an archived handoff text file, not a game). Upstream's
-catalog also lists a `Cookie-clicker` whose folder does not exist, so there is
-nothing to point at. `Google-dino` was wired up here first and then removed on
-request, so it is no longer linked either.
-
-### Gams Offline (68 additional games)
-
-**Copied into this repository (partial):** the Gams builds listed below were
-copied as files from the upstream snapshot at the commit above, under
-`games/gams/g/g/<game>/`, at the project owner's request. No licence is listed
-upstream, so no redistribution rights are granted by this project. These games
-run from this site in a sandbox without same-origin access (no localStorage
-saves). Remove any of them on request from the rights holders.
-
-- A Dance of Fire and Ice (`g/g/fireice`), Grey Box Testing (`g/g/greybox`)
-
-All other Gams games remain streamed from <https://gams-offline.github.io/Gams/>.
-
-- Source: <https://github.com/Gams-Offline/Gams/tree/main/g> (catalog in
-  `Gams.html`, inspected at commit `b75cc91c639e612c04db7d0966eb0fe6d39badf9`)
-- Served from: <https://gams-offline.github.io/Gams/g/…>
-- Integration: `apps/gams-*/app.html` specifies the source path and
-  `origin: 'https://gams-offline.github.io/Gams'` for the shared game host.
-
-The upstream catalog lists 71 games. **Bloxorz**, **Pac-Man** and **Spacebar
-Clicker** already had Proton Arcade entries, so no duplicate apps were made.
-The remaining 68 cover its Basic, Unity, Retrogaming, Henry Stickmin and Flash
-sections (including its full Duck Life, Learn to Fly and Bloons Tower Defense
-sequences). Its Tools section (Code Editor, Ruffle Flash Player, Web Retro)
-and About page are not games, so they were not added. **Geometry Dash** is a
-different upstream build from the existing **Geometry Dash Lite** and has its
-own entry. The catalog source paths were checked against the repository tree.
-
-Some Gams pages load multi-file Unity, Ruffle or emulator assets, which is why
-only their links are included here; copying a single HTML wrapper would not
-make those games work offline. GitHub lists **no repository licence** for
-Gams, and individual games and ROMs can have different owners and terms.
-This project grants no redistribution rights to the builds. They need a
-network connection, can be slow or unavailable, and save (if supported) to
-`gams-offline.github.io` storage rather than the proton account. If a game
-cannot embed, its window has **Open in new tab**. proton is not affiliated
-with Gams Offline or any of the games' creators.
+The frames are sandboxed without `allow-same-origin`, keeping embedded content
+away from proton's local account storage. No games or game assets are copied
+into this repository.

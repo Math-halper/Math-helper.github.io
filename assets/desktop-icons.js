@@ -1,7 +1,11 @@
 /* proton — per-account desktop shortcuts. An icon is a link to an app or a
  * VFS path, never another copy of (or ownership of) its target. The desktop
  * grid is laid out at render time, so a narrower window cannot overlap icons
- * or overwrite the positions saved for a larger screen. */
+ * or overwrite the positions saved for a larger screen.
+ *
+ * proton ships no Files app, so shortcuts to files and folders can no longer
+ * be created here; the ones an older account saved still render (and report
+ * that nothing can open them) until they are removed. */
 'use strict';
 
 const DesktopIcons = (() => {
@@ -65,11 +69,8 @@ const DesktopIcons = (() => {
       return { name: app.name, icon: app.icon, detail: 'Application', missing: false };
     }
     const st = FS.stat(entry.target);
-    const icon = !st ? 'alert' : st.type === 'dir' ? 'folder' : {
-      browser: 'globe', pdf: 'file-text', 'image-viewer': 'image',
-      media: FS.mediaKind(st.path) === 'audio' ? 'music' : 'film',
-      'text-editor': 'file-text',
-    }[FS.appFor(st.path)] || 'file';
+    const icon = !st ? 'alert' : st.type === 'dir' ? 'folder'
+      : FS.appFor(st.path) === 'browser' ? 'globe' : 'file';
     return { name: st && st.path === FS.home() ? 'Home' : st?.name || FS.basename(entry.target), icon,
       detail: (st ? st.path : 'Missing: ' + entry.target), missing: !st };
   }
@@ -121,28 +122,6 @@ const DesktopIcons = (() => {
     const entry = { id: 'desktop-' + MH.uid(), kind: 'app', target: id, col, row };
     if (commit([...userData.desktopIcons, entry], entry.id)) { MH.toast(`${APPS[id].name} added to the desktop.`); return true; }
     return false;
-  }
-  function addPaths(paths, preferred = null) {
-    if (!currentUser || !userData) return 0;
-    const next = [...userData.desktopIcons], { g, occupied } = placements();
-    let added = 0, first = null, invalid = false, duplicate = false;
-    for (const raw of paths) {
-      const path = FS.normalize(raw), st = FS.stat(path);
-      if (!st) { invalid = true; continue; }
-      if (next.some((x) => x.kind === 'path' && x.target === path)) { duplicate = true; continue; }
-      if (next.length >= LIMIT) { MH.toast('Your desktop has reached its shortcut limit.'); break; }
-      const { col, row } = freeCell(preferred, occupied, g);
-      occupied.add(key(col, row));
-      const entry = { id: 'desktop-' + MH.uid(), kind: 'path', target: path, col, row };
-      next.push(entry); first ||= entry.id; added++;
-      if (preferred) preferred = { col, row: row + 1 };
-    }
-    if (added) {
-      if (!commit(next, first)) return 0;
-      MH.toast(`${added} desktop shortcut${added === 1 ? '' : 's'} added. Originals stay in Files.`);
-    } else if (invalid) MH.toast('File or folder not found (or outside this account).');
-    else if (duplicate) MH.toast('Already on the desktop.');
-    return added;
   }
   function remove(id) {
     if (!userData?.desktopIcons.some((x) => x.id === id)) return false;
@@ -200,7 +179,6 @@ const DesktopIcons = (() => {
     if (entry) {
       selected = entry.id; highlight();
       add('Open', () => activate(entry.id));
-      if (entry.kind === 'path') add('Show in Files', () => openApp('files', { path: FS.stat(entry.target) ? FS.dirname(entry.target) : FS.home() }));
       actions.push(null);
       add('Remove shortcut (keep original)', () => remove(entry.id));
     } else if (appId && APPS[appId]) {
@@ -209,10 +187,8 @@ const DesktopIcons = (() => {
       add(existing ? 'Remove from desktop' : 'Add to desktop', () => existing ? remove(existing.id) : addApp(appId));
     } else {
       add('Add application…', showPicker);
-      add('Add file or folder…', promptPath);
       actions.push(null);
       add('Arrange icons', arrange);
-      add('Open Files', () => openApp('files'));
     }
     returnFocus = document.activeElement;
     host.innerHTML = actions.map((action, i) => action
@@ -240,9 +216,9 @@ const DesktopIcons = (() => {
     returnFocus = document.activeElement;
     host.innerHTML = `<div class="desktop-picker-dialog" role="dialog" aria-modal="true" aria-label="Add application shortcut">
       <div class="desktop-picker-head"><div><strong>Add application</strong><small>Choose an app to put on your desktop</small></div><button type="button" class="desktop-picker-close" aria-label="Close">${iconSvg('x')}</button></div>
-      <input type="search" class="desktop-picker-search" placeholder="Search applications and games…" aria-label="Search applications">
+      <input type="search" class="desktop-picker-search" placeholder="Search applications…" aria-label="Search applications">
       <div class="desktop-picker-list"></div>
-      <p class="desktop-picker-help">For files and folders, right-click in Files and choose Add shortcut to desktop, or drag them onto the wallpaper.</p>
+      <p class="desktop-picker-help">A shortcut is a link: removing it never deletes the app.</p>
     </div>`;
     const results = host.querySelector('.desktop-picker-list');
     function draw(query = '') {
@@ -264,10 +240,6 @@ const DesktopIcons = (() => {
     host.hidden = false;
     draw();
     host.querySelector('.desktop-picker-search').focus();
-  }
-  function promptPath() {
-    const raw = prompt('Path to a file or folder (or right-click it in Files):', '~/Documents');
-    if (raw?.trim()) addPaths([raw.trim()]);
   }
   function cellFromPointer(e) {
     const rect = area().getBoundingClientRect(), g = grid();
@@ -365,20 +337,14 @@ const DesktopIcons = (() => {
       }
     });
     host.addEventListener('dragover', (e) => {
-      const types = Array.from(e.dataTransfer?.types || []);
-      if (!types.includes('application/x-proton-app') && !types.includes('application/x-proton-files')) return;
+      if (!Array.from(e.dataTransfer?.types || []).includes('application/x-proton-app')) return;
       e.preventDefault(); e.dataTransfer.dropEffect = 'copy'; host.classList.add('desktop-drop');
     });
     host.addEventListener('dragleave', (e) => { if (!e.relatedTarget || !host.contains(e.relatedTarget)) host.classList.remove('desktop-drop'); });
     host.addEventListener('drop', (e) => {
       host.classList.remove('desktop-drop');
-      const types = Array.from(e.dataTransfer?.types || []);
-      if (types.includes('application/x-proton-app')) {
-        e.preventDefault(); addApp(e.dataTransfer.getData('application/x-proton-app'), cellFromPointer(e));
-      } else if (types.includes('application/x-proton-files') && window.__protonFilesDrag?.account === currentUser.usernameLower) {
-        e.preventDefault(); addPaths(window.__protonFilesDrag.paths, cellFromPointer(e));
-        window.__protonFilesDrag = null;
-      }
+      if (!Array.from(e.dataTransfer?.types || []).includes('application/x-proton-app')) return;
+      e.preventDefault(); addApp(e.dataTransfer.getData('application/x-proton-app'), cellFromPointer(e));
     });
     MH.$('desktop-add').onclick = showPicker;
     MH.$('desktop-open').onclick = () => { if (selected) activate(selected); };
@@ -406,7 +372,6 @@ const DesktopIcons = (() => {
     unwatch?.(); unwatch = null;
     closeMenu(); closePicker();
     selected = null; suppressClick = null;
-    window.__protonFilesDrag = null;
   }
-  return { mount, unmount, render, addApp, addPaths, remove, move, arrange, menu, showPicker };
+  return { mount, unmount, render, addApp, remove, move, arrange, menu, showPicker };
 })();

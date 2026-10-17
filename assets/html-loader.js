@@ -4,10 +4,11 @@
  * registration block. Metadata lives in data/applications.js; built-in sites
  * are standalone websites/<name>/site.html pages. Nothing needs a build step.
  *
- * Local desktop apps load at boot. Streamed games (streamed=true in the
- * catalog) get a lightweight registered placeholder and fetch their tiny
- * app.html only when launched. A library of 87 links should not make every
- * sign-in download 87 extra modules before the desktop appears.
+ * Local desktop apps load at boot. A streamed app (streamed=true in the
+ * catalog) instead gets a lightweight registered placeholder that fetches
+ * its tiny app.html only when it is launched — the way the 87 arcade games
+ * this site used to ship were kept out of the boot path. Nothing in the
+ * catalog is streamed right now; the loader still supports it.
  */
 'use strict';
 

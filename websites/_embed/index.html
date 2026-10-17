@@ -1,0 +1,96 @@
+<!DOCTYPE html>
+<!-- EMBED TEMPLATE — a built-in website that is nothing but one framed page.
+
+     TO USE IT: copy this folder, rename it, then change ONE line — the
+     EMBED_URL constant in the script at the bottom. Nothing else needs
+     editing.
+
+       1. cp -r websites/_embed websites/my-site
+       2. edit the EMBED_URL line below
+       3. add ONE [website] block to data/websites.js (a commented-out
+          example is waiting at the bottom of that file):
+
+            [website]
+            id=my-site
+            name=My Site
+            path=websites/my-site/site.html
+            icon=globe
+            desc=Frames https://example.com
+
+       4. python3 tools/gen-fs-manifest.py && npm test
+
+     The site then appears on the Browser home page, in its "Built-in
+     websites…" menu and at proton://my-site. Rename this file to
+     site.html in the copy if you like — only the path= line in the
+     catalog matters. This template itself is never registered.
+
+     NOTE: the framed page loads over the network, so it needs proton to be
+     served over HTTP(S) and the other site to allow embedding. Many sites
+     send X-Frame-Options / Content-Security-Policy: frame-ancestors and
+     show up blank — the bar here always offers "Open in new tab" for those.
+     The frame is sandboxed WITHOUT allow-same-origin on purpose: an
+     embedded third-party page must not reach proton's localStorage, where
+     the accounts live. -->
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Embedded page - proton website</title>
+<link rel="stylesheet" href="../../assets/styles.css">
+<style>
+html,body{height:100%;overflow:hidden;background:#050505;color:#fff}
+body{margin:0;display:flex;flex-direction:column}
+/* The bar is the only chrome this page adds; the frame fills the rest. */
+.embed-bar{flex:none;display:flex;align-items:center;gap:8px;padding:7px 12px;border-bottom:1px solid #333;background:#0d0d0d;font-size:12.5px}
+.embed-bar .embed-url{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;color:#b5b5b5}
+.embed-stage{position:relative;flex:1;min-height:0;background:#000}
+.embed-stage iframe{position:absolute;inset:0;width:100%;height:100%;border:0;display:block;background:#000}
+.embed-note{flex:none;margin:0;padding:6px 12px;border-top:1px solid #333;font-size:11.5px;color:#8a8a8a}
+</style>
+</head>
+<body>
+<div class="embed-bar">
+  <span class="embed-url" id="embed-url"></span>
+  <button class="btn sm" id="embed-reload" type="button">Reload</button>
+  <a class="btn sm" id="embed-open" href="#" target="_blank" rel="noopener">Open in new tab</a>
+</div>
+<div class="embed-stage">
+  <iframe id="embed-frame" title="Embedded page"
+          sandbox="allow-scripts allow-forms allow-popups allow-modals"
+          allow="fullscreen"></iframe>
+</div>
+<p class="embed-note">Loaded live from the address above by your browser — proton does not proxy, cache or store it.
+Blank frame? That site refuses to be embedded; use <b>Open in new tab</b>.</p>
+
+<script>
+/* =====================================================================
+   CHANGE ME — the one line this template exists for.
+   ===================================================================== */
+const EMBED_URL = 'https://example.com/';
+
+/* Optional: a title for the frame and the bar. Leave it null to use the
+   catalog name this site is registered under. */
+const EMBED_TITLE = null;
+/* --------------------------------------------------------------------- */
+
+(function () {
+  'use strict';
+  const frame = document.getElementById('embed-frame');
+  const bar = document.getElementById('embed-url');
+  const open = document.getElementById('embed-open');
+  /* The desktop is reachable from a built-in site as
+   * window.parent.__protonSiteCtx (.openApp / .showSite / .showHome /
+   * .loadExternal) — use it if you want this page to drive the desktop.
+   * Guarded: the page must also work opened directly, outside the Browser. */
+  const name = EMBED_TITLE || document.title.replace(/ - proton website$/, '');
+
+  frame.title = name;
+  frame.src = EMBED_URL;
+  bar.textContent = EMBED_URL;
+  bar.title = EMBED_URL;
+  open.href = EMBED_URL;
+  document.getElementById('embed-reload').onclick = () => { frame.src = EMBED_URL; };
+})();
+</script>
+</body>
+</html>

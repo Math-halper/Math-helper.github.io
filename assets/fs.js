@@ -1,14 +1,15 @@
 /* proton — virtual file system (VFS).
  *
- * One real, hierarchical file system rooted at "/" — shared by the Files app
- * (apps/files/app.html) and the Terminal (apps/terminal/app.html), so the
- * paths you browse and the paths you cat are exactly the same tree.
+ * One real, hierarchical file system rooted at "/". This build ships no
+ * Files app or Terminal, so the tree is what the Browser opens HTML files
+ * from (file:///path) and what every account's own data lives in; it stays
+ * a complete, documented API for apps added back later.
  *
  * Two layers:
  *   - System layer (READ-ONLY): every single file of this website, listed in
  *     data/fs-manifest.js (regenerate with tools/gen-fs-manifest.py). The / tree
- *     shows the whole system — apps/, assets/, data/, tools/, websites/ and
- *     the root files — and file contents are fetched over HTTP on demand
+ *     shows the whole system — apps/, assets/, data/, tools/ and the root
+ *     files — and file contents are fetched over HTTP on demand
  *     when opened. These files are the site's own code and can never be
  *     modified from inside proton.
  *   - User layer (READ-WRITE): the account's own files and folders under
@@ -117,6 +118,9 @@ const FS = {
     if (['mp4', 'mov', 'webm', 'avi', 'ogv'].includes(ext)) return 'video';
     return null;
   },
+  /* Which app opens a file, by extension. The ids are catalog ids: an app
+   * that is not in data/applications.js simply cannot be opened, and
+   * openFSItem() in assets/core.js says so. */
   appFor(path) {
     const ext = this.extname(path);
     if (['html', 'htm'].includes(ext)) return this.isBinary(path) ? null : 'browser';

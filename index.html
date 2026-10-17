@@ -12,8 +12,8 @@
      data/applications.js ([application] blocks with id, name, path, icon,
      cat, desc, w, h) and data/websites.js ([website] blocks with id, name,
      path, icon, desc). assets/config-loader.js parses both catalogs and
-     assets/html-loader.js registers catalog entries at boot and loads
-     streamed-game modules only on first launch. -->
+     assets/html-loader.js registers catalog entries at boot, loading any
+     streamed=true app's module only on first launch. -->
 </head>
 <body>
 <noscript><div class="noscript">proton needs JavaScript — it is a full desktop that runs entirely in your browser.</div></noscript>
@@ -148,10 +148,9 @@
      the data/ catalogs, loaded at boot by assets/html-loader.js) -->
 <script src="assets/store.js"></script>
 <script src="assets/icons.js"></script>
-<script src="assets/game-icons.js"></script>
 <!-- virtual file system: assets/fs.js builds the / directory tree from
      data/fs-manifest.js (every file of this site) + the account's home
-     folder; shared by the Files app and the Terminal -->
+     folder; the Browser opens HTML files from it -->
 <script src="data/fs-manifest.js"></script>
 <script src="assets/fs.js"></script>
 <script src="assets/fs-archive.js"></script>
@@ -160,9 +159,6 @@
 <script src="assets/config-loader.js"></script>
 <script src="assets/core.js"></script>
 <script src="assets/desktop-icons.js"></script>
-<!-- shared host for the streamed arcade games (apps/<game>/app.html); needs
-     core.js for bar()/iconSvg()/MH and must be up before those modules run -->
-<script src="assets/game-host.js"></script>
 <script src="assets/html-loader.js"></script>
 <!-- boot: must load last -->
 <script src="assets/boot.js"></script>

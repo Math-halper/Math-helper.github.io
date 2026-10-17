@@ -4,8 +4,8 @@ shows under / (see assets/fs.js).
 
 The site is static, so the VFS cannot ask the server for a directory listing.
 Instead this script snapshots the site's files (path + size) into one small
-JS file. Dependencies and local build caches are excluded: they aren't part
-of the deployed site. The Files app and Terminal read it to build the / tree,
+JS file. Dependencies, the regression tests and local build caches are
+excluded: they aren't part of the deployed site. The Files app and Terminal read it to build the / tree,
 and file contents are fetched over HTTP on demand when opened.
 
 Run from anywhere (paths are resolved from this script's location):
@@ -22,16 +22,25 @@ ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 OUT = os.path.join(ROOT, 'data', 'fs-manifest.js')
 SELF = 'data/fs-manifest.js'  # included too — the manifest lists itself
 EXCLUDE_DIRS = {'.git', '.arena', 'node_modules', '__pycache__', '.cache', '.pytest_cache',
-                '.venv', 'dist', 'build', 'coverage', '.next'}
+                '.venv', 'dist', 'build', 'coverage', '.next', 'tests'}
+
+
+def excluded(name):
+    """Dev-only folders: dependencies, caches, the tests — and anything
+    underscore-prefixed, which is how proton names its copy-me templates
+    (apps/_template, apps/_embed, websites/_template, websites/_embed).
+    A template is a starting point, not part of the deployed desktop, so it
+    is kept out of the virtual file system's / tree."""
+    return name in EXCLUDE_DIRS or name.startswith('_')
 
 HEADER = """\
 /* proton — file system manifest — GENERATED FILE, do not edit by hand.
  *
  * Every deployed site file (path + size in bytes) so the virtual file
  * system (assets/fs.js) can show a complete / directory tree: the system
- * folders apps/, assets/, data/, tools/, websites/ and every single file in
- * them, plus the root files. Contents are fetched over HTTP on demand when
- * a file is opened in the Files app or the Terminal (cat).
+ * folders apps/, assets/, data/ and tools/, every single file in them, plus
+ * the root files. Contents are fetched over HTTP on demand when a file is
+ * opened (the Browser does this for HTML pages).
  *
  * Regenerate after adding/removing/renaming files:
  *     python3 tools/gen-fs-manifest.py
@@ -44,7 +53,7 @@ window.PROTON_FS_MANIFEST = [
 def collect():
     entries = []
     for dirpath, dirnames, filenames in os.walk(ROOT):
-        dirnames[:] = sorted(d for d in dirnames if d not in EXCLUDE_DIRS)
+        dirnames[:] = sorted(d for d in dirnames if not excluded(d))
         for fn in sorted(filenames):
             full = os.path.join(dirpath, fn)
             rel = os.path.relpath(full, ROOT).replace(os.sep, '/')

@@ -5,234 +5,120 @@ There is no build step. The list of apps — name, location (path), icon,
 category, description and window size — lives in **one catalog file**:
 [`data/applications.js`](../data/applications.js), one `[application]` block
 per app. At boot proton's config loader (`assets/config-loader.js`) parses
-that catalog and the HTML loader (`assets/html-loader.js`) fetches local
-app files at boot, or a `streamed=true` game's small module on first launch,
-then runs the `<script data-proton-app>` block inside it. That
-block calls `registerApp({...})` (defined in `assets/core.js`) with the app's
-`render` code; the catalog metadata is merged in automatically and the app
-instantly appears in the proton menu, App Center and Customize.
+that catalog and the HTML loader (`assets/html-loader.js`) fetches each local
+app file (or a `streamed=true` app's small module on first launch), then runs
+the `<script data-proton-app>` block inside it. That block calls
+`registerApp({...})` (defined in `assets/core.js`) with the app's `render`
+code; the catalog metadata is merged in automatically and the app instantly
+appears in the proton menu, App Center and Customize.
 
 > Note for users: inside proton itself you **cannot** add websites or
 > web-address apps — everything is part of this static website. "Add your own
 > app" below is the *developer* workflow for changing the site's code.
 
+The current base keeps its five core System apps. This change adds only two
+more apps: Celeste Classic and Mario Collection, each a small wrapper around
+an existing GitHub Pages site. Their pages load live in sandboxed iframes;
+this repository does not contain game code, assets or copies of those repos.
+The previously bundled apps and game catalogs remain removed. The only
+built-in website is **Test Page** (the one entry in `data/websites.js`; see
+[`websites/README.md`](../websites/README.md)).
+
 ## Add your own app (developer workflow)
 
 1. Copy the `apps/_template/` folder and rename it, e.g. `apps/my-app/`.
+   If the app is only **one framed page** — a build, a doc, another site —
+   copy `apps/_embed/` instead and skip to step 3: its module is a toolbar
+   (address, Reload, Open in new tab) plus a full-height sandboxed `<iframe>`,
+   and the only thing to change is one constant at the top of its script:
+   `const EMBED_URL = 'https://example.com/';`. The frame is sandboxed
+   **without** `allow-same-origin` so an embedded page cannot reach proton's
+   localStorage, and the toolbar keeps an **Open in new tab** escape hatch for
+   sites that refuse framing (`X-Frame-Options` / `frame-ancestors`).
+   `websites/_embed/` is the same thing as a built-in website instead of an
+   app. Template folders are never registered or deployed —
+   `tools/gen-fs-manifest.py` skips every underscore-prefixed folder.
 2. Add ONE `[application]` block to `data/applications.js` (copy the template
    in that file's header): `id`, `name`, `path=apps/my-app/app.html`, `icon`
    (a name from `assets/icons.js` such as `folder`, `globe` or `star`),
-   `cat`, `desc`, `w`, `h`. Block order = menu order.
+   `cat`, `desc`, `w`, `h`. Block order = menu order. A new `cat=` name adds a
+   new section to the proton menu (the built-in order is `CATS` in
+   `assets/core.js`: `System`, `My Apps`, then anything else you invent).
 3. Edit `apps/my-app/app.html` and write the `render` function (the app's
    code). Reload proton.
+4. Re-run `python3 tools/gen-fs-manifest.py` so the new file appears in the
+   virtual file system, then `npm test`.
 
 Your app can use: `userData` (the account's saved data), `saveData()`,
 `openApp(id)`, `MH.toast(...)`, `MH.download(...)`, `FS` (the virtual file
-system — `FS.read`, `FS.write`, `FS.list`, …) and all the CSS classes in
-`assets/styles.css` (`.btn`, `.card`, `.appbar`, …). Look at
-`apps/_template/app.html` — the starting point.
+system — `FS.read`, `FS.write`, `FS.list`, `FS.appFor`, …) and the CSS classes
+in `assets/styles.css` (`.btn`, `.card`, `.appbar`, `.stat-grid`, …). Look at
+`apps/_template/app.html` — the starting point. The account data model in
+`assets/store.js` still carries `notes`, `files`, `dirs`, `events`, `contacts`,
+`sheets`, `slides`, `boards` and `games`, so an app added back can pick up
+exactly where the old one left off.
 
 ## Remove an app
 
 - **Temporarily:** proton menu → Customize (or App Center) → *Remove*.
-  This hides it per account and it can be added back any time.
+  This hides it per account and it can be added back any time. App Center,
+  Customize and Settings are protected so the desktop stays manageable.
 - **Permanently:** delete its `[application]` block from
-  `data/applications.js` (and optionally delete the folder).
+  `data/applications.js` (and optionally delete the folder), refresh
+  `data/fs-manifest.js`, and drop anything in `assets/` that only it used.
 
 ## The apps
 
 | Folder | App (id) |
 | --- | --- |
-| `files/` | Files (`files`) — browse, drag/drop, right-click, multi-select, copy/cut/paste, import/export and open in associated apps |
-| `text-editor/` | Text Editor (`text-editor`) — VFS text files, Save/Ctrl+S |
-| `image-viewer/` | Image Viewer (`image-viewer`) — VFS images |
-| `notes/` | Notes (`notes`) — separate rich-text notebook |
-| `calendar/` | Calendar (`calendar`) |
-| `contacts/` | Contacts (`contacts`) |
-| `app-center/` | App Center (`appcenter`) |
-| `customize/` | Customize (`customize`) |
-| `settings/` | Settings (`settings`) |
-| `about/` | About (`about`) |
-| `calculator/` | Calculator (`calculator`) |
-| `spreadsheet/` | Spreadsheet (`spreadsheet`) |
-| `presentation/` | Presentation (`presentation`) |
-| `whiteboard/` | Whiteboard (`whiteboard`) |
-| `logic-sim/` | Logic Sim (`logic-sim`) — windowed host of `websites/logic-sim/` |
-| `terminal/` | Terminal (`terminal`) |
-| `browser/` | Browser (`browser`) |
-| `media/` | Media (`media`) |
-| `pdf-viewer/` | PDF Viewer (`pdf`) |
-| `sudoku/` | Sudoku (`sudoku`) |
-| `chess/` | Chess (`chess`) |
-| `checkers/` | Checkers (`checkers`) |
-| `klondike/` | Klondike (`klondike`) |
-| `backgammon/` | Backgammon (`backgammon`) |
+| `app-center/` | App Center (`appcenter`) — hide/restore built-ins, manage the account's saved apps & websites |
+| `customize/` | Customize (`customize`) — app modules, themes, wallpapers, desktop parts, reset |
+| `settings/` | Settings (`settings`) — account, wallpaper & accent, password, backup, accounts on this device |
+| `about/` | About (`about`) — provenance, licence, what's inside |
+| `browser/` | Browser (`browser`) — Test Page, saved websites, external addresses and VFS HTML files |
+| `celeste-classic/` | Celeste Classic (`celeste-classic`) — [hosted game page](https://math-halper.github.io/Celeste/1/index.html), embedded with the shared safe iframe wrapper |
+| `mario-collection/` | Mario Collection (`mario-collection`) — [hosted collection](https://math-halper.github.io/Mario/index.html), embedded with the shared safe iframe wrapper |
+| `_template/` | not an app — the starting point for a new one |
+| `_embed/` | not an app — the starting point for one that is only a framed page (`EMBED_URL`) |
 
 ### Desktop shortcut workflow
 
 `assets/desktop-icons.js` renders per-account `userData.desktopIcons` entries
-(`{id, kind:'app'|'path', target, col, row}`). A new account starts with Files,
-Browser and Documents; an empty array means the user intentionally cleared
-all shortcuts. Icons are *links*, not VFS files: removing an icon leaves its
-app/file intact. Double-click/Enter opens the target (`openApp` or
-`openFSItem`); pointer dragging or Alt+arrow keys moves it on a snap grid,
-with occupied spots swapped. The layout reflows on narrow screens without
-changing the saved positions. Renames/moves in `FS.watch()` update linked
-paths; deleted targets appear as removable missing shortcuts.
+(`{id, kind:'app'|'path', target, col, row}`). A new account starts with
+Settings and Browser; an empty array means the user intentionally cleared all
+shortcuts. Icons are *links*, not VFS files: removing an icon leaves the app
+intact. Double-click/Enter opens the target; pointer dragging or Alt+arrow keys
+moves it on a snap grid, with occupied spots swapped. The layout reflows on
+narrow screens without changing the saved positions.
 
-Use the desktop **Add icon** search, right-click the wallpaper or app in the
+Use the desktop **Add icon** search, right-click the wallpaper or an app in the
 proton menu, drag a menu app onto the wallpaper, or use App Center's **Desktop
 icon** button. Select a shortcut for the touch-friendly **Open selected** or
 **Remove selected** buttons, right-click it for **Remove shortcut**, or press
-Delete. Files' item context/More menu
-adds file/folder links, and dragging items from Files onto the wallpaper
-creates links rather than moving originals. The transferable drag data never
-contains account paths. Shortcut edits save immediately with the account and
-are included in Settings backups; Customize's Reset restores default icons.
+Delete. Shortcut edits save immediately with the account and are included in
+Settings backups; Customize's Reset restores the defaults.
 
-### Files workflow
+`kind:'path'` entries (files and folders) can no longer be created: they were
+added from the Files app, by dragging out of Files, or by typing a path in the
+desktop menu, and opening one needed a viewer app. One saved by an older
+account still renders (missing targets are marked), can be moved and removed,
+and reports that nothing can open it — `openFSItem()` in `assets/core.js`
+honours any viewer an app added back registers through `FS.appFor()`.
 
-Files uses the same `FS` tree as the Terminal and Text Editor. Click to
-select, Ctrl/⌘-click to toggle items, Shift-click for a range, or Ctrl/⌘+A
-for all visible items. Double-click/Enter opens the associated app. Right-click
-an item, blank area, tree folder or breadcrumb for actions; the **···** toolbar
-button provides the same menu on touch devices. Common shortcuts: Ctrl/⌘+C,
-X and V (Files' internal clipboard), F2 to rename, Delete to permanently
-remove (after confirmation), Ctrl/⌘+D to duplicate, Ctrl/⌘+Shift+N for a
-folder, Ctrl/⌘+F to filter, and Alt+Left/Right/Up to navigate.
-
-Drag selected files/folders onto a folder tile, tree row, breadcrumb or blank
-area to **move**; hold Ctrl/⌘/Option to **copy**. Dragging from the read-only
-system layer always copies, and targets outside `/home/<user>/` are refused.
-Colliding copy/move names get a `(copy)` suffix, never a silent overwrite.
-Import several computer files at once, use **Import folder**, or drop files or
-folders from the computer (directory drops require browser support); imported
-file conflicts require explicit confirmation. Pasting a computer file also
-imports it when the Files clipboard is empty. Bytes are preserved, with a
-2 MB per-file storage limit. Download folders or a selection as an uncompressed
-ZIP (100 MB / 2,000-item safety cap); single files download unchanged. Files
-refreshes when another app modifies the VFS. The internal clipboard and
-selection last only while Files is open. This does not grant access to the
-computer's filesystem: user files live in per-account browser localStorage.
-
-### Math-halper GitHub Pages games
-
-Two additional game entries embed pages hosted in Math-halper's own public
-GitHub repositories. The proton modules only point at those Pages URLs; no
-game files are copied into this repository.
-
-| Folder | App (id) | Embedded GitHub Pages page |
-| --- | --- | --- |
-| `celeste-classic/` | Celeste Classic (`celeste-classic`) | <https://math-halper.github.io/Celeste/1/> |
-| `mario-collection/` | Mario Collection (`mario-collection`) | <https://math-halper.github.io/Mario/> |
-
-Celeste Classic launches the PICO-8 page in the `Celeste` repository's `1/`
-folder; the existing Gams Offline entry remains separately listed as Celeste.
-Mario Collection opens the `Mario` repository's landing page, where players can
-choose Super Mario 64 or Mari0. Both are embedded through
-[`assets/game-host.js`](../assets/game-host.js), which shows the page URL and
-an **Open in new tab** link. Because these Pages URLs share
-`math-halper.github.io` with proton, the game host detects that and omits
-`allow-same-origin`; its opaque sandbox cannot read proton's account data.
-Opaque frames do not have normal page-origin storage, so use **Open in new tab**
-if a game needs it.
-
-### The streamed arcade games
-
-Nineteen Proton Arcade apps sit in the **Games** category and work
-differently from local games: they are not proton code, and their content is
-not in this repository.
-
-| Folder | App (id) |
-| --- | --- |
-| `ampler-launcher/` | Ampler Launcher (`ampler-launcher`) |
-| `fnaf-1/` … `fnaf-4/` | Five Nights at Freddy's 1-4 (`fnaf-1` … `fnaf-4`) |
-| `fnaf-sister-location/` | Five Nights at Freddy's: Sister Location (`fnaf-sister-location`) |
-| `granny/` | Granny (`granny`) |
-| `baldis-basics/` | Baldi's Basics (`baldis-basics`) — placeholder upstream |
-| `backrooms/` | Backrooms (`backrooms`) |
-| `bloxorz/` | Bloxorz (`bloxorz`) |
-| `drift-boss/` | Drift Boss (`drift-boss`) |
-| `flappy-bird/` | Flappy Bird (`flappy-bird`) |
-| `football-bros/` | Football Bros (`football-bros`) |
-| `geometry-dash-lite/` | Geometry Dash Lite (`geometry-dash-lite`) |
-| `kart-bros/` | Kart Bros (`kart-bros`) |
-| `minesweeper/` | Minesweeper (`minesweeper`) |
-| `pac-man/` | Pac-Man (`pac-man`) |
-| `retro-bowl/` | Retro Bowl (`retro-bowl`) |
-| `spacebar-clicker/` | Spacebar Clicker (`spacebar-clicker`) |
-
-Each of those folders holds **only** its `app.html`, which does one thing:
-
-```js
-registerApp({
-  render(body, ctx) {
-    PROTON_ARCADE.open(body, ctx, {
-      src: 'website/games/Granny/index.html',   // path on proton-arcade.github.io
-      size: '56 MB',                            // shown while it downloads
-    });
-  },
-});
-```
-
-`PROTON_ARCADE` is the shared host in
-[`assets/game-host.js`](../assets/game-host.js), loaded by `index.html`. It
-frames that build **live from <https://proton-arcade.github.io>** and builds the
-window every streamed game shares: a toolbar with the source address,
-Reload, Fullscreen and Open in new tab; a loading panel with an elapsed
-counter; and a footnote saying where the bytes come from. The game's name is
-read back from the catalog via the window proton opened, so the module still
-carries no metadata.
-
-Those builds total roughly half a gigabyte and must never be committed here.
-
-### Gams Offline games
-
-**68 more game modules** live in `apps/gams-*/app.html`, each cataloged in
-`data/applications.js`. They follow the game catalog in
-[Gams-Offline/Gams](https://github.com/Gams-Offline/Gams/tree/main/g): 66 are
-loaded from `https://gams-offline.github.io/Gams/`, while A Dance of Fire and
-Ice and Grey Box Testing have local builds under `games/gams/`. The source
-catalog has 71 games; Bloxorz, Pac-Man and Spacebar Clicker already had apps
-here, so they were not duplicated. The upstream Tools and About pages are not
-games. Example:
-
-```js
-PROTON_ARCADE.open(body, ctx, {
-  origin: 'https://gams-offline.github.io/Gams',
-  src: 'g/g/drivemad/drivemad.html',
-});
-```
-
-Proton Arcade builds and 66 of the Gams Offline builds are **network-only**;
-A Dance of Fire and Ice and Grey Box Testing are the two existing local Gams
-builds under `games/gams/`. Keep remote-game modules small and do not copy
-additional builds into `apps/`; several games require entire asset trees,
-and the source repositories do not grant a blanket redistribution licence.
-Each game's `icon=game-<id>` selects a unique hand-drawn monochrome SVG in
-`assets/game-icons.js`, matching the desktop's 24px vector style. Provenance
-and limitations: [`CREDITS.md`](../CREDITS.md#streamed-arcade-games).
-
-**To add an embedded game page:** create `apps/<id>/app.html` calling
-`PROTON_ARCADE.open()` with its source path (and `origin` if not Proton Arcade),
-add an `[application]` block with `cat=Games` and `streamed=true`, and add its
-SVG icon to `assets/game-icons.js`. There is no game download or build step.
-If a page shares proton's origin, the shared host automatically removes
-`allow-same-origin`; set `opaqueOrigin: true` to force that isolated sandbox
-for another origin too.
+### Shared code
 
 Shared code lives outside this folder: `data/applications.js` (the app
 catalog — name, location, icon and everything else for every app),
-`data/websites.js` (the same kind of catalog for the built-in websites),
-`data/fs-manifest.js` (generated list of every file in this repository —
-the `/` tree of the virtual file system; refresh it with
-`python3 tools/gen-fs-manifest.py`), `assets/fs.js` (the file system API
-the Files app and Terminal share), `assets/fs-archive.js` (ZIP downloads),
-`assets/config-loader.js` (parses both
-catalogs), `assets/store.js` (accounts/storage), `assets/core.js`
-(desktop, windows, registries), `assets/desktop-icons.js` (shortcuts), `assets/icons.js` + `assets/game-icons.js`
-(the SVG icon set), `assets/styles.css`, `assets/html-loader.js` (loads local HTML modules at
-boot and streamed-game modules when launched) and `assets/boot.js` (loaded
-last). Note: because the loader fetches files over HTTP, proton must be
-served over HTTP(S) — GitHub Pages or `python3 -m http.server` — not opened
-as a `file://` page.
+`data/websites.js` (the same kind of catalog for built-in websites — Test Page
+is the only one left; guide: `websites/README.md`),
+`data/fs-manifest.js` (generated list of every deployed file in this
+repository — the `/` tree of the virtual file system; refresh it with
+`python3 tools/gen-fs-manifest.py`), `assets/fs.js` (the file system API),
+`assets/fs-archive.js` (ZIP downloads), `assets/config-loader.js` (parses both
+catalogs), `assets/store.js` (accounts/storage and the per-account defaults),
+`assets/core.js` (desktop, windows, registries), `assets/desktop-icons.js`
+(shortcuts), `assets/icons.js` (the SVG icon set), `assets/styles.css`,
+`assets/html-loader.js` (loads the HTML modules) and `assets/boot.js` (loaded
+last). Note: because the loader fetches files over HTTP, proton must be served
+over HTTP(S) — GitHub Pages or `python3 -m http.server` — not opened as a
+`file://` page.
