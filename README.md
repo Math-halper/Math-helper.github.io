@@ -28,7 +28,7 @@ timers, canvas, `fetch`, storage, the desktop bridge) and has buttons that talk
 back to proton.
 
 Apps and sites are catalog entries, so any of the removed ones can be added
-back: one folder under `apps/` (or `websites/`) plus one `[application]`
+back: one folder under `apps/inbuilt/` (or `websites/`) plus one `[application]`
 (or `[website]`) block in `data/applications.js` (or `data/websites.js`) — see
 [`apps/README.md`](apps/README.md) and [`websites/README.md`](websites/README.md).
 
@@ -48,13 +48,17 @@ runtime dependencies or build step. Optional regression tests use jsdom:
 
 ## Project layout (everything is a module)
 
-- **Apps:** one folder + HTML file each — `apps/<name>/app.html` (6 apps, plus
-  two starting points: `apps/_template/` for a normal app and `apps/_embed/`
-  for one that is only a framed page — change its single `EMBED_URL` constant).
+- **Apps:** one folder + HTML file each. The five System apps built into this
+  site are in **`apps/inbuilt/<name>/app.html`**; the Celeste Classic wrapper
+  is the one app outside that folder (`apps/celeste-classic/app.html`), because
+  the page it frames is hosted elsewhere. Two starting points sit next to them:
+  `apps/_template/` for a normal app and `apps/_embed/`
+  for one that is only a framed page — change its single `EMBED_URL` constant.
   Every app's name,
   location, icon, category, description and window size is listed in **one
   catalog file** — `data/applications.js`. Add one by copying
-  `apps/_template/` and adding an `[application]` block there; remove one by
+  `apps/_template/` into `apps/inbuilt/` and adding an `[application]` block
+  there; remove one by
   deleting that block. Full guide: [`apps/README.md`](apps/README.md).
 - **Built-in websites:** the same catalog system — `data/websites.js`, one
   `[website]` block per site, each page a `websites/<name>/site.html`. One site
@@ -76,10 +80,11 @@ runtime dependencies or build step. Optional regression tests use jsdom:
   app's module on first launch), `assets/styles.css`, `assets/boot.js`.
 - **Tests:** `tests/system-desktop.test.cjs` — the catalogs are exactly the
   five core System apps, one embedded game page and the one test site; every
-  module is present, the generated manifest matches the repository, and a
-  jsdom desktop boots and opens each app. The tests also verify the embedded
-  URL, sandbox settings and absence of copied game files; Test Page passes
-  its own checks.
+  module is present, the five inbuilt apps sit in `apps/inbuilt/` with only the
+  Celeste wrapper outside it, the generated manifest matches the repository,
+  and a jsdom desktop boots and opens each app. The tests also verify the
+  embedded URL, sandbox settings and absence of copied game files; Test Page
+  passes its own checks.
 
 ## Math Helper cover page
 
