@@ -13,6 +13,13 @@ location (path), icon and description all live here.
   - The page itself still lives in websites/<folder>/site.html; it is an
     ordinary standalone HTML page that the Browser loads in a frame at
     proton://<id>.
+  - Re-run python3 tools/gen-fs-manifest.py after adding or removing a page.
+
+This build ships its System apps only, so the built-in websites were removed
+with them; **Test Page** is the one site left, and it is the built-in smoke
+test for the Browser (proton://test-page). An empty catalog is fine — the
+Browser's home page then says there are no built-in sites. Guide:
+websites/README.md.
 
 Template:
 [website]
@@ -27,45 +34,23 @@ enabled=true
 window.PROTON_WEBSITES_TEXT = `
 
 [website]
-id=guide
-name=Guide
-path=websites/guide/site.html
-icon=book
-desc=How this desktop works: accounts, saving, windows, backups
-
-[website]
-id=world-history
-name=World History
-path=websites/world-history/site.html
-icon=landmark
-desc=A short interactive timeline, adapted from the original bundled site
-
-[website]
-id=maths-resources
-name=Maths Resources
-path=websites/maths-resources/site.html
-icon=sigma
-desc=Formula reminders and practice ideas
-
-[website]
 id=test-page
 name=Test Page
 path=websites/test-page/site.html
 icon=flask
-desc=TEST SITE: buttons, forms, clock & counter to try the Browser with
+desc=TEST SITE: automated checks plus buttons, forms, clock, counter, canvas and storage to try the Browser with
+
+/* TEMPLATE — a site that is only an embedded page. Copy websites/_embed/,
+   rename it, change the EMBED_URL constant in its index.html, then
+   uncomment a block like this one (and delete these lines):
 
 [website]
-id=proton-daily
-name=proton Daily
-path=websites/proton-daily/site.html
-icon=newspaper
-desc=TEST SITE: a sample newspaper front page (all stories fictional)
+id=my-embed
+name=My Embed
+path=websites/my-embed/index.html
+icon=globe
+desc=Frames https://example.com
 
-[website]
-id=logic-sim
-name=Digital Logic Sim
-path=websites/logic-sim/site.html
-icon=zap
-desc=Design & simulate logic circuits, nest chips inside chips — a web edition of Sebastian Lague's Digital Logic Sim
+*/
 
 `;

@@ -27,7 +27,7 @@ registerApp({
     const WP_BUILTINS = [['mint', 'Charcoal'], ['ocean', 'Smoke'], ['sunset', 'Ash'], ['grape', 'Graphite'], ['slate', 'Slate'], ['rose', 'Silver']];
     body.innerHTML = `${bar('Customize — everything is a module')}
     <div class="app-main pad">
-    <p class="muted" style="margin-top:0">Rename apps, change their icons, move them between categories, reorder them, hide or restore them — then invent your own themes and wallpapers. Everything here is saved per account, and <b>Reset customisations</b> at the bottom undoes it all without touching your notes, files or other content.</p>
+    <p class="muted" style="margin-top:0">Rename apps, change their icons, move them between categories, reorder them, hide or restore them — then invent your own themes and wallpapers. Everything here is saved per account, and <b>Reset customisations</b> at the bottom undoes it all without touching your saved content.</p>
     <div style="display:flex;gap:7px;flex-wrap:wrap;margin-bottom:6px">
       <a class="btn sm" href="#cust-apps" data-jump="cust-apps">${iconSvg('grid')} Apps</a><a class="btn sm" href="#cust-themes" data-jump="cust-themes">${iconSvg('palette')} Themes</a><a class="btn sm" href="#cust-walls" data-jump="cust-walls">${iconSvg('image')} Wallpapers</a><a class="btn sm" href="#cust-desktop" data-jump="cust-desktop">${iconSvg('monitor')} Desktop parts</a>
       <button class="btn sm" id="cust-goto-appcenter">${iconSvg('grid')} Manage apps in App Center</button>
@@ -61,17 +61,16 @@ registerApp({
     <h3 id="cust-desktop">${iconSvg('monitor')} Desktop parts</h3>
     <div class="card" id="cust-components"></div>
     <div class="card" style="margin-top:12px"><b>Desktop icons</b>
-      <p class="muted">Drag icons on the wallpaper to move them; double-click to open. Removing an icon never deletes its original app or file.</p>
+      <p class="muted">Drag icons on the wallpaper to move them; double-click to open. Removing an icon never deletes the app it points at.</p>
       <div id="cust-shortcuts"></div>
       <div style="display:flex;gap:7px;flex-wrap:wrap;margin-top:12px">
         <button class="btn sm" id="cust-add-shortcut">${iconSvg('plus')} Add application icon</button>
-        <button class="btn sm" id="cust-files-shortcut">${iconSvg('folder')} Add file/folder from Files</button>
         <button class="btn sm" id="cust-arrange-shortcuts">Arrange icons</button>
       </div>
     </div>
 
     <h3>${iconSvg('refresh')} Start over</h3>
-    <div class="card"><p class="muted" style="margin-top:0">Reset every customisation (app renames/icons/categories/order, hidden apps, pins, themes, wallpapers, desktop parts and shortcut layout) back to proton defaults. Your content — notes, files, calendar, saved web apps and websites — is <b>not</b> deleted.</p>
+    <div class="card"><p class="muted" style="margin-top:0">Reset every customisation (app renames/icons/categories/order, hidden apps, pins, themes, wallpapers, desktop parts and shortcut layout) back to proton defaults. Your content — saved web apps, websites and account files — is <b>not</b> deleted.</p>
     <button class="btn danger" id="cust-reset">Reset customisations</button></div>
     </div>`;
 
@@ -254,11 +253,10 @@ registerApp({
         const name = app?.name || (st?.path === FS.home() ? 'Home' : st?.name) || (entry.kind === 'path' ? FS.basename(entry.target) : entry.target);
         const glyph = app?.icon || (st?.type === 'dir' ? 'folder' : st ? 'file' : 'alert');
         return `<div class="rowitem" style="display:flex;align-items:center;gap:10px;padding:8px 0"><span style="font-size:21px">${iconFor(glyph)}</span><span style="flex:1;min-width:0;overflow-wrap:anywhere"><b>${MH.esc(name)}</b> <small class="muted">${entry.kind === 'app' ? 'App' : 'File / folder'}${entry.kind === 'path' && !st ? ' · missing' : ''}</small></span><button class="btn sm" data-shortcut-remove="${MH.esc(entry.id)}">Remove icon</button></div>`;
-      }).join('') : '<p class="muted">No icons yet. Add an application below or right-click an item in Files.</p>';
+      }).join('') : '<p class="muted">No icons yet. Add an application below.</p>';
       box.querySelectorAll('[data-shortcut-remove]').forEach((b) => b.onclick = () => DesktopIcons.remove(b.dataset.shortcutRemove));
     }
     body.querySelector('#cust-add-shortcut').onclick = () => DesktopIcons.showPicker();
-    body.querySelector('#cust-files-shortcut').onclick = () => openApp('files');
     body.querySelector('#cust-arrange-shortcuts').onclick = () => DesktopIcons.arrange();
     window.addEventListener('proton-desktop-icons-changed', drawShortcuts);
     body.onDestroy = () => window.removeEventListener('proton-desktop-icons-changed', drawShortcuts);
@@ -288,10 +286,10 @@ registerApp({
       drawWalls(); drawThemes(); MH.toast(`Wallpaper “${w.name}” added and applied.`);
     };
     body.querySelector('#cust-reset').onclick = () => {
-      if (!confirmBox('Reset ALL customisations, including desktop shortcuts and their positions, to proton defaults? Your notes, files, custom apps, websites and other content stay untouched.')) return;
+      if (!confirmBox('Reset ALL customisations, including desktop shortcuts and their positions, to proton defaults? Your custom apps, websites, files and other content stay untouched.')) return;
       userData.moduleOverrides = {}; userData.hiddenApps = [];
-      userData.desktopIcons = MH.defaultDesktopIcons(currentUser.usernameLower);
-      userData.settings.pinned = ['files', 'calculator', 'notes', 'browser', 'terminal'];
+      userData.desktopIcons = MH.defaultDesktopIcons();
+      userData.settings.pinned = ['settings', 'appcenter', 'browser'];
       userData.customThemes = []; userData.customWallpapers = [];
       userData.settings.activeThemeId = 'proton-dark';
       userData.settings.accent = '#ffffff'; userData.settings.wallpaper = 'mint';

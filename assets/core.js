@@ -2,9 +2,10 @@
  * Every app lives in its own apps/<name>/app.html module (loaded via
  * assets/html-loader.js); the list of apps and all their metadata (name,
  * icon, category, description, window size) live in the catalog
- * data/applications.js, parsed by assets/config-loader.js. Built-in
- * websites use the same catalog system (data/websites.js): each one is a
- * standalone page in websites/<name>/site.html, framed by the Browser app.
+ * data/applications.js, parsed by assets/config-loader.js. proton ships its
+ * System apps only (App Center, Customize, Settings, About, Browser).
+ * Built-in websites use the same catalog system (data/websites.js) and are
+ * framed by the Browser app; that catalog is empty right now.
  * Window chrome/panel styling follows Mixt's Mint-Y theme.
  */
 'use strict';
@@ -37,7 +38,8 @@ function normalizeUserData() {
   userData.hiddenApps ||= [];
   userData.settings.pinned ||= [];
   /* Legacy app ids saved by older versions (e.g. the Calculator used to be
-   * id "math") — remap them so old pins keep working. */
+   * id "math", the PDF Viewer "pdf-viewer"). Those apps are gone, but the
+   * mapping stays so an old pin/shortcut resolves to one id, not two. */
   const LEGACY_APP_IDS = { math: 'calculator', 'pdf-viewer': 'pdf' };
   userData.settings.pinned = userData.settings.pinned.map((id) => LEGACY_APP_IDS[id] || id);
   userData.hiddenApps = userData.hiddenApps.map((id) => LEGACY_APP_IDS[id] || id);
@@ -50,7 +52,7 @@ function normalizeUserData() {
     userData.desktopIcons = legacy
       ? legacy.filter((id) => typeof id === 'string').map((id, i) =>
         ({ id: 'legacy-desktop-' + i, kind: 'app', target: id, col: 0, row: i }))
-      : MH.defaultDesktopIcons(currentUser?.usernameLower);
+      : MH.defaultDesktopIcons();
   }
   const seenIds = new Set(), seenTargets = new Set();
   userData.desktopIcons = userData.desktopIcons.slice(0, 200).flatMap((entry) => {
@@ -336,15 +338,20 @@ function openApp(id, options = {}) {
   renderPanelApps();
 }
 
-/* The Files app and Terminal both use the same file associations. Selecting
- * an item only highlights it; activating it opens the appropriate app. */
+/* Open a virtual file or folder. proton ships no file-manager or viewer app
+ * any more, so this reports what is missing instead of failing silently; it
+ * still honours any viewer an account adds back to the catalog. */
 function openFSItem(path) {
   const st = FS.stat(path);
   if (!st) { MH.toast(`File not found: ${path}`); return; }
-  if (st.type === 'dir') { openApp('files', { path: st.path }); return; }
+  if (st.type === 'dir') {
+    if (APPS.files) openApp('files', { path: st.path });
+    else MH.toast(`Folders cannot be opened: this proton build ships no Files app.`);
+    return;
+  }
   const appId = FS.appFor(st.path);
   if (appId && APPS[appId]) openApp(appId, { path: st.path });
-  else MH.toast(`No viewer for ${st.name}. Select it in Files to download it.`);
+  else MH.toast(`No app can open ${st.name} in this build.`);
 }
 
 /* ---------------- desktop ---------------- */
@@ -432,7 +439,10 @@ function renderPanelApps() {
     wins.has(id) ? (activeApp === id ? toggleMin(id) : focusWin(id)) : openApp(id);
   });
 }
-const CATS = ['Productivity', 'Learn', 'Create', 'Games', 'Chat & Media', 'My Apps', 'Test', 'System'];
+/* Menu category order. proton ships System apps only; 'My Apps' holds the
+ * web-address apps an account saved before adding was disabled, and any
+ * category invented in Customize is appended after these. */
+const CATS = ['System', 'My Apps'];
 function renderStartMenu(q) {
   const sm = MH.$('startmenu'); if (!sm) return;
   const query = (q ?? MH.$('sm-search-input')?.value ?? '').trim().toLowerCase();

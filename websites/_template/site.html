@@ -14,7 +14,10 @@
      the catalog is the single source of truth for the site's id, name,
      icon and description. It will appear automatically on the Browser
      home page and in the Browser's "Built-in websites" menu, at
-     proton://my-site. This _template file itself is never loaded. -->
+     proton://my-site. This _template file itself is never loaded.
+
+     Re-run `python3 tools/gen-fs-manifest.py` afterwards so the new page
+     appears in the virtual file system, then `npm test`. -->
 <html lang="en">
 <head>
 <meta charset="utf-8">
@@ -31,8 +34,10 @@
   stylesheet, and add a script at the bottom for interactivity.</p>
   <p>From a script you can reach the desktop (same browser tab) with
   <span class="kbd">window.parent.__protonSiteCtx</span> — for example
-  <span class="kbd">.openApp('calculator')</span>, <span class="kbd">.showSite('guide')</span>
-  or <span class="kbd">.showHome()</span>.</p>
+  <span class="kbd">.openApp('settings')</span>, <span class="kbd">.showSite('test-page')</span>,
+  <span class="kbd">.showHome()</span> or <span class="kbd">.loadExternal(url)</span>.
+  Guard for it: the page can also be opened directly, outside the Browser.
+  See <span class="kbd">websites/test-page/site.html</span> for a worked example.</p>
   <button class="btn primary" id="my-site-btn">Say hello</button>
 </div>
 <script>

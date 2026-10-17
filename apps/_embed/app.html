@@ -1,0 +1,78 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Embedded Page - proton app</title>
+</head>
+<body>
+<p>This file is a proton app. It is not meant to be opened on its own:
+open <a href="../../index.html">proton</a> and launch <b>Embedded Page</b>
+from the proton menu. The script below is fetched and run by proton's HTML
+loader (assets/html-loader.js) at boot.</p>
+<!-- EMBED TEMPLATE — an app that is nothing but one framed page.
+
+     TO USE IT: copy this folder, rename it, then change ONE line — the
+     EMBED_URL constant in the script below. Nothing else needs editing.
+
+       1. cp -r apps/_embed apps/my-app
+       2. edit the EMBED_URL line in apps/my-app/app.html
+       3. add ONE [application] block to data/applications.js (a
+          commented-out example is waiting at the bottom of that file):
+
+            [application]
+            id=my-app
+            name=My App
+            path=apps/my-app/app.html
+            icon=globe
+            cat=System
+            desc=Frames https://example.com
+            w=980
+            h=640
+
+       4. python3 tools/gen-fs-manifest.py && npm test
+
+     The app then appears in the proton menu, App Center and Customize.
+     This template itself is never registered.
+
+     NOTE: the framed page loads over the network, so it needs proton to be
+     served over HTTP(S) and the other site to allow embedding. Many sites
+     send X-Frame-Options / Content-Security-Policy: frame-ancestors and show
+     up blank — the toolbar always offers "Open in new tab" for those. The
+     frame is sandboxed WITHOUT allow-same-origin on purpose: an embedded
+     third-party page must not reach proton's localStorage, where the
+     accounts live. -->
+<script data-proton-app>
+/* proton app module: embedded page — edit this file to change this app.
+ * Loaded by index.html; calls registerApp() (see apps/README.md).
+ * Metadata (name, icon, cat, desc, w, h) lives in data/applications.js. */
+'use strict';
+
+/* =====================================================================
+   CHANGE ME — the one line this template exists for.
+   ===================================================================== */
+const EMBED_URL = 'https://example.com/';
+/* --------------------------------------------------------------------- */
+
+registerApp({
+  render(body) {
+    body.innerHTML = `${bar('Embedded page', `<span class="muted embed-src" title="${MH.esc(EMBED_URL)}">${MH.esc(EMBED_URL)}</span>
+      <button class="btn sm" data-e="reload">${iconSvg('refresh')} Reload</button>
+      <button class="btn sm primary" data-e="ext">${iconSvg('external')} Open in new tab</button>`)}
+      <div class="app-main local-page"><iframe class="site-frame" title="Embedded page" src="${MH.esc(EMBED_URL)}"
+        sandbox="allow-scripts allow-forms allow-popups allow-modals" allow="fullscreen"></iframe></div>
+      <p class="muted" style="flex:none;margin:0;padding:7px 14px;border-top:1px solid var(--line)">Loaded live from the
+        address above by your browser — proton does not proxy, cache or store it. Blank frame? That site refuses to be
+        embedded; use <b>Open in new tab</b>.</p>`;
+    const frame = body.querySelector('iframe');
+    body.querySelector('[data-e="reload"]').onclick = () => { frame.src = EMBED_URL; };
+    body.querySelector('[data-e="ext"]').onclick = () => window.open(EMBED_URL, '_blank', 'noopener');
+  },
+});
+</script>
+<style>
+/* The toolbar address, truncated like the Browser's. */
+.embed-src{max-width:300px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-size:12px}
+</style>
+</body>
+</html>

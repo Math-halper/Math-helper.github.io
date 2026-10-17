@@ -5,42 +5,240 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Test Page - proton website</title>
 <!-- This site is listed in the website catalog, data/websites.js — its
-     id, name, icon and description live there, not in this file. -->
+     id, name, icon and description live there, not in this file.
+
+     It is the built-in smoke test for a proton build: the automated checks
+     below prove the Browser's frame really runs scripts, timers, canvas,
+     fetch and storage, and that this page can reach the desktop through
+     window.parent.__protonSiteCtx. Open it at proton://test-page. -->
 <link rel="stylesheet" href="../../assets/styles.css">
-<style>html,body{height:auto;min-height:100%;overflow:auto;background:#050505;color:#fff}body{margin:0}</style>
+<style>
+html,body{height:auto;min-height:100%;overflow:auto;background:#050505;color:#fff}
+body{margin:0}
+.tp-checks{display:grid;gap:6px;margin:10px 0 0}
+.tp-check{display:flex;align-items:center;gap:9px;padding:8px 11px;border:1px solid #333;border-radius:7px;background:#101010;font-size:13.5px}
+.tp-check b{flex:none;width:52px;font-size:11.5px;letter-spacing:.04em;text-transform:uppercase}
+.tp-check small{color:#b5b5b5}
+.tp-check .icn{flex:none;width:16px;height:16px}
+.tp-check[data-state="pass"] b{color:#ffffff}
+.tp-check[data-state="fail"]{border-color:#a92c28;background:#2b0f0d}
+.tp-check[data-state="fail"] b{color:#ffb4ab}
+.tp-check[data-state="skip"]{opacity:.62}
+.tp-check[data-state="wait"] b{color:#8a8a8a}
+.tp-summary{margin-top:12px;font-size:13.5px}
+</style>
 </head>
 <body>
-<div class="pad" style="max-width:720px">
+<div class="pad" style="max-width:760px">
   <h2>Test Page</h2>
-  <p class="muted">A built-in test website living in <span class="kbd">websites/test-page/site.html</span>. Everything below is interactive, so you can check the Browser, windows and rendering all work.</p>
+  <p class="muted">A built-in website living in <span class="kbd">websites/test-page/site.html</span>, catalogued in
+  <span class="kbd">data/websites.js</span> and framed by the Browser at <span class="kbd">proton://test-page</span>.
+  If every check below passes, this proton build renders and runs websites correctly.</p>
+
+  <div class="card" style="margin-top:14px">
+    <h3 style="margin-top:0">Automated checks</h3>
+    <div class="tp-checks" id="tp-checks"></div>
+    <p class="tp-summary muted" id="tp-summary">Running checks…</p>
+    <button class="btn sm" id="tp-rerun">Run checks again</button>
+  </div>
+
+  <h3 style="margin-top:22px">Try it yourself</h3>
   <div class="grid-cards">
-    <div class="card"><h3>Counter</h3><p style="font-size:30px;margin:6px 0" id="tp-count">0</p>
+    <div class="card"><h3 style="margin-top:0">Counter</h3>
+      <p style="font-size:30px;margin:6px 0" id="tp-count">0</p>
       <button class="btn primary" id="tp-inc">Click me</button>
-      <button class="btn" id="tp-reset">Reset</button></div>
-    <div class="card"><h3>Live clock</h3><p style="font-size:24px;margin:6px 0" id="tp-clock">--:--:--</p>
-      <p class="muted">If this ticks every second, timers work.</p></div>
-    <div class="card"><h3>Echo form</h3>
-      <form id="tp-form"><div class="field"><label>Type something</label><input id="tp-input" maxlength="60" placeholder="Hello proton"></div>
-      <button class="btn primary">Echo it</button></form>
-      <p id="tp-out" style="min-height:1.4em"></p></div>
-    <div class="card"><h3>Colour box</h3>
+      <button class="btn" id="tp-reset">Reset</button>
+      <p class="muted" style="margin-bottom:0">Clicks: events work.</p></div>
+
+    <div class="card"><h3 style="margin-top:0">Live clock</h3>
+      <p style="font-size:24px;margin:6px 0" id="tp-clock">--:--:--</p>
+      <p class="muted" style="margin-bottom:0">Ticks every second while the window is open — timers are not throttled to death.</p></div>
+
+    <div class="card"><h3 style="margin-top:0">Echo form</h3>
+      <form id="tp-form"><div class="field"><label for="tp-input">Type something</label>
+      <input id="tp-input" type="text" maxlength="60" placeholder="Hello proton"></div>
+      <button class="btn primary" type="submit">Echo it</button></form>
+      <p id="tp-out" class="muted" style="min-height:1.4em;margin-bottom:0"></p></div>
+
+    <div class="card"><h3 style="margin-top:0">Theme box</h3>
       <div id="tp-box" style="height:64px;border-radius:8px;background:#ffffff;margin-bottom:8px"></div>
-      <input type="color" id="tp-color" value="#ffffff" style="width:100%;height:38px;padding:2px" aria-label="Pick a colour"></div>
+      <input type="color" id="tp-color" value="#ffffff" style="width:100%;height:38px;padding:2px" aria-label="Pick a colour">
+      <p class="muted" style="margin-bottom:0">Only this box is coloured — proton's own UI stays black and white.</p></div>
+
+    <div class="card"><h3 style="margin-top:0">Canvas</h3>
+      <canvas id="tp-canvas" width="220" height="80" style="width:100%;height:80px;border:1px solid #333;border-radius:7px;background:#000"></canvas>
+      <p class="muted" style="margin-bottom:0">Drawn by this page's script on load.</p></div>
+
+    <div class="card"><h3 style="margin-top:0">Saved on this page</h3>
+      <div class="field"><label for="tp-note">Note (kept in this browser)</label>
+      <input id="tp-note" type="text" maxlength="80" placeholder="Stored under proton:test-page"></div>
+      <button class="btn" id="tp-note-save">Save</button>
+      <button class="btn" id="tp-note-clear">Clear</button>
+      <p id="tp-note-out" class="muted" style="min-height:1.4em;margin-bottom:0"></p></div>
+  </div>
+
+  <h3 style="margin-top:22px">Talk to the desktop</h3>
+  <div class="card">
+    <p class="muted" style="margin-top:0">A built-in site runs in a same-origin frame, so its script can reach proton as
+    <span class="kbd">window.parent.__protonSiteCtx</span>. These buttons are disabled if you opened this file directly
+    instead of through the Browser.</p>
+    <div style="display:flex;gap:7px;flex-wrap:wrap">
+      <button class="btn sm" id="tp-home" disabled>Go to Browser home</button>
+      <span id="tp-appbtns" style="display:flex;gap:7px;flex-wrap:wrap"></span>
+    </div>
+    <p class="muted" id="tp-ctx" style="margin-bottom:0">Checking for the desktop…</p>
   </div>
 </div>
+
 <script>
-let count = 0;
-const $ = (id) => document.getElementById(id);
-$('tp-inc').onclick = () => { $('tp-count').textContent = ++count; };
-$('tp-reset').onclick = () => { count = 0; $('tp-count').textContent = '0'; };
-const tick = () => { const el = $('tp-clock'); if (el) el.textContent = new Date().toLocaleTimeString(); };
-tick();
-setInterval(tick, 1000);
-$('tp-form').onsubmit = (e) => {
-  e.preventDefault();
-  $('tp-out').textContent = 'You typed: ' + $('tp-input').value;
-};
-$('tp-color').oninput = (e) => { $('tp-box').style.background = e.target.value; };
+(function () {
+  'use strict';
+  const $ = (id) => document.getElementById(id);
+  const ctx = () => (window.parent !== window ? window.parent.__protonSiteCtx : null);
+  const inFrame = () => !!ctx();
+
+  /* ------------------------- automated checks ------------------------- */
+  const CHECKS = [
+    { id: 'script', name: 'This script ran', detail: 'the page is not just markup',
+      run: () => true },
+    { id: 'css', name: 'proton stylesheet applied', detail: 'assets/styles.css rules reach this frame',
+      run: () => {
+        /* .btn, .pad and the dark-theme :root variables all come from the
+         * shared sheet — nothing on this page sets them inline. */
+        const btn = getComputedStyle($('tp-inc'));
+        const pad = getComputedStyle(document.querySelector('.pad'));
+        return btn.display === 'inline-flex' && pad.paddingTop === '16px'
+          && getComputedStyle(document.body).color === 'rgb(255, 255, 255)';
+      } },
+    { id: 'dom', name: 'DOM ready & queryable', detail: 'every control on this page was found',
+      run: () => ['tp-count', 'tp-clock', 'tp-form', 'tp-color', 'tp-canvas', 'tp-note'].every((id) => !!$(id)) },
+    { id: 'timer', name: 'Timers fire', detail: 'a 40 ms setTimeout resolved',
+      run: () => new Promise((resolve) => {
+        let done = false;
+        setTimeout(() => { done = true; resolve(true); }, 40);
+        setTimeout(() => { if (!done) resolve(false); }, 2000);
+      }) },
+    { id: 'canvas', name: 'Canvas 2D draws', detail: 'pixels read back from the box above',
+      run: () => {
+        const c = $('tp-canvas'), g = c && c.getContext && c.getContext('2d');
+        if (!g) return false;
+        g.fillStyle = '#ffffff'; g.fillRect(4, 4, 24, 24);
+        return g.getImageData(10, 10, 1, 1).data[0] > 200;
+      } },
+    { id: 'fetch', name: 'fetch() over HTTP', detail: 'this page could be re-requested from the server',
+      run: async () => {
+        try { return (await fetch(location.href, { cache: 'no-store' })).ok; }
+        catch { return false; }
+      } },
+    { id: 'storage', name: 'localStorage writable', detail: 'a key was written and read back',
+      run: () => {
+        try { localStorage.setItem('proton:test-page:check', '1');
+          const ok = localStorage.getItem('proton:test-page:check') === '1';
+          localStorage.removeItem('proton:test-page:check'); return ok; }
+        catch { return false; }
+      } },
+    { id: 'ctx', name: 'Desktop reachable', detail: 'window.parent.__protonSiteCtx from the Browser',
+      run: () => inFrame() && typeof ctx().showHome === 'function', skipIfTopLevel: true },
+    { id: 'catalog', name: 'Listed in the catalog', detail: 'the Browser knows this site as proton://test-page',
+      run: () => inFrame() && typeof ctx().showSite === 'function', skipIfTopLevel: true },
+  ];
+
+  function drawChecks(states) {
+    const host = $('tp-checks');
+    if (!host) return false;                 /* frame closed mid-run */
+    host.parentElement.dataset.running = states.some((s) => s === 'wait') ? 'true' : 'false';
+    host.innerHTML = CHECKS.map((c, i) => {
+      const s = states[i] || 'wait';
+      const glyph = s === 'pass' ? '&#10003;' : s === 'fail' ? '&#10007;' : s === 'skip' ? '&ndash;' : '&hellip;';
+      const label = s === 'pass' ? 'Pass' : s === 'fail' ? 'Fail' : s === 'skip' ? 'Skipped' : 'Running';
+      return `<div class="tp-check" data-state="${s}" id="tp-check-${c.id}"><b>${label}</b>
+        <span aria-hidden="true">${glyph}</span><span><b style="width:auto;text-transform:none;font-size:13.5px">${c.name}</b>
+        <br><small>${c.detail}</small></span></div>`;
+    }).join('');
+  }
+
+  async function runChecks() {
+    const states = CHECKS.map(() => 'wait');
+    if (drawChecks(states) === false) return;
+    for (let i = 0; i < CHECKS.length; i++) {
+      const c = CHECKS[i];
+      if (c.skipIfTopLevel && !inFrame()) { states[i] = 'skip'; drawChecks(states); continue; }
+      try { states[i] = (await c.run()) ? 'pass' : 'fail'; }
+      catch { states[i] = 'fail'; }
+      if (drawChecks(states) === false) return;   /* the Browser window closed */
+    }
+    const pass = states.filter((s) => s === 'pass').length;
+    const fail = states.filter((s) => s === 'fail').length;
+    const skip = states.filter((s) => s === 'skip').length;
+    const summary = $('tp-summary');
+    if (!summary) return;
+    summary.textContent = fail
+      ? `${fail} of ${CHECKS.length} checks failed (${pass} passed, ${skip} skipped).`
+      : `All ${pass} checks passed${skip ? ` (${skip} skipped — open this page in the Browser to run them)` : ''}.`;
+  }
+
+  /* ------------------------- manual controls ------------------------- */
+  let count = 0;
+  $('tp-inc').onclick = () => { $('tp-count').textContent = String(++count); };
+  $('tp-reset').onclick = () => { count = 0; $('tp-count').textContent = '0'; };
+
+  const tick = () => { const el = $('tp-clock'); if (el) el.textContent = new Date().toLocaleTimeString(); };
+  tick(); setInterval(tick, 1000);
+
+  $('tp-form').onsubmit = (e) => { e.preventDefault(); $('tp-out').textContent = 'You typed: ' + $('tp-input').value; };
+  $('tp-color').oninput = (e) => { $('tp-box').style.background = e.target.value; };
+
+  const NOTE_KEY = 'proton:test-page:note';
+  function drawNote() {
+    let saved = '';
+    try { saved = localStorage.getItem(NOTE_KEY) || ''; } catch { saved = ''; }
+    $('tp-note').value = saved;
+    $('tp-note-out').textContent = saved ? 'Saved: ' + saved : 'Nothing saved yet.';
+  }
+  $('tp-note-save').onclick = () => {
+    try { localStorage.setItem(NOTE_KEY, $('tp-note').value); drawNote(); }
+    catch { $('tp-note-out').textContent = 'Storage is blocked in this frame.'; }
+  };
+  $('tp-note-clear').onclick = () => { try { localStorage.removeItem(NOTE_KEY); } catch {} drawNote(); };
+
+  function drawCanvas() {
+    const c = $('tp-canvas'), g = c && c.getContext && c.getContext('2d');
+    if (!g) return;
+    g.clearRect(0, 0, c.width, c.height);
+    g.strokeStyle = '#ffffff'; g.lineWidth = 2; g.beginPath();
+    for (let x = 0; x <= c.width; x += 4) {
+      const y = c.height / 2 + Math.sin(x / 16) * (c.height / 3);
+      x ? g.lineTo(x, y) : g.moveTo(x, y);
+    }
+    g.stroke();
+    g.fillStyle = '#8a8a8a'; g.font = '11px sans-serif';
+    g.fillText('drawn by this page', 8, 14);
+  }
+
+  /* ----------------------- desktop integration ----------------------- */
+  function drawDesktop() {
+    const c = ctx();
+    const buttons = [$('tp-home'), ...$('tp-appbtns').querySelectorAll('button')];
+    if (!c) {
+      $('tp-ctx').textContent = 'Opened outside the Browser (no desktop to talk to) — the desktop checks are skipped.';
+      buttons.forEach((b) => { b.disabled = true; });
+      return;
+    }
+    $('tp-home').disabled = false;
+    $('tp-home').onclick = () => c.showHome();
+    /* One button per app proton actually has, so this page never points at an
+     * app that was removed. */
+    const apps = (window.parent.PROTON_APPLICATIONS || []).filter((a) => a.id !== 'browser');
+    $('tp-appbtns').innerHTML = apps.map((a) => `<button class="btn sm" data-app="${a.id}">Open ${a.name}</button>`).join('');
+    $('tp-appbtns').querySelectorAll('[data-app]').forEach((b) => {
+      b.onclick = () => c.openApp(b.dataset.app);
+    });
+    $('tp-ctx').textContent = `Connected to proton — ${apps.length} app(s) available to open from here.`;
+  }
+
+  drawCanvas(); drawNote(); drawDesktop(); runChecks();
+  $('tp-rerun').onclick = runChecks;
+})();
 </script>
 </body>
 </html>
