@@ -1,26 +1,25 @@
 /* proton — streamed arcade game host.
  *
- * Games in the catalog are framed live from their publisher's GitHub Pages
- * origin (Proton Arcade or Gams Offline); none of their builds are vendored.
- * See CREDITS.md for provenance, licensing and the network requirement.
+ * Most games in the catalog are framed live from their publisher's GitHub
+ * Pages origin. Math-halper's own Pages projects are linked the same way; two
+ * Gams builds are the exception and are served from games/gams/. See
+ * CREDITS.md for provenance, licensing and network requirements.
  *
- * They stay remote on purpose: the publishers' payloads are large (many are
- * self-contained HTML; others need whole asset directories) and generally
- * have no licence permitting redistribution. A streamed game adds only a
- * small HTML module here, not someone else's game build to every deploy.
+ * Remote builds stay remote on purpose: payloads can be large or need whole
+ * asset trees, and their source repositories generally grant no redistribution
+ * rights. A game app adds only a small HTML module here, not another build.
  *
  * Every game app (apps/<game>/app.html) is a thin module that calls
- * PROTON_ARCADE.open(body, ctx, {...}) with its own remote path. This file
- * builds the identical window for all of them: a toolbar carrying the source
- * address plus reload, fullscreen and an "open in a new tab" escape hatch, a
- * loading indicator (these builds are big — first load is a real download), the
- * frame itself, and a footnote that says plainly where the bytes come from.
+ * PROTON_ARCADE.open(body, ctx, {...}) with its source path. This file builds
+ * the shared window: source address, reload, fullscreen, an "open in a new
+ * tab" escape hatch, a loading indicator and a footnote that says where the
+ * bytes come from.
  *
  * Nothing is proxied, cached or stored here: the player's browser talks to
- * the publisher's origin directly. proton never sees the game's traffic, and
- * the game never sees proton's accounts or localStorage. A stuck or blank
- * frame has a direct-link escape hatch; cross-origin frames cannot reliably
- * report whether the remote game failed to this page.
+ * the page's origin directly. proton never sees game traffic, and framed
+ * pages cannot read proton's accounts or localStorage. A stuck or blank frame
+ * has a direct-link escape hatch; cross-origin or origin-isolated frames cannot
+ * reliably report whether the remote game failed to this page.
  *
  * Loaded by index.html after assets/core.js (it uses bar(), iconSvg() and MH)
  * and before assets/boot.js, so every game module can rely on PROTON_ARCADE
@@ -32,12 +31,12 @@ const PROTON_ARCADE = (function () {
   /* Default for the original games; Gams modules specify their own base. */
   const ORIGIN = 'https://proton-arcade.github.io';
 
-  /* Cross-origin framing, so this sandbox cannot be escaped by the game:
+  /* Standard sandbox for genuinely cross-origin publishers:
    * allow-same-origin hands the build back to ITS OWN origin, not proton's —
-   * which is what lets a title keep its saves in
-   * localStorage and run its own workers. The rest are what games actually ask
-   * for: pointer lock for first-person and 3D titles, modals for their confirm
-   * dialogs, popups and downloads for "share your score" buttons. */
+   * which lets a title keep its saves in localStorage and run its own workers.
+   * Never use this on a URL sharing proton's origin; same-origin scripts could
+   * otherwise reach the shell. The remaining tokens are what games ask for:
+   * pointer lock, modals, popups and downloads. */
   const SANDBOX = [
     'allow-scripts', 'allow-same-origin', 'allow-forms', 'allow-popups',
     'allow-pointer-lock', 'allow-modals', 'allow-downloads',
@@ -47,11 +46,12 @@ const PROTON_ARCADE = (function () {
    * game's own), audio without a second gesture, gamepads, pointer lock and
    * the clipboard ("copy your score" buttons). Matches what Proton Arcade's
    * own player page grants its frame. */
-  /* Games copied into this site (cfg.local) run from proton's own origin, so
-   * they must NOT get allow-same-origin: that would let their scripts reach
-   * proton's page and storage. They run in an opaque origin instead (no
-   * localStorage saves). */
-  const SANDBOX_LOCAL = SANDBOX.replace('allow-same-origin', '').replace(/\s+/g, ' ').trim();
+  /* Any frame served from proton's own origin must not get allow-same-origin:
+   * a same-origin game could otherwise reach the shell and account storage.
+   * Local builds and same-origin URLs are opaque by default; opaqueOrigin:true
+   * can force this for any other URL. Opaque frames cannot use localStorage,
+   * so the direct-tab escape hatch is available when a game needs normal storage. */
+  const SANDBOX_OPAQUE = SANDBOX.replace('allow-same-origin', '').replace(/\s+/g, ' ').trim();
 
   const ALLOW = 'fullscreen; autoplay; gamepad; pointer-lock; clipboard-read; clipboard-write';
 
@@ -74,10 +74,12 @@ const PROTON_ARCADE = (function () {
   }
 
   /* Build the game window. `game` is:
-   *   src    path of the build, relative to origin (required)
-   *   origin base URL, defaulting to Proton Arcade
-   *   size   optional human-readable first-load weight
-   *   note   optional extra line for the footnote (controls, caveats) */
+   *   src          path of the build, relative to origin (required)
+   *   origin       base URL, defaulting to Proton Arcade
+   *   size         optional human-readable first-load weight
+   *   note         optional extra line for the footnote (controls, caveats)
+   *   local        use this site's URL and an opaque sandbox
+   *   opaqueOrigin force an opaque sandbox even for an otherwise cross-origin URL */
   function open(body, ctx, game) {
     const cfg = game || {};
     if (!cfg.src) {
@@ -90,8 +92,10 @@ const PROTON_ARCADE = (function () {
     const url = cfg.local
       ? new URL(cfg.src, document.baseURI).href
       : urlFor(cfg.src, cfg.origin || ORIGIN);
-    const hostname = cfg.local ? location.hostname : new URL(url).hostname;
-    const sandbox = cfg.local ? SANDBOX_LOCAL : SANDBOX;
+    const gameUrl = new URL(url);
+    const hostname = cfg.local ? location.hostname : gameUrl.hostname;
+    const sandbox = (cfg.local || cfg.opaqueOrigin || gameUrl.origin === location.origin)
+      ? SANDBOX_OPAQUE : SANDBOX;
     const sourceLabel = cfg.local ? 'Runs from this site' : 'Streaming from ' + hostname;
     const name = nameFor(ctx, cfg.name);
     const weight = cfg.size ? ` · about ${MH.esc(cfg.size)} on first load` : '';
@@ -162,10 +166,10 @@ const PROTON_ARCADE = (function () {
 
     /* An iframe's `load` fires EVEN when Chromium displays its internal
      * network-error page. On that failure it is an accessible chrome-error:
-     * document; a working publisher page is cross-origin and inaccessible.
+     * document; a working publisher page is cross-origin or origin-isolated and inaccessible.
      * Keep an explicit, nonblank retry/direct-link panel for detectable
-     * failures. Do not probe with HEAD/fetch: the games are cross-origin and
-     * CORS failures would be mistaken for missing builds. A publisher's 404
+     * failures. Do not probe with HEAD/fetch: the games may be cross-origin
+     * or origin-isolated, and CORS failures would be mistaken for missing builds. A publisher's 404
      * or a silent failure inside its own code cannot be diagnosed from here. */
     function showFailure() {
       if (stopTicker) stopTicker();
@@ -180,7 +184,7 @@ const PROTON_ARCADE = (function () {
       try {
         const doc = frame.contentDocument;
         errorPage = !!doc && /^(chrome-error:|about:neterror|about:certerror)/.test(doc.URL);
-      } catch { /* A real cross-origin game is not readable. */ }
+      } catch { /* A real cross-origin or opaque game is not readable. */ }
       if (errorPage) showFailure();
       else loading.classList.add('gone');
     });

@@ -1,7 +1,7 @@
 # proton — a browser desktop (static Mixt clone)
 
 A complete desktop in your browser: Mint-style bottom panel and proton menu,
-draggable/resizable windows, file-aware desktop apps and 92 game entries — cloned and rebranded from
+draggable/resizable windows, file-aware desktop apps and 94 game entries — cloned and rebranded from
 [Mixt (`proton-arcade/mlp` @ `arena/170861f7-mlp`)](https://github.com/proton-arcade/mlp/tree/arena/170861f7-mlp)
 and rebuilt to run as a **pure static website** (no server, no build step,
 no dependencies). It ships a **black-and-white theme: black backgrounds, white text, and
@@ -25,9 +25,10 @@ no runtime dependencies or build step. Optional regression tests use jsdom:
 
 ## Project layout (everything is a module)
 
-- **Apps:** one folder + HTML file each — `apps/<name>/app.html` (114 apps:
-  27 local desktop/test apps and 87 streamed games). Every app's
-  name, location, icon, category, description and window size is listed in
+- **Apps:** one folder + HTML file each — `apps/<name>/app.html` (113 apps:
+  24 eagerly loaded apps and 89 lazy-loaded game modules, including two
+  Math-halper GitHub Pages games). Every app's name, location, icon, category,
+  description and window size is listed in
   **one catalog file** — `data/applications.js`.
   Add one by copying `apps/_template/` and adding an `[application]` block
   there; remove one by deleting that block. Full guide:
@@ -133,25 +134,27 @@ in Files; icons are shortcuts, not a mirror of that folder.
   Digital Logic Sim; also a built-in website at `proton://logic-sim`, both
   sharing `websites/logic-sim/`)
 - **Games** — proton's own: Chess (vs computer or 2-player), Checkers, Sudoku
-  (easy/medium/hard, hints), Klondike solitaire, Backgammon practice board.
-  Plus **19 streamed Proton Arcade titles**: Ampler Launcher (browser
-  Minecraft), five FNAF games, Granny, Baldi's Basics (upstream placeholder,
-  not a playable build yet), Backrooms, Geometry
-  Dash Lite, Bloxorz, Kart Bros, Football Bros, Retro Bowl, Drift Boss,
-  Pac-Man, **Flappy Bird (now with a bird SVG icon)**, Minesweeper and
-  Spacebar Clicker. **68 more games** come from
-  [Gams Offline's game catalog](https://github.com/Gams-Offline/Gams/tree/main/g)
-  (its 71 games minus Bloxorz, Pac-Man and Spacebar Clicker, already here),
-  including 2048, Drive Mad, Wordle, Slope, Duck Life and Flash titles.
-  Their builds are **not in this repository**: each frames its publisher's
-  GitHub Pages site live, with Reload, Fullscreen and Open in new tab. A
-  network connection is required. See [`CREDITS.md`](CREDITS.md#streamed-arcade-games)
-  for provenance and licensing limitations.
+  (easy/medium/hard, hints), Klondike solitaire and Backgammon practice board.
+  The 89 lazy-loaded game modules include **19 Proton Arcade titles**,
+  **Celeste Classic** and a **Mario Collection** hosted on
+  [Math-halper's GitHub Pages](https://math-halper.github.io/), and **68
+  Gams Offline catalog entries** (its 71 games minus Bloxorz, Pac-Man and
+  Spacebar Clicker, already here). The Math-halper apps embed
+  [Celeste Classic](https://math-halper.github.io/Celeste/1/) and the
+  [Mario collection](https://math-halper.github.io/Mario/) directly; their
+  builds are not copied into this repository. Most other streamed builds also
+  come from their publisher's Pages sites; two Gams games have local builds
+  under `games/gams/`. The shared game window has Reload, Fullscreen and Open
+  in new tab. A network connection is required for externally hosted games.
+  See [`CREDITS.md`](CREDITS.md#streamed-arcade-games) for provenance and
+  licensing limitations.
 - **Media** — Media player (audio/video from your computer or small VFS files)
   and Image Viewer
 - **Everything is the static website — no adding websites.** Apps are built
-  into this static site; the 87 streamed games above load their builds from
-  their publishers' origins and store no game bytes here. There is no way to
+  into this static site; game modules are catalogued here, but their pages
+  load from their existing origins (except the two Gams builds under
+  `games/gams/`). No game builds from Math-halper's Pages repos are copied
+  here. There is no way to
   add a website or create an app from a web address in the UI. The Browser can still visit an address
   typed into its bar without saving it, and anything already saved on an
   account (custom apps, websites) stays openable and removable in App Center
@@ -173,9 +176,10 @@ in Files; icons are shortcuts, not a mirror of that folder.
 
 Everything autosaves per account: notes, files, events, contacts, slides,
 whiteboards and local-game progress (Text Editor uses an explicit **Save**
-button/Ctrl+S). Streamed games are the exception: their progress belongs to
-**their own origin** (`proton-arcade.github.io` or `gams-offline.github.io`),
-not to a proton account, and never reaches proton.
+button/Ctrl+S). External game data is separate from proton accounts: remote
+publishers own their pages and any supported saves. Math-halper's Pages games
+run in an isolated frame that cannot access proton's account storage; use
+**Open in new tab** if a game needs its normal page-origin storage.
 
 ## Credits & licence
 
@@ -186,11 +190,11 @@ cloud sync) is documented in [`CREDITS.md`](CREDITS.md). Licensed
 (Mixt / Puter-derived, © Puter Technologies Inc.). Not affiliated with
 Linux Mint, Cinnamon, Puter, or the Mixt authors.
 
-That licence covers **proton's own code** — the desktop, apps, hand-drawn
-SVG icons and game host/catalog. It does **not** cover the streamed games:
-no game build is stored or redistributed here, and this repository grants no
-rights in them. Many are commercial works; the referenced repositories do
-not grant a blanket licence for the builds. Read
+That licence covers **proton's own code** — the desktop, app wrappers,
+hand-drawn SVG icons and game host/catalog. It does **not** grant rights to
+the games themselves: this repository references external builds, and the two
+Gams builds stored here have separate provenance and licensing limitations.
+The Math-halper Pages games are embedded by URL and are not copied here. Read
 [CREDITS.md](CREDITS.md#streamed-arcade-games) before redistributing or
 mirroring this site. Not affiliated with Proton Arcade, Gams Offline or any
 game's author.

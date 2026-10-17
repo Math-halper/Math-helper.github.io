@@ -171,7 +171,7 @@ function iconOptions(selected) {
   const cur = iconNameFrom(selected, 'grid');
   const option = (name, label) => `<option value="${name}" ${name === cur ? 'selected' : ''}>${MH.esc(label)}</option>`;
   const general = ICON_CHOICES.map(([name, label]) => option(name, label)).join('');
-  /* Populate the picker from the catalog so all 92 game glyphs can be chosen
+  /* Populate the picker from the catalog so all 94 game glyphs can be chosen
    * in Customize, without maintaining a second list of game names. */
   const games = (window.PROTON_APPLICATIONS || []).filter((a) => a.cat === 'Games' && ICON_PATHS[a.icon]);
   return general + `<optgroup label="Games">${games.map((a) => option(a.icon, a.name)).join('')}</optgroup>`;

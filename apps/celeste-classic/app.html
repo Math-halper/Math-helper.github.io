@@ -1,0 +1,20 @@
+<!DOCTYPE html>
+<html lang="en">
+<head><meta charset="utf-8"><title>Celeste Classic — proton app</title></head>
+<body>
+<p>Launch Celeste Classic from <a href="../../index.html">proton</a>.</p>
+<!-- The game stays in Math-halper/Celeste and is embedded from its GitHub Pages site. -->
+<script data-proton-app>
+'use strict';
+registerApp({
+  render(body, ctx) {
+    PROTON_ARCADE.open(body, ctx, {
+      origin: 'https://math-halper.github.io/Celeste',
+      src: '1/index.html',
+      note: 'Hosted by Math-halper on GitHub Pages; this opens Celeste Classic.',
+    });
+  },
+});
+</script>
+</body>
+</html>

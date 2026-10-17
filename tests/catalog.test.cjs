@@ -17,7 +17,7 @@ test('every registered game gets its own monochrome SVG icon, including Flappy B
   const { apps, icons, render, picker, warnings } = catalog();
   assert.deepEqual(Array.from(warnings), []);
   const games = apps.filter((a) => a.cat === 'Games');
-  assert.equal(games.length, 92); // 5 local + 19 Proton Arcade + 68 new Gams games
+  assert.equal(games.length, 94); // 5 local + 19 Proton Arcade + 2 Math-halper Pages + 68 Gams games
   const gams = games.filter((a) => a.id.startsWith('gams-'));
   assert.equal(gams.length, 68); // upstream's 71 games minus 3 titles already present
   assert.ok(!gams.some((a) => ['gams-pacman', 'gams-bloxorz', 'gams-spacebar-clicker'].includes(a.id)));
@@ -46,7 +46,7 @@ test('every registered game gets its own monochrome SVG icon, including Flappy B
   assert.equal(flappy.icon, 'game-flappy-bird');
   assert.ok(render(flappy.icon).includes('circle'), 'Flappy Bird shows a bird, not a star');
   const options = picker('game-flappy-bird');
-  assert.equal((options.match(/<option value="game-/g) || []).length, 92);
+  assert.equal((options.match(/<option value="game-/g) || []).length, 94);
   assert.match(options, /<option value="game-flappy-bird" selected>Flappy Bird<\/option>/);
 });
 
@@ -56,11 +56,13 @@ test('game host preserves project subpaths for both publishers', () => {
   const host = vm.runInContext('PROTON_ARCADE', ctx);
   assert.equal(host.urlFor('website/games/Granny/index.html'), 'https://proton-arcade.github.io/website/games/Granny/index.html');
   assert.equal(host.urlFor('g/g/drivemad/drivemad.html', 'https://gams-offline.github.io/Gams'), 'https://gams-offline.github.io/Gams/g/g/drivemad/drivemad.html');
+  assert.equal(host.urlFor('1/index.html', 'https://math-halper.github.io/Celeste'), 'https://math-halper.github.io/Celeste/1/index.html');
+  assert.equal(host.urlFor('index.html', 'https://math-halper.github.io/Mario'), 'https://math-halper.github.io/Mario/index.html');
 });
 
 test('every catalog entry points to a real, syntactically valid app module', () => {
   const { apps } = catalog();
-  assert.equal(apps.length, 111);
+  assert.equal(apps.length, 113);
   assert.equal(new Set(apps.map((a) => a.id)).size, apps.length);
   for (const app of apps) {
     assert.ok(fs.existsSync(path.join(ROOT, app.path)), `Missing module: ${app.path}`);

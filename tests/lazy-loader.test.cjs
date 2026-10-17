@@ -21,7 +21,7 @@ test('boot loads only local apps; streamed games register immediately and fetch 
     w.fetchText = async (p) => { calls.push(p); return source(p); };
     await w.loadHtmlModules();
     const apps = w.eval('APPS'), wins = w.eval('wins');
-    assert.equal(Object.keys(apps).length, 111);
+    assert.equal(Object.keys(apps).length, 113);
     assert.equal(Object.keys(w.eval('SITES')).length, 6);
     assert.equal(calls.length, 24, 'Only 24 local desktop apps should be fetched at boot');
     assert.ok(!calls.some((p) => p.startsWith('apps/gams-')));
@@ -56,6 +56,21 @@ test('boot loads only local apps; streamed games register immediately and fetch 
     w.openApp('gams-2048');
     assert.equal(calls.filter((p) => p === 'apps/gams-2048/app.html').length, 1, 'module is not fetched twice');
     w.closeWin('gams-2048');
+
+    for (const [id, page] of [
+      ['celeste-classic', 'https://math-halper.github.io/Celeste/1/index.html'],
+      ['mario-collection', 'https://math-halper.github.io/Mario/index.html'],
+    ]) {
+      w.openApp(id);
+      await tick();
+      const body = wins.get(id).body;
+      const frame = body.querySelector('iframe.arcade-frame');
+      assert.equal(frame.src, page);
+      assert.ok(!frame.getAttribute('sandbox').split(/\s+/).includes('allow-same-origin'), `${id} must not access proton's same-origin account data`);
+      assert.equal(body.querySelector('.arcade-foot a[target="_blank"]').href, page, `${id} exposes the GitHub Pages URL`);
+      assert.equal(calls.filter((p) => p === `apps/${id}/app.html`).length, 1);
+      w.closeWin(id);
+    }
 
     let failOnce = true;
     w.fetchText = async (p) => {

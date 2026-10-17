@@ -26,6 +26,9 @@ const GAME_ICONS = {
   'game-minesweeper': '<circle cx="12" cy="12" r="5"/><path d="M12 2v5m0 10v5M2 12h5m10 0h5M5 5l3.5 3.5M15.5 15.5 19 19m0-14-3.5 3.5M8.5 15.5 5 19"/><circle cx="10.5" cy="10.5" r="1" fill="currentColor" stroke="none"/>',
   'game-granny': '<path d="M5 21V5l14-2v18H5zM9 8c0-2 1.5-3 3-3s3 1 3 3v5c0 2-1.5 3-3 3s-3-1-3-3zM11 20h2"/><circle cx="11" cy="10" r=".8" fill="currentColor" stroke="none"/><circle cx="14" cy="10" r=".8" fill="currentColor" stroke="none"/>',
 
+  'game-celeste-classic': '<path d="M7 7c-2 2-3 4-2 7l4 7c1 1 2 1 3 1s3 0 4-1l4-7c1-3 0-5-2-7-2-1-4 0-5 1-1-1-4-2-6-1z"/><path d="M8 7c1-3 3-4 4-2 2-2 4-1 4 2M10 12h.01M15 13h.01M12 17h.01M8 16h.01M17 17h.01"/>',
+  'game-mario-collection': '<path d="m12 2 1.4 3 3.3.4-2.4 2.2.6 3.2L12 9.2l-2.9 1.6.6-3.2-2.4-2.2 3.3-.4zM3 12h18v4H3zM5 16v5h14v-5M8 18v1m8-1v1"/>',
+
   /* Gams Offline — Basic */
   'game-gams-stickman-hook': '<path d="M4 4h16M16 4v4M16 8c0 2-2 3-4 4"/><circle cx="11" cy="13" r="1.5"/><path d="m11 14.5-2 4m1-2 4 1m-5 1-2 3m2-3 3 3"/>',
   'game-gams-drive-mad': '<path d="M2 15h20l-2 3H4zM5 15l2-6h9l3 6M8 9l1-3h5l2 3M3 11 2 8"/><circle cx="6" cy="19" r="2"/><circle cx="18" cy="19" r="2"/>',

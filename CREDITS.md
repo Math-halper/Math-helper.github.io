@@ -65,13 +65,36 @@ and nesting chips inside chips.
 
 ## Streamed arcade games
 
-The Games menu includes **19 Proton Arcade titles and 68 Gams Offline titles**
-in addition to proton's five locally implemented board games. These 87 builds
-are **not in this repository**. Each `apps/<id>/app.html` is only a small
-module that asks the shared host (`assets/game-host.js`) to frame the build
-live from its publisher's GitHub Pages origin. The artwork for every menu
-icon is instead an original, single-color inline SVG drawn in
-`assets/game-icons.js` (no upstream thumbnail or logo files are copied).
+The Games menu includes **19 Proton Arcade titles, two Math-halper GitHub
+Pages entries, and 68 Gams Offline entries**, in addition to proton's five
+locally implemented board games. The 89 game modules are small wrappers for
+the shared host (`assets/game-host.js`): 87 pages are loaded from their
+existing Pages origins, while A Dance of Fire and Ice and Grey Box Testing
+have local Gams builds under `games/gams/`. The two Math-halper game builds
+are not copied into this repository. The artwork for every menu icon is an
+original, single-color inline SVG in `assets/game-icons.js` (no upstream
+thumbnail or logo files are copied).
+
+### Math-halper GitHub Pages games (2)
+
+| App id | Page embedded in proton | Repo |
+| --- | --- | --- |
+| `celeste-classic` | <https://math-halper.github.io/Celeste/1/> | <https://github.com/Math-halper/Celeste> |
+| `mario-collection` | <https://math-halper.github.io/Mario/> | <https://github.com/Math-halper/Mario> |
+
+**Celeste Classic** opens the PICO-8 game in the `Celeste` repository's `1/`
+folder (the repository also has a `2/` game page). The existing Gams Offline
+Celeste entry remains separate. **Mario Collection** opens the `Mario`
+repository's landing page, which offers Super Mario 64 and Mari0. Proton
+stores only these two small app wrappers and their original SVG icons; it does
+not copy the games or their assets. Refer to the linked repositories for
+credits and licensing terms.
+
+Both Pages sites use the same `math-halper.github.io` origin as proton. The
+shared game host detects that and omits `allow-same-origin`, so game scripts
+cannot read proton's account data. This isolated frame cannot use normal
+page-origin storage; the game window provides **Open in new tab** for playing
+directly on the Pages site.
 
 ### Proton Arcade (19 titles)
 

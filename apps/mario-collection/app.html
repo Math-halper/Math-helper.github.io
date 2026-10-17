@@ -1,0 +1,20 @@
+<!DOCTYPE html>
+<html lang="en">
+<head><meta charset="utf-8"><title>Mario Collection — proton app</title></head>
+<body>
+<p>Launch the Mario Collection from <a href="../../index.html">proton</a>.</p>
+<!-- The games stay in Math-halper/Mario and are embedded from its GitHub Pages site. -->
+<script data-proton-app>
+'use strict';
+registerApp({
+  render(body, ctx) {
+    PROTON_ARCADE.open(body, ctx, {
+      origin: 'https://math-halper.github.io/Mario',
+      src: 'index.html',
+      note: 'Hosted by Math-halper on GitHub Pages; choose Super Mario 64 or Mari0 there.',
+    });
+  },
+});
+</script>
+</body>
+</html>

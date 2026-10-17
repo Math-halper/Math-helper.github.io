@@ -499,6 +499,28 @@ desc=Escape the house before Granny finds you
 w=1200
 h=760
 
+/* Math-halper games are embedded from GitHub Pages; their builds are not copied here. */
+[application]
+id=celeste-classic
+name=Celeste Classic
+path=apps/celeste-classic/app.html
+icon=game-celeste-classic
+cat=Games
+streamed=true
+desc=PICO-8 platformer hosted on Math-halper GitHub Pages
+w=1000
+h=720
+
+[application]
+id=mario-collection
+name=Mario Collection
+path=apps/mario-collection/app.html
+icon=game-mario-collection
+cat=Games
+streamed=true
+desc=Super Mario 64 and Mari0 collection hosted on GitHub Pages
+w=1120
+h=760
 
 /*
 Gams Offline games: cataloged from Gams-Offline/Gams (main @ b75cc91).

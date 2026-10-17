@@ -9,7 +9,7 @@ const source = (p) => fs.readFileSync(path.join(ROOT, p), 'utf8');
 // Real Chromium is used for visual QA; this jsdom regression test checks
 // the render path of EVERY catalogued app without needing a live server,
 // an installed Chromium binary or the publishers' external game builds.
-test('all 24 local apps render content and all 87 streamed games open a nonblank host', async () => {
+test('all 24 local apps render content and all 89 streamed game modules open a nonblank host', async () => {
   const virtualConsole = new VirtualConsole(), errors = [];
   virtualConsole.on('jsdomError', (err) => errors.push(err.message));
   const dom = new JSDOM('<!doctype html><main id="auth" hidden></main><div id="desktop" hidden></div><div id="toasts"></div>', {
@@ -60,9 +60,17 @@ test('all 24 local apps render content and all 87 streamed games open a nonblank
       if (app.streamed === 'true') {
         counts.streamed++;
         const frame = body?.querySelector('iframe.arcade-frame');
-        const match = source(app.path).match(/src: '([^']+)'/);
+        const module = source(app.path);
+        const match = module.match(/src: '([^']+)'/);
+        const expectedPages = {
+          'celeste-classic': 'https://math-halper.github.io/Celeste/1/index.html',
+          'mario-collection': 'https://math-halper.github.io/Mario/index.html',
+        };
+        const opaqueRequired = Object.hasOwn(expectedPages, app.id);
         if (!frame || !match || !frame.src.endsWith('/' + match[1])
-          || !(/^https:\/\/(proton-arcade|gams-offline)\.github\.io\//.test(frame.src) || /local: true/.test(source(app.path)))
+          || !(/^https:\/\/(proton-arcade|gams-offline|math-halper)\.github\.io\//.test(frame.src) || /local: true/.test(module))
+          || (expectedPages[app.id] && frame.src !== expectedPages[app.id])
+          || (opaqueRequired && frame.getAttribute('sandbox').split(/\s+/).includes('allow-same-origin'))
           || !body.querySelector('.arcade-loading')
           || !body.querySelector('[data-w="error"]')?.hidden
           || !body.querySelector('.arcade-foot a[target="_blank"]')
@@ -72,7 +80,7 @@ test('all 24 local apps render content and all 87 streamed games open a nonblank
       } else counts.local++;
       w.closeWin(app.id, true);
     }
-    assert.deepEqual(counts, { local: 24, streamed: 87 });
+    assert.deepEqual(counts, { local: 24, streamed: 89 });
     assert.deepEqual(failures, []);
     assert.deepEqual(errors, []);
   } finally { dom.window.close(); }

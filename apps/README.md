@@ -115,6 +115,28 @@ refreshes when another app modifies the VFS. The internal clipboard and
 selection last only while Files is open. This does not grant access to the
 computer's filesystem: user files live in per-account browser localStorage.
 
+### Math-halper GitHub Pages games
+
+Two additional game entries embed pages hosted in Math-halper's own public
+GitHub repositories. The proton modules only point at those Pages URLs; no
+game files are copied into this repository.
+
+| Folder | App (id) | Embedded GitHub Pages page |
+| --- | --- | --- |
+| `celeste-classic/` | Celeste Classic (`celeste-classic`) | <https://math-halper.github.io/Celeste/1/> |
+| `mario-collection/` | Mario Collection (`mario-collection`) | <https://math-halper.github.io/Mario/> |
+
+Celeste Classic launches the PICO-8 page in the `Celeste` repository's `1/`
+folder; the existing Gams Offline entry remains separately listed as Celeste.
+Mario Collection opens the `Mario` repository's landing page, where players can
+choose Super Mario 64 or Mari0. Both are embedded through
+[`assets/game-host.js`](../assets/game-host.js), which shows the page URL and
+an **Open in new tab** link. Because these Pages URLs share
+`math-halper.github.io` with proton, the game host detects that and omits
+`allow-same-origin`; its opaque sandbox cannot read proton's account data.
+Opaque frames do not have normal page-origin storage, so use **Open in new tab**
+if a game needs it.
+
 ### The streamed arcade games
 
 Nineteen Proton Arcade apps sit in the **Games** category and work
@@ -167,11 +189,13 @@ Those builds total roughly half a gigabyte and must never be committed here.
 ### Gams Offline games
 
 **68 more game modules** live in `apps/gams-*/app.html`, each cataloged in
-`data/applications.js`. They link to the games in
-[Gams-Offline/Gams](https://github.com/Gams-Offline/Gams/tree/main/g) at
-`https://gams-offline.github.io/Gams/`. The source catalog has 71 games;
-Bloxorz, Pac-Man and Spacebar Clicker already had apps here, so they were
-not duplicated. The upstream Tools and About pages are not games. Example:
+`data/applications.js`. They follow the game catalog in
+[Gams-Offline/Gams](https://github.com/Gams-Offline/Gams/tree/main/g): 66 are
+loaded from `https://gams-offline.github.io/Gams/`, while A Dance of Fire and
+Ice and Grey Box Testing have local builds under `games/gams/`. The source
+catalog has 71 games; Bloxorz, Pac-Man and Spacebar Clicker already had apps
+here, so they were not duplicated. The upstream Tools and About pages are not
+games. Example:
 
 ```js
 PROTON_ARCADE.open(body, ctx, {
@@ -180,17 +204,22 @@ PROTON_ARCADE.open(body, ctx, {
 });
 ```
 
-Both publishers' games are **network-only**. Keep their modules small and do
-not copy any builds into `apps/`; several games require entire asset trees,
+Proton Arcade builds and 66 of the Gams Offline builds are **network-only**;
+A Dance of Fire and Ice and Grey Box Testing are the two existing local Gams
+builds under `games/gams/`. Keep remote-game modules small and do not copy
+additional builds into `apps/`; several games require entire asset trees,
 and the source repositories do not grant a blanket redistribution licence.
 Each game's `icon=game-<id>` selects a unique hand-drawn monochrome SVG in
 `assets/game-icons.js`, matching the desktop's 24px vector style. Provenance
 and limitations: [`CREDITS.md`](../CREDITS.md#streamed-arcade-games).
 
-**To add a streamed game:** create `apps/<id>/app.html` calling
+**To add an embedded game page:** create `apps/<id>/app.html` calling
 `PROTON_ARCADE.open()` with its source path (and `origin` if not Proton Arcade),
-add an `[application]` block with `cat=Games` and `streamed=true`, and add its SVG icon to
-`assets/game-icons.js`. There is no game download or build step.
+add an `[application]` block with `cat=Games` and `streamed=true`, and add its
+SVG icon to `assets/game-icons.js`. There is no game download or build step.
+If a page shares proton's origin, the shared host automatically removes
+`allow-same-origin`; set `opaqueOrigin: true` to force that isolated sandbox
+for another origin too.
 
 Shared code lives outside this folder: `data/applications.js` (the app
 catalog — name, location, icon and everything else for every app),
