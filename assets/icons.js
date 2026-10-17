@@ -1,10 +1,6 @@
-/* proton — SVG icon set.
- * Every app, website and button icon on the desktop is one of these named
- * vector icons (drawn on a 24x24 grid, stroke = currentColor), never an
- * emoji. Apps refer to icons by name, e.g.  icon: 'folder'  and the shell
- * renders them with iconFor(app.icon). Add your own by adding a line to
- * ICON_PATHS below — the name instantly works in every app, in the
- * Customize app and in the App Center icon pickers. */
+/* proton — SVG icon set and safe rendering for per-account image icons.
+ * Named vector icons remain the defaults; users can also upload a small
+ * raster image for an app icon from Customize. */
 'use strict';
 
 const ICON_PATHS = {
@@ -161,8 +157,68 @@ function iconSvg(name, cls = '') {
   return `<svg class="icn ${cls}" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false">${ICON_PATHS[n]}</svg>`;
 }
 
-/* Render any stored icon value (new name or legacy emoji) as an SVG icon. */
+/* Uploaded icons are normalized to tiny raster data URLs before being saved
+ * in the account record. Accept only known raster MIME types and base64 so
+ * account backups cannot inject markup or remote URLs into the UI. */
+const ICON_IMAGE_DATA_MAX = 180_000;
+const ICON_IMAGE_DATA_RE = /^data:image\/(?:png|jpeg|webp);base64,[A-Za-z0-9+/]+={0,2}$/;
+function isIconImageData(value) {
+  return typeof value === 'string' && value.length <= ICON_IMAGE_DATA_MAX && ICON_IMAGE_DATA_RE.test(value);
+}
+
+/* Read, downscale and re-encode a chosen raster image. Keeping a 128px copy
+ * makes it sharp in the desktop while avoiding large localStorage backups. */
+function iconImageFromFile(file) {
+  return new Promise((resolve, reject) => {
+    if (!file || !/^image\/(?:png|jpe?g|webp|gif|bmp|avif)$/i.test(file.type || '')) {
+      reject(new Error('Choose a PNG, JPG, WebP, GIF, BMP, or AVIF image.'));
+      return;
+    }
+    if (file.size > 8 * 1024 * 1024) {
+      reject(new Error('Choose an image that is 8 MB or smaller.'));
+      return;
+    }
+
+    let objectUrl;
+    try { objectUrl = URL.createObjectURL(file); }
+    catch { reject(new Error('This browser could not read that image.')); return; }
+    const image = new Image();
+    const release = () => { if (objectUrl) URL.revokeObjectURL(objectUrl); objectUrl = ''; };
+    image.onerror = () => { release(); reject(new Error('That image could not be decoded.')); };
+    image.onload = () => {
+      release();
+      const sourceWidth = image.naturalWidth || image.width;
+      const sourceHeight = image.naturalHeight || image.height;
+      if (!sourceWidth || !sourceHeight || sourceWidth * sourceHeight > 32_000_000) {
+        reject(new Error('That image has invalid or excessively large dimensions.'));
+        return;
+      }
+      const scale = Math.min(1, 128 / Math.max(sourceWidth, sourceHeight));
+      const canvas = document.createElement('canvas');
+      canvas.width = Math.max(1, Math.round(sourceWidth * scale));
+      canvas.height = Math.max(1, Math.round(sourceHeight * scale));
+      try {
+        const context = canvas.getContext('2d');
+        if (!context) throw new Error('Canvas is unavailable.');
+        context.clearRect(0, 0, canvas.width, canvas.height);
+        context.drawImage(image, 0, 0, canvas.width, canvas.height);
+        const data = canvas.toDataURL('image/webp', 0.86);
+        if (!isIconImageData(data)) throw new Error('That image could not be saved as an app icon.');
+        resolve(data);
+      } catch (error) {
+        reject(error instanceof Error ? error : new Error('That image could not be saved as an app icon.'));
+      }
+    };
+    try { image.src = objectUrl; }
+    catch { release(); reject(new Error('That image could not be decoded.')); }
+  });
+}
+
+/* Render an uploaded image or a named/legacy icon. */
 function iconFor(value, fallback = 'grid') {
+  if (isIconImageData(value)) {
+    return `<img class="icn app-icon-image" src="${value}" alt="" aria-hidden="true" draggable="false">`;
+  }
   return iconSvg(iconNameFrom(value, fallback));
 }
 

@@ -71,7 +71,7 @@ runtime dependencies or build step. Optional regression tests use jsdom:
   `python3 tools/gen-fs-manifest.py`), `assets/config-loader.js` (parses both
   catalogs), `assets/store.js` (accounts/storage and the per-account defaults),
   `assets/fs.js` (the virtual file system), `assets/fs-archive.js`
-  (dependency-free ZIP export), `assets/icons.js` (monochrome inline SVGs),
+  (dependency-free ZIP export), `assets/icons.js` (monochrome SVGs plus safe uploaded-image icons),
   `assets/core.js` (desktop/window manager/registries),
   `assets/desktop-icons.js` (shortcut layout, drag/drop and menus),
   `assets/html-loader.js` (loads the app modules at boot, or a `streamed=true`
@@ -132,9 +132,10 @@ it reports that no app can open it.
   running apps, clock, searchable start menu (one **System** section), window
   manager (drag/resize/minimise/maximise), toasts.
 - **System** — App Center, Customize, Settings, About, Browser, Celeste Classic and Mario Collection.
-- **Customize — everything is modular.** Rename any app, change its icon, move
-  it to another (or a brand-new) menu category, reorder it, pin it, remove it
-  and add it back, or reset it — per account. Invent your own **themes**
+- **Customize — everything is modular.** Rename any app, change its vector
+  icon or upload a raster image for it, move it to another (or a brand-new)
+  menu category, reorder it, pin it, remove it and add it back, or reset it —
+  per account. Uploaded icons are resized and saved with that account. Invent your own **themes**
   (accent + wallpaper) and **wallpapers** (two-shade gradients) and apply them
   in one click; they also appear in Settings. Toggle desktop parts (clock,
   desktop date/hint, lock & account buttons, menu search, panel labels)

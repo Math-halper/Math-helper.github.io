@@ -66,7 +66,7 @@ const DesktopIcons = (() => {
   function info(entry) {
     if (entry.kind === 'app') {
       const app = APPS[entry.target];
-      return { name: app.name, icon: app.icon, detail: 'Application', missing: false };
+      return { name: app.name, icon: app.iconImage || app.icon, detail: 'Application', missing: false };
     }
     const st = FS.stat(entry.target);
     const icon = !st ? 'alert' : st.type === 'dir' ? 'folder'
@@ -227,7 +227,7 @@ const DesktopIcons = (() => {
         .sort((a, b) => a.name.localeCompare(b.name));
       results.innerHTML = apps.length ? apps.map((app) => {
         const present = userData.desktopIcons.some((x) => x.kind === 'app' && x.target === app.id);
-        return `<button type="button" class="desktop-picker-item" data-app="${MH.esc(app.id)}"><span class="desktop-picker-glyph">${iconFor(app.icon)}</span><span><b>${MH.esc(app.name)}</b><small>${MH.esc(app.cat)}</small></span>${present ? '<em>On desktop</em>' : iconSvg('plus')}</button>`;
+        return `<button type="button" class="desktop-picker-item" data-app="${MH.esc(app.id)}"><span class="desktop-picker-glyph">${iconFor(app.iconImage || app.icon)}</span><span><b>${MH.esc(app.name)}</b><small>${MH.esc(app.cat)}</small></span>${present ? '<em>On desktop</em>' : iconSvg('plus')}</button>`;
       }).join('') : '<p class="desktop-picker-empty">No matching apps.</p>';
       results.querySelectorAll('[data-app]').forEach((button) => button.onclick = () => {
         const id = button.dataset.app;

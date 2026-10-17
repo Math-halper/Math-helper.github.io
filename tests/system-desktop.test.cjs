@@ -39,6 +39,8 @@ function catalog() {
     warnings: ctx.window.PROTON_CATALOG_WARNINGS,
     icons: vm.runInContext('ICON_PATHS', ctx),
     render: vm.runInContext('iconSvg', ctx),
+    renderIcon: vm.runInContext('iconFor', ctx),
+    loadImageIcon: vm.runInContext('iconImageFromFile', ctx),
   };
 }
 
@@ -75,6 +77,21 @@ test('the catalog is five core apps, two embedded games and the built-in test si
   assert.deepEqual(siteFolders, ['_embed', '_template', 'test-page']);
   const index = source('index.html');
   assert.ok(!index.includes('game-icons.js') && !index.includes('game-host.js'));
+});
+
+test('uploaded icon data renders only as a small, safe raster image', () => {
+  const { renderIcon } = catalog();
+  const image = 'data:image/png;base64,AQID';
+  assert.equal(renderIcon(image), `<img class="icn app-icon-image" src="${image}" alt="" aria-hidden="true" draggable="false">`);
+  assert.match(renderIcon('data:image/svg+xml;base64,PHN2Zz48L3N2Zz4='), /^<svg/);
+  assert.match(renderIcon('https://example.com/icon.png'), /^<svg/);
+  assert.match(renderIcon(`data:image/png;base64,${'A'.repeat(180_001)}`), /^<svg/);
+});
+
+test('uploaded icon files reject unsafe formats and files over the size limit', async () => {
+  const { loadImageIcon } = catalog();
+  await assert.rejects(loadImageIcon({ type: 'image/svg+xml', size: 128 }), /PNG, JPG, WebP, GIF, BMP, or AVIF/);
+  await assert.rejects(loadImageIcon({ type: 'image/png', size: 8 * 1024 * 1024 + 1 }), /8 MB or smaller/);
 });
 
 test('every catalog entry points at a real, syntactically valid app module', () => {
@@ -223,23 +240,80 @@ test('the desktop boots, lists and opens all seven catalogued apps', async () =>
   } finally { dom.window.close(); }
 });
 
-test('Customize still resets to defaults that exist', async () => {
+test('Customize saves, displays and resets uploaded app icon images', async () => {
   const { window: w } = new JSDOM('<!doctype html><main id="auth" hidden></main><div id="desktop" hidden></div><div id="toasts"></div>', {
     url: 'https://math-halper.github.io/math-halper.github.io/', runScripts: 'dangerously', pretendToBeVisual: true,
   });
+  const storedImage = 'data:image/webp;base64,AQID';
+  w.URL.createObjectURL = () => 'blob:icon-upload';
+  w.URL.revokeObjectURL = () => {};
+  w.Image = class {
+    constructor() { this.naturalWidth = 256; this.naturalHeight = 128; }
+    set src(_value) { queueMicrotask(() => this.onload?.()); }
+  };
+  w.HTMLCanvasElement.prototype.getContext = () => ({ clearRect() {}, drawImage() {} });
+  w.HTMLCanvasElement.prototype.toDataURL = () => storedImage;
   const run = (text) => { const s = w.document.createElement('script'); s.textContent = text; w.document.body.appendChild(s); s.remove(); };
   try {
     for (const p of SHELL) run(source(p));
     w.fetchText = async (p) => source(p);
     await w.loadHtmlModules();
-    w.eval("currentUser = {username:'Ada',usernameLower:'ada',displayName:'Ada',createdAt:Date.now()}; userData = MH.defaultData('Ada','ada'); enterDesktop();");
+    w.eval("currentUser = {username:'Ada',usernameLower:'ada',displayName:'Ada',createdAt:Date.now()}; userData = MH.defaultData('Ada','ada'); userData.customApps.push({id:'legacy-image-app',name:'Saved App',url:'https://example.org/',icon:'globe',desc:'Saved app'}); enterDesktop();");
     w.eval("window.confirm = () => true;");
     w.openApp('customize');
     const body = w.eval('wins').get('customize').body;
+    w.openApp('browser');
+    const browserWindow = w.eval('wins').get('browser');
     assert.equal(body.querySelector('#cust-files-shortcut'), null, 'Customize still offers a Files shortcut');
     assert.deepEqual([...body.querySelectorAll('#cust-modlist .card b')].map((b) => b.textContent).slice(0, SYSTEM_APPS.length),
       ['App Center', 'Customize', 'Settings', 'About', 'Browser', 'Celeste Classic', 'Mario Collection']);
+
+    const uploadBrowserIcon = async () => {
+      const input = body.querySelector('[data-micon-file="browser"]');
+      assert.ok(input, 'Customize should offer an image picker for app icons');
+      Object.defineProperty(input, 'files', { configurable: true, value: [{ type: 'image/png', size: 1024 }] });
+      await input.onchange();
+    };
+    await uploadBrowserIcon();
+    assert.equal(w.eval('APPS.browser.iconImage'), storedImage);
+    assert.equal(JSON.parse(w.localStorage.getItem('mhOS.user.ada.v1')).moduleOverrides.browser.iconImage, storedImage,
+      'the resized image is saved in this account data');
+    assert.ok(w.document.querySelector('#startmenu .sm-item[data-app="browser"] img.app-icon-image'));
+    assert.ok(w.document.querySelector('#panelapps .pitem[data-app="browser"] img.app-icon-image'));
+    assert.ok(w.document.querySelector('.desktop-icon[data-shortcut="desktop-browser"] img.app-icon-image'));
+    assert.ok(browserWindow.el.querySelector('.wic img.app-icon-image'), 'an already-open window title updates live');
+    w.openApp('appcenter');
+    const center = w.eval('wins').get('appcenter').body;
+    const browserCard = [...center.querySelectorAll('#ac-grid .card')].find((card) => card.querySelector('h3')?.textContent === 'Browser');
+    assert.ok(browserCard?.querySelector('.card-ic img.app-icon-image'), 'App Center listings use the uploaded image');
+    w.closeWin('appcenter', true);
+    w.openApp('about');
+    assert.ok(w.eval('wins').get('about').body.querySelector('.app-main p img.app-icon-image'), 'About lists use the uploaded image');
+    w.closeWin('about', true);
+
+    body.querySelector('[data-micon-clear="browser"]').click();
+    assert.equal(w.eval('APPS.browser.iconImage'), '', 'the Use vector icon button clears the image override');
+    assert.ok(!w.document.querySelector('#startmenu .sm-item[data-app="browser"] img.app-icon-image'));
+    assert.ok(!browserWindow.el.querySelector('.wic img.app-icon-image'), 'clearing updates open window titles');
+    w.closeWin('browser', true);
+
+    const customInput = body.querySelector('[data-cicon-file="legacy-image-app"]');
+    assert.ok(customInput, 'saved custom apps should also have image icon controls');
+    Object.defineProperty(customInput, 'files', { configurable: true, value: [{ type: 'image/png', size: 1024 }] });
+    await customInput.onchange();
+    assert.equal(w.eval("APPS['legacy-image-app'].iconImage"), storedImage);
+    assert.equal(JSON.parse(w.localStorage.getItem('mhOS.user.ada.v1')).customApps[0].iconImage, storedImage);
+    w.openApp('appcenter');
+    const customCard = [...w.eval('wins').get('appcenter').body.querySelectorAll('#ac-custom .card')]
+      .find((card) => card.querySelector('h3')?.textContent === 'Saved App');
+    assert.ok(customCard?.querySelector('.card-ic img.app-icon-image'), 'saved custom app listings use the uploaded image');
+    w.closeWin('appcenter', true);
+    body.querySelector('[data-cicon-clear="legacy-image-app"]').click();
+    assert.equal(w.eval("APPS['legacy-image-app'].iconImage"), '');
+
+    await uploadBrowserIcon();
     body.querySelector('#cust-reset').click();
+    assert.equal(w.eval('APPS.browser.iconImage'), '', 'Reset customisations also clears uploaded icons');
     assert.deepEqual(Array.from(w.eval('userData.settings.pinned')), ['settings', 'appcenter', 'browser']);
     assert.deepEqual(Array.from(w.eval('userData.desktopIcons'), (s) => s.target), ['settings', 'browser']);
   } finally { w.close(); }

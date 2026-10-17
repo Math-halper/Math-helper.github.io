@@ -24,6 +24,11 @@ The previously bundled apps and game catalogs remain removed. The only
 built-in website is **Test Page** (the one entry in `data/websites.js`; see
 [`websites/README.md`](../websites/README.md)).
 
+In **Customize → App modules**, choose a named vector icon or upload a PNG,
+JPG, WebP, GIF, BMP or AVIF image. Images are resized to at most 128 pixels,
+stored per account, and displayed in the menu, panel, app windows and desktop
+shortcuts. Existing custom web apps can use the same image control.
+
 ## Add your own app (developer workflow)
 
 1. Copy the `apps/_template/` folder and rename it, e.g. `apps/my-app/`.
@@ -72,7 +77,7 @@ exactly where the old one left off.
 | Folder | App (id) |
 | --- | --- |
 | `app-center/` | App Center (`appcenter`) — hide/restore built-ins, manage the account's saved apps & websites |
-| `customize/` | Customize (`customize`) — app modules, themes, wallpapers, desktop parts, reset |
+| `customize/` | Customize (`customize`) — app modules, vector or uploaded image icons, themes, wallpapers, desktop parts, reset |
 | `settings/` | Settings (`settings`) — account, wallpaper & accent, password, backup, accounts on this device |
 | `about/` | About (`about`) — provenance, licence, what's inside |
 | `browser/` | Browser (`browser`) — Test Page, saved websites, external addresses and VFS HTML files |
@@ -117,7 +122,7 @@ repository — the `/` tree of the virtual file system; refresh it with
 `assets/fs-archive.js` (ZIP downloads), `assets/config-loader.js` (parses both
 catalogs), `assets/store.js` (accounts/storage and the per-account defaults),
 `assets/core.js` (desktop, windows, registries), `assets/desktop-icons.js`
-(shortcuts), `assets/icons.js` (the SVG icon set), `assets/styles.css`,
+(shortcuts), `assets/icons.js` (the SVG set and safe image-icon renderer), `assets/styles.css`,
 `assets/html-loader.js` (loads the HTML modules) and `assets/boot.js` (loaded
 last). Note: because the loader fetches files over HTTP, proton must be served
 over HTTP(S) — GitHub Pages or `python3 -m http.server` — not opened as a
