@@ -15,15 +15,17 @@ loader (assets/html-loader.js) at boot.</p>
      TO USE IT: copy this folder, rename it, then change ONE line — the
      EMBED_URL constant in the script below. Nothing else needs editing.
 
-       1. cp -r apps/_embed apps/my-app
-       2. edit the EMBED_URL line in apps/my-app/app.html
+       1. cp -r apps/_embed apps/inbuilt/my-app   (built-in apps live under
+          apps/inbuilt/; the "open proton" link below is one level deeper
+          there — ../../../index.html)
+       2. edit the EMBED_URL line in apps/inbuilt/my-app/app.html
        3. add ONE [application] block to data/applications.js (a
           commented-out example is waiting at the bottom of that file):
 
             [application]
             id=my-app
             name=My App
-            path=apps/my-app/app.html
+            path=apps/inbuilt/my-app/app.html
             icon=globe
             svg-icon=true
             cat=System

@@ -12,18 +12,23 @@ from the proton menu. The script below is fetched and run by proton's HTML
 loader (assets/html-loader.js) at boot.</p>
 <!-- EMBED TEMPLATE — an app that is nothing but one framed page.
 
-     TO USE IT: copy this folder, rename it, then change ONE line — the
-     EMBED_URL constant in the script below. Nothing else needs editing.
+     TO USE IT: copy apps/_embed (or this folder), rename it, then change
+     ONE line — the EMBED_URL constant in the script below. Nothing else
+     needs editing.
 
-       1. cp -r apps/_embed apps/my-app
-       2. edit the EMBED_URL line in apps/my-app/app.html
+       1. cp -r apps/_embed apps/inbuilt/my-app   (apps built into this
+          site live under apps/inbuilt/ — this Celeste wrapper is the one
+          app that stays directly under apps/, because the page it frames
+          is hosted elsewhere; remember the "open proton" link above is one
+          level deeper in apps/inbuilt/: ../../../index.html)
+       2. edit the EMBED_URL line in apps/inbuilt/my-app/app.html
        3. add ONE [application] block to data/applications.js (a
           commented-out example is waiting at the bottom of that file):
 
             [application]
             id=my-app
             name=My App
-            path=apps/my-app/app.html
+            path=apps/inbuilt/my-app/app.html
             icon=globe
             svg-icon=true
             cat=System

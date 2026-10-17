@@ -13,14 +13,17 @@ proton menu. The script below is fetched and run by proton's HTML loader
 <!-- proton app: this script block is the app's code (render). Its metadata
      (name, icon, category, size) comes from the catalog, data/applications.js. -->
 <script data-proton-app>
-/* TEMPLATE — copy this whole _template folder, rename it, then add ONE
- * [application] block to data/applications.js (copy the template in that
- * file's header comment):
+/* TEMPLATE — copy this whole _template folder to apps/inbuilt/my-app/
+ * (every app built into this site lives under apps/inbuilt/; Celeste
+ * Classic is the one wrapper that stays at apps/celeste-classic/), fix the
+ * "open proton" link below to ../../../index.html for that extra level,
+ * then add ONE [application] block to data/applications.js (copy the
+ * template in that file's header comment):
  *
  *   [application]
  *   id=my-app
  *   name=My App
- *   path=apps/my-app/app.html
+ *   path=apps/inbuilt/my-app/app.html
  *   icon=grid
  *   svg-icon=true
  *   cat=Productivity

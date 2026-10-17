@@ -25,7 +25,7 @@ and offers buttons that talk back to proton. Add more sites the same way.
 
 (Websites saved on an account before adding was disabled are different — those
 live in account data and can still be opened or removed in App Center
-(`apps/app-center/`) and on the Browser home page. Users cannot add websites;
+(`apps/inbuilt/app-center/`) and on the Browser home page. Users cannot add websites;
 typing an address in the Browser visits it without saving it.)
 
 ## Add your own site (developer workflow)

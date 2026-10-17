@@ -4,7 +4,8 @@ Copy the template below for each application, in the order you want them
 in the proton menu. Nothing else needs editing: name, location (path),
 icon, category, description and default window size all live here.
 
-  - Add an app:    copy the template block below (and the app's folder).
+  - Add an app:    copy the template block below (and the app's folder,
+                   under apps/inbuilt/).
   - Remove an app: delete its block (or set enabled=false to keep the
                    block but hide the app).
   - icon= is either a named SVG icon, or a local raster path such as
@@ -16,20 +17,23 @@ icon, category, description and default window size all live here.
   - w= / h= are the starting window size in pixels.
   - streamed=true loads a remote app's tiny module on first launch instead
     of fetching it during desktop boot (assets/html-loader.js).
-  - The app itself still lives in apps/<folder>/app.html; its render()
-    code runs from there (apps/_template is the starting point).
+  - The app itself still lives in apps/inbuilt/<folder>/app.html; its
+    render() code runs from there (apps/_template is the starting point).
+    apps/inbuilt/ holds every app built into this site; the one exception
+    is the Celeste Classic wrapper, which stays at apps/celeste-classic/.
 
-proton ships the five core System apps plus one embedded game page:
-Celeste Classic. Its app folder contains only an iframe wrapper for the
-existing GitHub Pages site; no game files or assets are copied into this
-repository.
+proton ships the five core System apps — all under apps/inbuilt/ — plus
+one embedded game page: Celeste Classic, which stays in its own
+apps/celeste-classic/ folder. That folder contains only an iframe wrapper
+for the existing GitHub Pages site; no game files or assets are copied into
+this repository.
 
 Template (named SVG; for an image use `icon=data/icons/my-app.png` and
 `svg-icon=false` instead):
 [application]
 id=
 name=
-path=apps/my-app/app.html
+path=apps/inbuilt/my-app/app.html
 icon=grid
 svg-icon=true
 cat=Productivity
@@ -44,7 +48,7 @@ window.PROTON_APPLICATIONS_TEXT = `
 [application]
 id=appcenter
 name=App Center
-path=apps/app-center/app.html
+path=apps/inbuilt/app-center/app.html
 icon=grid
 svg-icon=true
 cat=System
@@ -55,7 +59,7 @@ h=640
 [application]
 id=customize
 name=Customize
-path=apps/customize/app.html
+path=apps/inbuilt/customize/app.html
 icon=sliders
 svg-icon=true
 cat=System
@@ -66,7 +70,7 @@ h=660
 [application]
 id=settings
 name=Settings
-path=apps/settings/app.html
+path=apps/inbuilt/settings/app.html
 icon=settings
 svg-icon=true
 cat=System
@@ -77,7 +81,7 @@ h=600
 [application]
 id=about
 name=About
-path=apps/about/app.html
+path=apps/inbuilt/about/app.html
 icon=info
 svg-icon=true
 cat=System
@@ -88,7 +92,7 @@ h=540
 [application]
 id=browser
 name=Browser
-path=apps/browser/app.html
+path=apps/inbuilt/browser/app.html
 icon=globe
 svg-icon=true
 cat=System
@@ -107,14 +111,14 @@ desc=Play Celeste Classic from Math-halper's GitHub Pages site
 w=980
 h=640
 
-/* TEMPLATE — an app that is only an embedded page. Copy apps/_embed/,
-   rename it, change the EMBED_URL constant in its app.html, then
-   uncomment a block like this one (and delete these lines):
+/* TEMPLATE — an app that is only an embedded page. Copy apps/_embed/ to
+   apps/inbuilt/my-embed/, change the EMBED_URL constant in its app.html,
+   then uncomment a block like this one (and delete these lines):
 
 [application]
 id=my-embed
 name=My Embed
-path=apps/my-embed/app.html
+path=apps/inbuilt/my-embed/app.html
 icon=globe
 svg-icon=true
 cat=System

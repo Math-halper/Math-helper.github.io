@@ -1,6 +1,10 @@
 # proton apps — one app per folder
 
-Every app is a **single HTML file in its own folder**: `apps/<app-name>/app.html`.
+Every app is a **single HTML file in its own folder**. The apps built into this
+site live under **[`inbuilt/`](inbuilt/)**: `apps/inbuilt/<app-name>/app.html`.
+The one exception is the Celeste Classic wrapper, which frames a page hosted
+elsewhere and stays directly under `apps/`:
+`apps/celeste-classic/app.html`.
 There is no build step. The list of apps — name, location (path), icon,
 category, description and window size — lives in **one catalog file**:
 [`data/applications.js`](../data/applications.js), one `[application]` block
@@ -16,10 +20,12 @@ appears in the proton menu, App Center and Customize.
 > web-address apps — everything is part of this static website. "Add your own
 > app" below is the *developer* workflow for changing the site's code.
 
-The current base keeps its five core System apps. Celeste Classic is added as
+The current base keeps its five core System apps, all in `apps/inbuilt/`.
+Celeste Classic is added as
 a small wrapper around its existing GitHub Pages site, loaded live in a
-sandboxed iframe. This repository does not contain its game code, assets or
-copies of the source repository.
+sandboxed iframe from its own `apps/celeste-classic/` folder — it is not an
+inbuilt app, so it does not live in `apps/inbuilt/`. This repository does not
+contain its game code, assets or copies of the source repository.
 The previously bundled apps and game catalogs remain removed. The only
 built-in website is **Test Page** (the one entry in `data/websites.js`; see
 [`websites/README.md`](../websites/README.md)).
@@ -36,7 +42,9 @@ see [`data/icons/README.md`](../data/icons/README.md).
 
 ## Add your own app (developer workflow)
 
-1. Copy the `apps/_template/` folder and rename it, e.g. `apps/my-app/`.
+1. Copy the `apps/_template/` folder into `apps/inbuilt/` and rename it, e.g.
+   `apps/inbuilt/my-app/` (its "open proton" fallback link is one level deeper
+   there: `../../../index.html`).
    If the app is only **one framed page** — a build, a doc, another site —
    copy `apps/_embed/` instead and skip to step 3: its module is a toolbar
    (address, Reload, Open in new tab) plus a full-height sandboxed `<iframe>`,
@@ -49,13 +57,14 @@ see [`data/icons/README.md`](../data/icons/README.md).
    app. Template folders are never registered or deployed —
    `tools/gen-fs-manifest.py` skips every underscore-prefixed folder.
 2. Add ONE `[application]` block to `data/applications.js` (copy the template
-   in that file's header): `id`, `name`, `path=apps/my-app/app.html`, `icon`
+   in that file's header): `id`, `name`, `path=apps/inbuilt/my-app/app.html`,
+   `icon`
    (a name from `assets/icons.js` such as `folder`, `globe` or `star`),
    `cat`, `desc`, `w`, `h`. Block order = menu order. A new `cat=` name adds a
    new section to the proton menu (the built-in order is `CATS` in
    `assets/core.js`: `System`, `My Apps`, then anything else you invent).
-3. Edit `apps/my-app/app.html` and write the `render` function (the app's
-   code). Reload proton.
+3. Edit `apps/inbuilt/my-app/app.html` and write the `render` function (the
+   app's code). Reload proton.
 4. Re-run `python3 tools/gen-fs-manifest.py` so the new file appears in the
    virtual file system, then `npm test`.
 
@@ -79,15 +88,18 @@ exactly where the old one left off.
 
 ## The apps
 
+Everything in `inbuilt/` is built into this site; `celeste-classic/` and the
+two `_`-prefixed starting points sit next to it, directly under `apps/`.
+
 | Folder | App (id) |
 | --- | --- |
-| `app-center/` | App Center (`appcenter`) — hide/restore built-ins, manage the account's saved apps & websites |
-| `customize/` | Customize (`customize`) — app modules, vector or uploaded image icons, themes, wallpapers, desktop parts, reset |
-| `settings/` | Settings (`settings`) — account, wallpaper & accent, password, backup, accounts on this device |
-| `about/` | About (`about`) — provenance, licence, what's inside |
-| `browser/` | Browser (`browser`) — Test Page, saved websites, external addresses and VFS HTML files |
+| `inbuilt/app-center/` | App Center (`appcenter`) — hide/restore built-ins, manage the account's saved apps & websites |
+| `inbuilt/customize/` | Customize (`customize`) — app modules, vector or uploaded image icons, themes, wallpapers, desktop parts, reset |
+| `inbuilt/settings/` | Settings (`settings`) — account, wallpaper & accent, password, backup, accounts on this device |
+| `inbuilt/about/` | About (`about`) — provenance, licence, what's inside |
+| `inbuilt/browser/` | Browser (`browser`) — Test Page, saved websites, external addresses and VFS HTML files |
 | `celeste-classic/` | Celeste Classic (`celeste-classic`) — [hosted game page](https://math-halper.github.io/Celeste/1/index.html), embedded with the shared safe iframe wrapper |
-| `_template/` | not an app — the starting point for a new one |
+| `_template/` | not an app — the starting point for a new one (copy it into `inbuilt/`) |
 | `_embed/` | not an app — the starting point for one that is only a framed page (`EMBED_URL`) |
 
 ### Desktop shortcut workflow

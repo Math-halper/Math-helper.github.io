@@ -100,11 +100,11 @@ test('catalog icons accept local image paths or named inline SVG defaults', () =
   const ctx = vm.createContext({ window: {}, console });
   vm.runInContext(source('assets/icons.js'), ctx);
   ctx.window.PROTON_APPLICATIONS_TEXT = [
-    '[application]', 'id=image-app', 'name=Image App', 'path=apps/image/app.html',
+    '[application]', 'id=image-app', 'name=Image App', 'path=apps/inbuilt/image/app.html',
     'icon=data/icons/app-logo.png', 'svg-icon=false',
-    '[application]', 'id=vector-app', 'name=Vector App', 'path=apps/vector/app.html',
+    '[application]', 'id=vector-app', 'name=Vector App', 'path=apps/inbuilt/vector/app.html',
     'icon=globe', 'svg-icon=true',
-    '[application]', 'id=legacy-app', 'name=Legacy App', 'path=apps/legacy/app.html', 'icon=grid',
+    '[application]', 'id=legacy-app', 'name=Legacy App', 'path=apps/inbuilt/legacy/app.html', 'icon=grid',
   ].join('\n');
   ctx.window.PROTON_WEBSITES_TEXT = '';
   vm.runInContext(source('assets/config-loader.js'), ctx);
@@ -148,10 +148,20 @@ test('every catalog entry points at a real, syntactically valid app module', () 
     assert.deepEqual(fs.readdirSync(path.dirname(path.join(ROOT, app.path))).sort(), ['app.html']);
   }
 
-  /* apps/ holds only the shipped apps plus the developer templates. */
+  /* apps/ holds the developer templates, the Celeste wrapper and inbuilt/ —
+   * the folder with every app built into this site. */
   const folders = fs.readdirSync(path.join(ROOT, 'apps'), { withFileTypes: true })
     .filter((e) => e.isDirectory()).map((e) => e.name).sort();
-  assert.deepEqual(folders, ['_embed', '_template', 'about', 'app-center', 'browser', 'celeste-classic', 'customize', 'settings']);
+  assert.deepEqual(folders, ['_embed', '_template', 'celeste-classic', 'inbuilt']);
+  const inbuilt = fs.readdirSync(path.join(ROOT, 'apps', 'inbuilt'), { withFileTypes: true })
+    .filter((e) => e.isDirectory()).map((e) => e.name).sort();
+  assert.deepEqual(inbuilt, ['about', 'app-center', 'browser', 'customize', 'settings']);
+  /* The catalog agrees with the tree: only the embedded game sits outside
+   * apps/inbuilt/, and it stays a wrapper folder of its own under apps/. */
+  for (const app of apps) {
+    const home = app.id === 'celeste-classic' ? 'apps/celeste-classic/' : 'apps/inbuilt/';
+    assert.ok(app.path.startsWith(home), `${app.id} should live in ${home}, not ${app.path}`);
+  }
 });
 
 test('the system manifest still matches the repository exactly', () => {

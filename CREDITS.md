@@ -85,7 +85,7 @@ the virtual file system (`assets/fs.js`, `data/fs-manifest.js`,
 all still work, and the account data model in `assets/store.js` still carries
 the removed apps' data (notes, files, events, contacts, sheets, slides,
 boards), so an older backup still imports and any of these apps can be added
-back with a folder under `apps/` and one catalog block.
+back with a folder under `apps/inbuilt/` and one catalog block.
 
 The provenance table above and the sections that used to follow it (Digital
 Logic Sim, the streamed Proton Arcade and Gams Offline catalogs) are historical:
