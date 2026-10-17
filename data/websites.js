@@ -9,7 +9,8 @@ location (path), icon and description all live here.
                    starting from websites/_template/).
   - Remove a site: delete its block (or set enabled=false to keep the
                    block but hide the site).
-  - icon= is a name from assets/icons.js (globe, book, flask, …).
+  - icon= is either a named SVG icon or a local raster path under data/icons/.
+  - svg-icon=true means icon= is a named inline SVG; use false for an image path.
   - The page itself still lives in websites/<folder>/site.html; it is an
     ordinary standalone HTML page that the Browser loads in a frame at
     proton://<id>.
@@ -27,6 +28,7 @@ id=
 name=
 path=websites/my-site/site.html
 icon=globe
+svg-icon=true
 desc=
 enabled=true
 */
@@ -38,6 +40,7 @@ id=test-page
 name=Test Page
 path=websites/test-page/site.html
 icon=flask
+svg-icon=true
 desc=TEST SITE: automated checks plus buttons, forms, clock, counter, canvas and storage to try the Browser with
 
 /* TEMPLATE — a site that is only an embedded page. Copy websites/_embed/,
@@ -49,6 +52,7 @@ id=my-embed
 name=My Embed
 path=websites/my-embed/index.html
 icon=globe
+svg-icon=true
 desc=Frames https://example.com
 
 */

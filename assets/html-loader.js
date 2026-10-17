@@ -87,7 +87,7 @@ async function loadHtmlModules() {
 
   /* Site pages are loaded by the Browser frame only when visited. */
   siteEntries.forEach((entry) => registerSite({
-    id: entry.id, name: entry.name, icon: entry.icon, desc: entry.desc,
+    id: entry.id, name: entry.name, icon: entry.icon, svgIcon: entry.svgIcon, desc: entry.desc,
     page: new URL(entry.path, document.baseURI).href,
   }));
 }

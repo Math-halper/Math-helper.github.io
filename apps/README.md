@@ -16,10 +16,10 @@ appears in the proton menu, App Center and Customize.
 > web-address apps — everything is part of this static website. "Add your own
 > app" below is the *developer* workflow for changing the site's code.
 
-The current base keeps its five core System apps. This change adds only two
-more apps: Celeste Classic and Mario Collection, each a small wrapper around
-an existing GitHub Pages site. Their pages load live in sandboxed iframes;
-this repository does not contain game code, assets or copies of those repos.
+The current base keeps its five core System apps. Celeste Classic is added as
+a small wrapper around its existing GitHub Pages site, loaded live in a
+sandboxed iframe. This repository does not contain its game code, assets or
+copies of the source repository.
 The previously bundled apps and game catalogs remain removed. The only
 built-in website is **Test Page** (the one entry in `data/websites.js`; see
 [`websites/README.md`](../websites/README.md)).
@@ -28,6 +28,11 @@ In **Customize → App modules**, choose a named vector icon or upload a PNG,
 JPG, WebP, GIF, BMP or AVIF image. Images are resized to at most 128 pixels,
 stored per account, and displayed in the menu, panel, app windows and desktop
 shortcuts. Existing custom web apps can use the same image control.
+
+For a site-wide default icon, put the raster file in `data/icons/` and set
+`icon=data/icons/my-app.png` and `svg-icon=false` in `data/applications.js`.
+Use `icon=globe` and `svg-icon=true` for one of the built-in inline SVG icons;
+see [`data/icons/README.md`](../data/icons/README.md).
 
 ## Add your own app (developer workflow)
 
@@ -82,7 +87,6 @@ exactly where the old one left off.
 | `about/` | About (`about`) — provenance, licence, what's inside |
 | `browser/` | Browser (`browser`) — Test Page, saved websites, external addresses and VFS HTML files |
 | `celeste-classic/` | Celeste Classic (`celeste-classic`) — [hosted game page](https://math-halper.github.io/Celeste/1/index.html), embedded with the shared safe iframe wrapper |
-| `mario-collection/` | Mario Collection (`mario-collection`) — [hosted collection](https://math-halper.github.io/Mario/index.html), embedded with the shared safe iframe wrapper |
 | `_template/` | not an app — the starting point for a new one |
 | `_embed/` | not an app — the starting point for one that is only a framed page (`EMBED_URL`) |
 

@@ -66,12 +66,12 @@ const DesktopIcons = (() => {
   function info(entry) {
     if (entry.kind === 'app') {
       const app = APPS[entry.target];
-      return { name: app.name, icon: app.iconImage || app.icon, detail: 'Application', missing: false };
+      return { name: app.name, iconHtml: appIcon(app), detail: 'Application', missing: false };
     }
     const st = FS.stat(entry.target);
     const icon = !st ? 'alert' : st.type === 'dir' ? 'folder'
       : FS.appFor(st.path) === 'browser' ? 'globe' : 'file';
-    return { name: st && st.path === FS.home() ? 'Home' : st?.name || FS.basename(entry.target), icon,
+    return { name: st && st.path === FS.home() ? 'Home' : st?.name || FS.basename(entry.target), iconHtml: iconFor(icon),
       detail: (st ? st.path : 'Missing: ' + entry.target), missing: !st };
   }
   function highlight() {
@@ -96,8 +96,8 @@ const DesktopIcons = (() => {
     const { g, entries } = placements();
     host.style.height = Math.max(g.height, (Math.max(-1, ...entries.map((x) => x.row)) + 1) * HEIGHT + PAD_Y * 2) + 'px';
     host.innerHTML = entries.map(({ entry, col, row }) => {
-      const { name, icon, detail, missing } = info(entry);
-      return `<button type="button" class="desktop-icon${missing ? ' missing' : ''}" data-shortcut="${MH.esc(entry.id)}" data-col="${col}" data-row="${row}" aria-label="${MH.esc(name)}${missing ? ', missing' : ''}, desktop shortcut" aria-selected="false" title="${MH.esc(name + ' — ' + detail)}" style="left:${PAD_X + col * WIDTH}px;top:${PAD_Y + row * HEIGHT}px"><span class="desktop-icon-glyph">${iconFor(icon)}<span class="desktop-shortcut-mark">${iconSvg('external')}</span></span><span class="desktop-icon-label">${MH.esc(name)}</span></button>`;
+      const { name, iconHtml, detail, missing } = info(entry);
+      return `<button type="button" class="desktop-icon${missing ? ' missing' : ''}" data-shortcut="${MH.esc(entry.id)}" data-col="${col}" data-row="${row}" aria-label="${MH.esc(name)}${missing ? ', missing' : ''}, desktop shortcut" aria-selected="false" title="${MH.esc(name + ' — ' + detail)}" style="left:${PAD_X + col * WIDTH}px;top:${PAD_Y + row * HEIGHT}px"><span class="desktop-icon-glyph">${iconHtml}<span class="desktop-shortcut-mark">${iconSvg('external')}</span></span><span class="desktop-icon-label">${MH.esc(name)}</span></button>`;
     }).join('');
     if (selected && !entries.some(({ entry }) => entry.id === selected)) selected = null;
     highlight();
@@ -227,7 +227,7 @@ const DesktopIcons = (() => {
         .sort((a, b) => a.name.localeCompare(b.name));
       results.innerHTML = apps.length ? apps.map((app) => {
         const present = userData.desktopIcons.some((x) => x.kind === 'app' && x.target === app.id);
-        return `<button type="button" class="desktop-picker-item" data-app="${MH.esc(app.id)}"><span class="desktop-picker-glyph">${iconFor(app.iconImage || app.icon)}</span><span><b>${MH.esc(app.name)}</b><small>${MH.esc(app.cat)}</small></span>${present ? '<em>On desktop</em>' : iconSvg('plus')}</button>`;
+        return `<button type="button" class="desktop-picker-item" data-app="${MH.esc(app.id)}"><span class="desktop-picker-glyph">${appIcon(app)}</span><span><b>${MH.esc(app.name)}</b><small>${MH.esc(app.cat)}</small></span>${present ? '<em>On desktop</em>' : iconSvg('plus')}</button>`;
       }).join('') : '<p class="desktop-picker-empty">No matching apps.</p>';
       results.querySelectorAll('[data-app]').forEach((button) => button.onclick = () => {
         const id = button.dataset.app;

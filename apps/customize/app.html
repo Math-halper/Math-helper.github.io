@@ -118,7 +118,7 @@ registerApp({
           const removed = userData.hiddenApps.includes(a.id), edited = !!userData.moduleOverrides[a.id];
           return `<div class="card" style="margin-bottom:9px;${removed ? 'opacity:.62' : ''}">
           <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center">
-            <span style="font-size:23px">${iconFor(a.iconImage || a.icon)}</span><b>${MH.esc(a.name)}</b>
+            <span style="font-size:23px">${appIcon(a)}</span><b>${MH.esc(a.name)}</b>
             <span class="chip">${MH.esc(a.cat)}</span><span class="muted">${a.id}</span>
             ${edited ? '<span class="chip">Edited</span>' : ''}${removed ? '<span class="chip" style="background:#4a1713;color:#ffb4ab">Removed</span>' : ''}
             <span style="margin-left:auto;display:flex;gap:6px;flex-wrap:wrap">
@@ -126,9 +126,9 @@ registerApp({
               ${edited ? `<button class="btn sm" data-mreset="${a.id}">Reset</button>` : ''}
             </span></div>
           <div class="add-form" style="margin-top:9px;grid-template-columns:minmax(170px,1fr) 1.5fr 1.2fr 70px 2fr">
-            <div class="field"><label>Icon</label><select data-micon="${a.id}">${iconOptions(a.icon)}</select>
+            <div class="field"><label>Icon</label><select data-micon="${a.id}">${iconOptions(a.svgIcon === false ? '__catalog__' : a.icon, BASE_MODULES[a.id]?.svgIcon === false)}</select>
               <label class="btn sm" style="margin-top:5px">${a.iconImage ? 'Replace image…' : 'Set image…'}<input data-micon-file="${a.id}" type="file" accept="image/png,image/jpeg,image/webp,image/gif,image/bmp,image/avif" aria-label="Choose image icon for ${MH.esc(a.name)}" hidden></label>
-              ${a.iconImage ? `<button class="btn sm" type="button" data-micon-clear="${a.id}" style="margin-top:5px">Use vector icon</button>` : '<small class="muted">Raster image, up to 8 MB.</small>'}
+              ${a.iconImage ? `<button class="btn sm" type="button" data-micon-clear="${a.id}" style="margin-top:5px">${a.svgIcon === false ? 'Use catalog icon' : 'Use vector icon'}</button>` : '<small class="muted">Raster image, up to 8 MB.</small>'}
             </div>
             <div class="field"><label>Name</label><input data-mname="${a.id}" value="${MH.esc(a.name)}" maxlength="40"></div>
             <div class="field"><label>Category</label><input data-mcat="${a.id}" value="${MH.esc(a.cat)}" list="cust-cats" maxlength="24"></div>
@@ -138,7 +138,7 @@ registerApp({
           <button class="btn sm" data-msave="${a.id}" style="margin-top:8px">Save changes</button>
           <span class="muted">Tip: give several apps the same new category name to create your own menu section.</span></div>`;
         }).join('') +
-        (customs.length ? customs.map((a) => `<div class="card" style="margin-bottom:9px"><span style="font-size:23px">${iconFor(a.iconImage || a.icon, 'grid')}</span> <b>${MH.esc(a.name)}</b> <span class="chip">My Apps</span> <span class="muted site-url">${MH.esc(a.url)}</span>
+        (customs.length ? customs.map((a) => `<div class="card" style="margin-bottom:9px"><span style="font-size:23px">${appIcon(a, 'grid')}</span> <b>${MH.esc(a.name)}</b> <span class="chip">My Apps</span> <span class="muted site-url">${MH.esc(a.url)}</span>
           <div style="display:flex;gap:6px;flex-wrap:wrap;margin-top:8px">
             <label class="btn sm">${a.iconImage ? 'Replace image…' : 'Set image…'}<input data-cicon-file="${a.id}" type="file" accept="image/png,image/jpeg,image/webp,image/gif,image/bmp,image/avif" aria-label="Choose image icon for ${MH.esc(a.name)}" hidden></label>
             ${a.iconImage ? `<button class="btn sm" type="button" data-cicon-clear="${a.id}">Use named icon</button>` : ''}
@@ -195,9 +195,12 @@ registerApp({
         const id = b.dataset.msave, base = BASE_MODULES[id], a = APPS[id]; if (!base || !a) return;
         const val = (attr) => body.querySelector(`[data-${attr}="${id}"]`).value.trim();
         const o = {}, existing = userData.moduleOverrides[id] || {}, selectedIcon = val('micon');
+        const currentIconSelection = a.svgIcon === false ? '__catalog__' : a.icon;
         if (val('mname') && val('mname') !== base.name) o.name = val('mname');
-        if (selectedIcon && selectedIcon !== base.icon) o.icon = selectedIcon;
-        if (isIconImageData(existing.iconImage) && selectedIcon === (existing.icon || base.icon)) o.iconImage = existing.iconImage;
+        if (selectedIcon !== '__catalog__' && (!base.svgIcon || selectedIcon !== base.icon)) {
+          o.icon = selectedIcon; o.svgIcon = true;
+        }
+        if (isIconImageData(existing.iconImage) && selectedIcon === currentIconSelection) o.iconImage = existing.iconImage;
         if (val('mcat') && val('mcat') !== base.cat) o.cat = val('mcat');
         if (val('mdesc') !== base.desc) o.desc = val('mdesc');
         const ord = body.querySelector(`[data-morder="${id}"]`).value;
@@ -311,8 +314,9 @@ registerApp({
         const app = entry.kind === 'app' ? APPS[entry.target] : null;
         const st = entry.kind === 'path' ? FS.stat(entry.target) : null;
         const name = app?.name || (st?.path === FS.home() ? 'Home' : st?.name) || (entry.kind === 'path' ? FS.basename(entry.target) : entry.target);
-        const glyph = app?.icon || (st?.type === 'dir' ? 'folder' : st ? 'file' : 'alert');
-        return `<div class="rowitem" style="display:flex;align-items:center;gap:10px;padding:8px 0"><span style="font-size:21px">${iconFor(glyph)}</span><span style="flex:1;min-width:0;overflow-wrap:anywhere"><b>${MH.esc(name)}</b> <small class="muted">${entry.kind === 'app' ? 'App' : 'File / folder'}${entry.kind === 'path' && !st ? ' · missing' : ''}</small></span><button class="btn sm" data-shortcut-remove="${MH.esc(entry.id)}">Remove icon</button></div>`;
+        const glyph = st?.type === 'dir' ? 'folder' : st ? 'file' : 'alert';
+        const iconHtml = app ? appIcon(app) : iconFor(glyph);
+        return `<div class="rowitem" style="display:flex;align-items:center;gap:10px;padding:8px 0"><span style="font-size:21px">${iconHtml}</span><span style="flex:1;min-width:0;overflow-wrap:anywhere"><b>${MH.esc(name)}</b> <small class="muted">${entry.kind === 'app' ? 'App' : 'File / folder'}${entry.kind === 'path' && !st ? ' · missing' : ''}</small></span><button class="btn sm" data-shortcut-remove="${MH.esc(entry.id)}">Remove icon</button></div>`;
       }).join('') : '<p class="muted">No icons yet. Add an application below.</p>';
       box.querySelectorAll('[data-shortcut-remove]').forEach((b) => b.onclick = () => DesktopIcons.remove(b.dataset.shortcutRemove));
     }
